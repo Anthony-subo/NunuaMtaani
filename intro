@@ -1,0 +1,82 @@
+NunuaMtaani-MERN/
+├── client/                       # React Frontend
+│   ├── public/
+│   └── src/
+│       ├── assets/
+│       │   ├── components/       # Reusable components for seller
+│       │   │   ├── AllProducts.jsx
+│       │   │   ├── MyProducts.jsx
+│       │   │   └── Orders.jsx
+│       │   └── pages/           # Page components
+│       │       ├── Signup.jsx
+│       │       ├── Login.jsx
+│       │       ├── Home.jsx
+│       │       ├── AdminDashboard.jsx
+│       │       ├── SellerDashboard.jsx
+│       │       └── BuyerDashboard.jsx
+│       ├── App.jsx              # Main React app with routes
+│       └── index.js             # React entry point
+├── server/                      # Node.js + Express Backend
+│   ├── models/
+│   │   └── users.js             # Mongoose schema for user
+│   ├── routes/
+│   │   └── auth.js              # Auth routes (login/register)
+│   ├── controllers/
+│   │   └── userController.js    # Logic for login/register
+│   ├── index.js                 # Entry point for Express server
+│   ├── .env                     # Environment config
+│   └── package.json
+├── README.md
+└── .gitignore
+
+
+
+client/
+├── public/
+├── src/
+│   ├── assets/
+│   │   └── pages/
+│   │       ├── Home.jsx
+│   │       ├── Login.jsx
+│   │       ├── Signup.jsx
+│   │       ├── BuyerDashboard.jsx
+│   │       ├── AdminDashboard.jsx
+│   │       └── SellerDashboard.jsx
+│   ├── components/
+│   │   ├── AddProduct.jsx
+│   │   ├── AllProducts.jsx
+│   │   ├── AllShops.jsx
+│   │   ├── AllUsers.jsx
+│   │   ├── Cart.jsx
+│   │   ├── MyProducts.jsx
+│   │   ├── Orders.jsx
+│   │   ├── ProductImageSlider.jsx
+│   │   └── ProtectedRoute.jsx
+│   ├── styles/
+│   │   └── allproduct.css
+│   └── App.jsx
+│   └── main.jsx
+├── .env
+├── package.json
+
+server/
+├── config/
+│   └── db.js
+├── controllers/
+│   ├── productController.js
+│   └── userController.js     ← ✅ Add this
+├── models/
+│   ├── productModel.js
+│   └── users.js
+├── routes/
+│   ├── productRoutes.js
+│   └── userRoutes.js         ← ✅ Add this
+├── uploads/
+├── index.js                  ← ✅ Main entry point
+├── .env
+├── package.json
+
+
+
+server  = npm start
+client = npm run dev

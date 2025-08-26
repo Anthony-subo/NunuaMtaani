@@ -1,0 +1,49 @@
+/* allproduct.css */
+
+.all-products-container {
+  margin-top: 2rem;
+}
+
+.section-title {
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #333;
+}
+
+/* Product Card Enhancements */
+.product-card {
+  transition: transform 0.2s ease-in-out;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1);
+}
+
+.card-header .shop-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.verified-check {
+  font-size: 1.2rem;
+  color: green;
+}
+
+.empty-state {
+  text-align: center;
+  margin-top: 4rem;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.btn-outline-primary {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
