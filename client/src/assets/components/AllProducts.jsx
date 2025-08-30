@@ -9,11 +9,11 @@ function AllProducts() {
   const [userId, setUserId] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/products')
+    axios.get(`${import.meta.env.VITE_API_URL}/api/products`)
       .then(res => setProducts(res.data))
       .catch(err => console.error('Failed to fetch products:', err));
 
-    axios.get('http://localhost:3001/api/shops')
+    axios.get(`${import.meta.env.VITE_API_URL}/api/shops`)
       .then(res => setShops(res.data))
       .catch(err => console.error('Failed to fetch shops:', err));
 

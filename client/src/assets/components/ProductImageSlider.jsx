@@ -4,6 +4,9 @@ import '../styles/productSlider.css';
 function ProductImageSlider({ images }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Backend base URL from env
+  const API_URL = import.meta.env.VITE_API_URL;
+
   // Show at most 4 images
   const displayImages = images?.slice(0, 4) || [];
 
@@ -29,7 +32,7 @@ function ProductImageSlider({ images }) {
   return (
     <div className="slider-wrapper">
       <img
-        src={`http://localhost:3001/uploads/${displayImages[currentIndex]}`}
+        src={`${API_URL}/uploads/${displayImages[currentIndex]}`}
         className="slider-image"
         alt={`Product image ${currentIndex + 1}`}
       />

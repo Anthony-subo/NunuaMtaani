@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import '../styles/addProduct.css';
 
-
 function AddProduct() {
   const [form, setForm] = useState({
     shop_id: '',
@@ -17,6 +16,9 @@ function AddProduct() {
   const [imageFiles, setImageFiles] = useState([null, null, null, null]);
   const [message, setMessage] = useState('');
 
+  // ✅ Use backend API URL from .env
+  const API_URL = import.meta.env.VITE_API_URL;
+
   // Auto-fetch shop_id from logged-in user
   useEffect(() => {
     const fetchShopId = async () => {
@@ -24,7 +26,7 @@ function AddProduct() {
         const user = JSON.parse(localStorage.getItem('user')); // assuming user object is saved at login
         if (!user || !user._id) return setMessage('❌ User not found');
 
-        const res = await axios.get(`http://localhost:3001/api/shops/user/${user._id}`);
+        const res = await axios.get(`${API_URL}/api/shops/user/${user._id}`);
         setForm(prev => ({ ...prev, shop_id: res.data.shop._id }));
       } catch (err) {
         setMessage('❌ Failed to fetch shop ID');
@@ -32,7 +34,7 @@ function AddProduct() {
     };
 
     fetchShopId();
-  }, []);
+  }, [API_URL]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -67,8 +69,8 @@ function AddProduct() {
       selectedImages.forEach(file => {
         formData.append('images', file);
       });
-
-      const res = await axios.post('http://localhost:3001/api/products', formData, {
+           
+      const res = await axios.post(`${API_URL}/api/products`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -96,21 +98,16 @@ function AddProduct() {
 
  return (
   <div className="add-product-card">
-   <div className="add-product-banner">
-  <span role="img" aria-label="cart" className="cart-icon">🛒</span>
-  <h4>Add Your Best Product Today!</h4>
-  <p className="slogan-text">Let customers discover your shop’s top picks!</p>
-</div>
+    <div className="add-product-banner">
+      <span role="img" aria-label="cart" className="cart-icon">🛒</span>
+      <h4>Add Your Best Product Today!</h4>
+      <p className="slogan-text">Let customers discover your shop’s top picks!</p>
+    </div>
 
     {message && <div className="add-product-alert">{message}</div>}
 
     <form className="add-product-form" onSubmit={handleSubmit} encType="multipart/form-data">
-      <input
-        type="text"
-        value={form.shop_id}
-        disabled
-        readOnly
-      />
+      <input type="text" value={form.shop_id} disabled readOnly />
 
       <input
         type="text"
@@ -157,7 +154,7 @@ function AddProduct() {
       <button type="submit" className="btn-primary">Submit Product</button>
     </form>
   </div>
-);
+ );
 
 }
 

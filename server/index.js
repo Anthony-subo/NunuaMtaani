@@ -8,7 +8,13 @@ const app = express();
 const port = process.env.PORT || 3001
 
 // Middleware
-app.use(cors());
+// Middleware
+app.use(cors({
+  origin: ["http://localhost:5173", "https://nunuamtaani.onrender.com"], // ✅ your frontend URLs
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Static route to serve uploaded images

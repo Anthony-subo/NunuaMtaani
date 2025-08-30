@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import '../styles/orders.css';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function AllOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +12,7 @@ function AllOrders() {
   useEffect(() => {
     const fetchAllOrders = async () => {
       try {
-        const res = await axios.get('http://localhost:3001/api/orders');
+        const res = await axios.get(`${API_URL}/api/orders`);
         setOrders(res.data);
       } catch (err) {
         console.error('Failed to fetch all orders:', err);
@@ -34,7 +36,7 @@ function AllOrders() {
     if (!newStatus) return;
 
     try {
-      await axios.put(`http://localhost:3001/api/orders/${orderId}/status`, {
+      await axios.put(`${API_URL}/api/orders/${orderId}/status`, {
         status: newStatus
       });
 

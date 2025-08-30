@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '../styles/orders.css'; // Make sure this file is included in your project
+import '../styles/orders.css'; // Ensure this file exists
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Orders() {
   const [orders, setOrders] = useState([]);
@@ -15,12 +17,12 @@ function Orders() {
 
     const fetchShopAndOrders = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/api/shops/user/${user._id}`);
+        const res = await axios.get(`${API_URL}/api/shops/user/${user._id}`);
         const shop = res.data.shop;
         setShopId(shop._id);
         setShopName(shop.shop_name);
 
-        const orderRes = await axios.get(`http://localhost:3001/api/orders/seller/${shop._id}`);
+        const orderRes = await axios.get(`${API_URL}/api/orders/seller/${shop._id}`);
         setOrders(orderRes.data);
       } catch (err) {
         console.error('Failed to fetch shop or orders:', err);
@@ -42,9 +44,7 @@ function Orders() {
   const updateStatus = async (orderId) => {
     const newStatus = statusUpdates[orderId];
     try {
-      await axios.put(`http://localhost:3001/api/orders/${orderId}/status`, {
-        status: newStatus
-      });
+      await axios.put(`${API_URL}/api/orders/${orderId}/status`, { status: newStatus });
 
       setOrders(prev =>
         prev.map(order =>

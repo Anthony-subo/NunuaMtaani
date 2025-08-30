@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function MyProducts() {
   const [myProducts, setMyProducts] = useState([]);
   const [editProduct, setEditProduct] = useState(null);
@@ -11,7 +13,7 @@ function MyProducts() {
     if (!user?._id) return;
 
     axios
-      .get(`http://localhost:3001/api/products/seller/products/${user._id}`)
+      .get(`${API_URL}/api/products/seller/products/${user._id}`)
       .then((res) => setMyProducts(res.data))
       .catch((err) => console.error('Error fetching your products:', err));
   }, [user]);
@@ -19,7 +21,7 @@ function MyProducts() {
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       axios
-        .delete(`http://localhost:3001/api/products/${id}`)
+        .delete(`${API_URL}/api/products/${id}`)
         .then(() => {
           setMyProducts((prev) => prev.filter((p) => p._id !== id));
         })
@@ -30,7 +32,7 @@ function MyProducts() {
   const handleEditSubmit = (e) => {
     e.preventDefault();
     axios
-      .put(`http://localhost:3001/api/products/${editProduct._id}`, {
+      .put(`${API_URL}/api/products/${editProduct._id}`, {
         name: editProduct.name,
         price: editProduct.price,
         status: editProduct.status,
@@ -57,7 +59,7 @@ function MyProducts() {
               <div className="card h-100 shadow-sm">
                 {product.images?.[0] && (
                   <img
-                    src={`http://localhost:3001/uploads/${product.images[0]}`}
+                    src={`${API_URL}/uploads/${product.images[0]}`}
                     className="card-img-top"
                     alt={product.name}
                     style={{ height: '200px', objectFit: 'cover' }}
@@ -100,7 +102,11 @@ function MyProducts() {
 
       {/* Edit Modal */}
       {editProduct && (
-        <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <form onSubmit={handleEditSubmit}>

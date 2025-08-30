@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import '../styles/orders.css';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function MyPurchases() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,7 @@ function MyPurchases() {
 
     const fetchOrders = async () => {
       try {
-        const res = await axios.get('http://localhost:3001/api/orders');
+        const res = await axios.get(`${API_URL}/api/orders`);
         const userOrders = res.data.filter(order => order.user_id === user._id);
         setOrders(userOrders);
       } catch (err) {
@@ -35,7 +37,7 @@ function MyPurchases() {
     if (!window.confirm('Cancel this order?')) return;
 
     try {
-      await axios.put(`http://localhost:3001/api/orders/${orderId}/status`, {
+      await axios.put(`${API_URL}/api/orders/${orderId}/status`, {
         status: 'cancelled'
       });
 
@@ -56,7 +58,7 @@ function MyPurchases() {
 
   return (
     <div className="orders-container">
-      <h3 className="orders-title">🧾 My Purchase</h3>
+      <h3 className="orders-title">🧾 My Purchases</h3>
 
       {orders.length === 0 ? (
         <p className="text-muted">🕐 You have not placed any orders yet.</p>

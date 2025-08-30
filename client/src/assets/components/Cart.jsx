@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '../styles/admin-tables.css';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Cart() {
   const [cart, setCart] = useState([]);
@@ -65,7 +66,7 @@ function Cart() {
         total: items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0),
       };
 
-      return axios.post('http://localhost:3001/api/orders', orderData);
+      return axios.post(`${API_URL}/api/orders`, orderData);
     });
 
     try {
