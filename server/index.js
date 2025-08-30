@@ -10,10 +10,14 @@ const port = process.env.PORT || 3001
 // Middleware
 // Middleware
 app.use(cors({
-  origin: ["http://localhost:5173", "https://nunua-mtaani-swg2.vercel.app/"], // ✅ your frontend URLs
+  origin: [
+    "http://localhost:5173",
+    "https://nunua-mtaani-swg2.vercel.app"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
+
 
 app.use(express.json());
 
