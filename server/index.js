@@ -5,7 +5,7 @@ const path = require("path");
 require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 3001; // ✅ Use Render/Vercel assigned port
+const PORT = 3001;
 
 // Middleware
 app.use(cors());
@@ -19,10 +19,10 @@ connectDB();
 
 // Routes
 app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/products", require("./routes/productRoutes"));
-app.use("/api/users", require("./routes/userRoutes"));
-app.use("/api/shops", require("./routes/shopRoutes"));
-app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/products", require("./routes/productRoutes")); // <-- Add this line
+app.use('/api/users', require('./routes/userRoutes')); // ✅ Add this
+app.use('/api/shops', require('./routes/shopRoutes')); // ✅ Add this
+app.use('/api/orders', require('./routes/orderRoutes')); // ✅ Add this
 
 // Server
 app.listen(PORT, () => {

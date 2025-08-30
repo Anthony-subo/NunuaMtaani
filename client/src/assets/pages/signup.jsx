@@ -16,7 +16,8 @@ function Signup() {
     e.preventDefault();
     setErrMsg(''); // Clear previous error
 
-    axios.post('http://localhost:3001/api/auth/register', { name, phone, email, location, password })
+    //axios.post('http://localhost:3001/api/auth/register', { name, phone, email, location, password })
+     axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, { name, phone, email, location, password })
       .then(result => {
         if (result.data.status === 'success') {
           navigate('/login');

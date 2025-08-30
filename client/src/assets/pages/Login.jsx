@@ -12,7 +12,7 @@ function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setErrMsg('');
-    axios.post('http://localhost:3001/api/auth/login', { email, password })
+    axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, { email, password })
       .then(result => {
         if (result.data.status === "success") {
           localStorage.setItem("user", JSON.stringify(result.data.user));

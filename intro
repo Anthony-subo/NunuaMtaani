@@ -80,3 +80,13 @@ server/
 
 server  = npm start
 client = npm run dev
+"scripts": {
+  "start": "node index.js",
+  "dev": "nodemon index.js"
+}
+
+"scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview"
+}
