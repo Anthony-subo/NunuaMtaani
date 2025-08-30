@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://nunua-mtaani-swg2.vercel.app"
+    "https://nunua-mtaani.vercel.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
