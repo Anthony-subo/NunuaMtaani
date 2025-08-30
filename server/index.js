@@ -25,6 +25,6 @@ app.use('/api/shops', require('./routes/shopRoutes')); // ✅ Add this
 app.use('/api/orders', require('./routes/orderRoutes')); // ✅ Add this
 
 // Server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+app.listen(port, () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
 });
