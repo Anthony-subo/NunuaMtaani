@@ -19,7 +19,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Routes WITHOUT header */}
-        <Route path="/register" element={<Signup />} />
+        <Route path="/" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 
         {/* Routes WITH header via Layout */}
