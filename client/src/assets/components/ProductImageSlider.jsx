@@ -32,10 +32,15 @@ function ProductImageSlider({ images }) {
   return (
     <div className="slider-wrapper">
       <img
-        src={displayImages[currentIndex]}
-        className="slider-image"
-        alt={`Product image ${currentIndex + 1}`}
-      />
+  src={
+    displayImages[currentIndex].startsWith("data:")
+      ? displayImages[currentIndex]  // Base64
+      : `${API_URL}/uploads/${displayImages[currentIndex]}` // Old filename
+  }
+  className="slider-image"
+  alt={`Product image ${currentIndex + 1}`}
+/>
+
       {displayImages.length > 1 && (
         <>
           <button className="slider-btn left" onClick={prev}>‹</button>

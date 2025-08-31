@@ -13,11 +13,10 @@ const uploadPath = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
 
 // Multer config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadPath),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
+// Multer config (store in memory instead of disk)
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
+router.post('/', upload.array('images', 4), addProduct);
 
 // ====================== ROUTES ======================
 

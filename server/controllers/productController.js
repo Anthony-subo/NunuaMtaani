@@ -9,9 +9,10 @@ const addProduct = async (req, res) => {
       return res.status(400).json({ message: "All required fields must be filled and at least 1 image provided." });
     }
 
-   const imagePaths = req.files.map(file => 
-  `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
-);
+   // Convert each uploaded image buffer to Base64 string
+    const imageBase64 = req.files.map(file =>
+      `data:${file.mimetype};base64,${file.buffer.toString('base64')}`
+    );
 
 
     const newProduct = new Product({
