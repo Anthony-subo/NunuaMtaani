@@ -4,44 +4,39 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Controllers
 const { addProduct, getAllProducts } = require('../controllers/productController');
-
-// Models
 const Product = require('../models/product');
 const Shop = require('../models/shop');
 
-// ====================== MULTER CONFIG ======================
-// Use memory storage (you can swap to diskStorage if you want to persist files)
-const storage = multer.memoryStorage();
+// Ensure the uploads folder exists
+const uploadPath = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
+
+// Multer config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadPath),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+});
 const upload = multer({ storage });
 
 // ====================== ROUTES ======================
 
-// @route   POST /api/products
-// @desc    Add a new product
-// @access  Private (seller)
+// POST /api/products - Add a new product
 router.post('/', upload.array('images', 4), addProduct);
 
-// @route   GET /api/products
-// @desc    Get all products
-// @access  Public
+// GET /api/products - Get all products
 router.get('/', getAllProducts);
 
-// @route   GET /api/products/seller/products/:userId
-// @desc    Get all products for a specific seller by userId
-// @access  Private (seller)
+// GET /api/products/seller/products/:userId - Get all products for a seller
 router.get('/seller/products/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-
-    // Find shop linked to the seller
     const shop = await Shop.findOne({ user_id: userId });
+
     if (!shop) {
       return res.status(404).json({ message: 'No shop found for this user' });
     }
 
-    // Fetch products belonging to that shop
     const products = await Product.find({ shop_id: shop._id });
     res.json(products);
   } catch (error) {
@@ -50,9 +45,7 @@ router.get('/seller/products/:userId', async (req, res) => {
   }
 });
 
-// @route   DELETE /api/products/:id
-// @desc    Delete a product by product _id
-// @access  Private (seller/admin)
+// DELETE /api/products/:id - Delete a product by _id
 router.delete('/:id', async (req, res) => {
   try {
     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
@@ -61,20 +54,14 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    res.json({
-      status: 'success',
-      message: 'Product deleted successfully',
-      product: deletedProduct,
-    });
+    res.json({ status: 'success', message: 'Product deleted successfully', product: deletedProduct });
   } catch (error) {
     console.error('Error deleting product:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// @route   PUT /api/products/:id
-// @desc    Update product fields by product _id
-// @access  Private (seller/admin)
+// PUT /api/products/:id - Update a product by _id
 router.put('/:id', async (req, res) => {
   try {
     const { name, price, status } = req.body;
@@ -89,11 +76,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    res.json({
-      status: 'success',
-      message: 'Product updated successfully',
-      product: updatedProduct,
-    });
+    res.json({ status: 'success', message: 'Product updated', product: updatedProduct });
   } catch (error) {
     console.error('Error updating product:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
