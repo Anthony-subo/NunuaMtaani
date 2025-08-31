@@ -32,7 +32,7 @@ function ProductImageSlider({ images }) {
   return (
     <div className="slider-wrapper">
       <img
-        src={`${API_URL}/uploads/${displayImages[currentIndex]}`}
+        src={displayImages[currentIndex]}
         className="slider-image"
         alt={`Product image ${currentIndex + 1}`}
       />

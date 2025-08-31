@@ -9,7 +9,10 @@ const addProduct = async (req, res) => {
       return res.status(400).json({ message: "All required fields must be filled and at least 1 image provided." });
     }
 
-    const imagePaths = req.files.map(file => file.filename);
+   const imagePaths = req.files.map(file => 
+  `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
+);
+
 
     const newProduct = new Product({
       product_id: 'product-' + Date.now(),
