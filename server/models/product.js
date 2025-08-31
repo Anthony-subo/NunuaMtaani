@@ -6,7 +6,12 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   location: { type: String, required: true },
-  images: [String], // array of image filenames
+  images: [
+    {
+      data: Buffer,
+      contentType: String,
+    }
+  ],
   status: { type: String, enum: ['available', 'sold', 'out-of-stock'], default: 'available' },
   timestamp: { type: String, default: () => new Date().toISOString() }
 });
