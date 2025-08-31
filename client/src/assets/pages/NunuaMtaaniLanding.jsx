@@ -1,32 +1,23 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react"; 
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/dashboard.css"; // reuse your color scheme
 
 function NunuaMtaaniLanding() {
-  const [uploaded, setUploaded] = useState([]);
   const [policyChecked, setPolicyChecked] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
-  const fileRef = useRef(null);
   const navigate = useNavigate();
 
-  // Handle image uploads (max 6)
-  const handleFiles = (e) => {
-    const files = Array.from(e.target.files).slice(0, 6);
-    Promise.all(
-      files.map(
-        (f) =>
-          new Promise((res) => {
-            const reader = new FileReader();
-            reader.onload = (ev) =>
-              res({ name: f.name, src: ev.target.result });
-            reader.readAsDataURL(f);
-          })
-      )
-    ).then((imgs) => setUploaded(imgs));
-  };
+  // Use URLs to public folder images instead of imports
+  const galleryImages = [
+    "/uploads/nunua.jpg",
+    "/uploads/nunua2.jpg",
+    "/uploads/nunua3.jpg",
+    "/uploads/nunua4.jpg",
+    "/uploads/nunua5.jpg",
+    "/uploads/nunua5.jpg",
+  ];
 
-  // Navigate to register if policy accepted
   const handleContinue = () => {
     if (policyChecked) {
       navigate("/register");
@@ -122,37 +113,15 @@ function NunuaMtaaniLanding() {
       <section id="gallery" className="container py-5">
         <h2 className="fw-bold text-center mb-4">Community Gallery</h2>
         <div className="row g-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {galleryImages.map((img, i) => (
             <div key={i} className="col-md-4">
-              {uploaded[i] ? (
-                <img
-                  src={uploaded[i].src}
-                  alt={uploaded[i].name}
-                  className="img-fluid rounded shadow-sm"
-                />
-              ) : (
-                <div
-                  className="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center border rounded"
-                  style={{ height: "200px" }}
-                >
-                  <span className="text-muted">Placeholder {i + 1}</span>
-                </div>
-              )}
+              <img
+                src={img}
+                alt={`NunuaMtaani screenshot ${i + 1}`}
+                className="img-fluid rounded shadow-sm"
+              />
             </div>
           ))}
-        </div>
-        <div className="text-center mt-4">
-          <label className="btn btn-outline-primary">
-            📷 Upload Images
-            <input
-              type="file"
-              ref={fileRef}
-              className="d-none"
-              multiple
-              accept="image/*"
-              onChange={handleFiles}
-            />
-          </label>
         </div>
       </section>
 
@@ -209,24 +178,16 @@ function NunuaMtaaniLanding() {
                   <li>Respect local sellers, buyers, and the NunuaMtaani community at all times.</li>
                   <li>Provide only accurate and truthful information when creating accounts, listing products, or making purchases.</li>
                   <li>
-                    Do not misuse, share, or sell buyer/seller personal data —
-                    all data is protected under the Kenya Data Protection Act,
-                    2019.
+                    Do not misuse, share, or sell buyer/seller personal data — all data is protected under the Kenya Data Protection Act, 2019.
                   </li>
                   <li>
-                    Understand that NunuaMtaani is a digital platform and is not
-                    liable for disputes, fraud, or delivery issues between buyers
-                    and sellers.
+                    Understand that NunuaMtaani is a digital platform and is not liable for disputes, fraud, or delivery issues between buyers and sellers.
                   </li>
                   <li>
-                    Accept that shops or accounts violating rules, failing to
-                    make required payments, or engaging in unlawful practices may
-                    be suspended or terminated without prior notice.
+                    Accept that shops or accounts violating rules, failing to make required payments, or engaging in unlawful practices may be suspended or terminated without prior notice.
                   </li>
                   <li>
-                    By continuing to use NunuaMtaani, you agree that the platform
-                    may update these terms and policies at any time in compliance
-                    with Kenyan law.
+                    By continuing to use NunuaMtaani, you agree that the platform may update these terms and policies at any time in compliance with Kenyan law.
                   </li>
                 </ul>
 

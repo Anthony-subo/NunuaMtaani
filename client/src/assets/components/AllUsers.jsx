@@ -16,12 +16,14 @@ function AllUsers() {
     location: '',
   });
 
+  // Fetch all users on mount
   useEffect(() => {
     axios.get(`${API_URL}/api/users`)
       .then((res) => setUsers(res.data))
       .catch((err) => console.error('Error fetching users:', err));
   }, []);
 
+  // Delete user
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       axios.delete(`${API_URL}/api/users/${id}`)
@@ -30,23 +32,29 @@ function AllUsers() {
     }
   };
 
+  // Update role in local state
   const handleRoleChange = (id, newRole) => {
-    setUsers(prevUsers =>
-      prevUsers.map(user =>
+    setUsers(prev =>
+      prev.map(user =>
         user._id === id ? { ...user, role: newRole } : user
       )
     );
   };
 
-  const handleRoleUpdate = (id, role) => {
-    axios.patch(`${API_URL}/api/users/${id}`, { role })
+  // Send role update to backend
+  const handleRoleUpdate = (id) => {
+    const user = users.find(u => u._id === id);
+    if (!user) return alert('User not found');
+
+    axios.patch(`${API_URL}/api/users/${id}`, { role: user.role })
       .then(() => alert('Role updated successfully'))
       .catch(err => {
-        console.error('Error updating role:', err);
+        console.error('Error updating role:', err.response?.data || err.message);
         alert('Error updating role');
       });
   };
 
+  // Show shop form modal
   const handleCreateShopClick = (user) => {
     setShopFormData({
       user_id: user._id,
@@ -58,11 +66,13 @@ function AllUsers() {
     setShowShopForm(true);
   };
 
+  // Shop form input change
   const handleShopInputChange = (e) => {
     const { name, value } = e.target;
     setShopFormData({ ...shopFormData, [name]: value.trimStart() });
   };
 
+  // Submit shop creation
   const handleShopSubmit = () => {
     const { shop_name, owner_name, email, location } = shopFormData;
     if (!shop_name || !owner_name || !email || !location) {
@@ -80,9 +90,11 @@ function AllUsers() {
       });
   };
 
+  // Filtered users based on role
   const filteredUsers =
     roleFilter === 'all' ? users : users.filter((user) => user.role === roleFilter);
 
+  // Close modal on Esc key
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') setShowShopForm(false);
@@ -94,6 +106,7 @@ function AllUsers() {
   return (
     <div className="admin-table-container">
       <h4>All Registered Users ({filteredUsers.length})</h4>
+
       <div style={{ overflowX: 'auto' }}>
         <div className="mb-3">
           <label>Filter by Role:</label>{' '}
@@ -132,13 +145,22 @@ function AllUsers() {
                 </div>
 
                 <div className="d-flex gap-2 flex-wrap">
-                  <button className="btn btn-success btn-sm" onClick={() => handleRoleUpdate(user._id, user.role)}>
+                  <button
+                    className="btn btn-success btn-sm"
+                    onClick={() => handleRoleUpdate(user._id)}
+                  >
                     Update
                   </button>
-                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(user._id)}>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDelete(user._id)}
+                  >
                     Delete
                   </button>
-                  <button className="btn btn-primary btn-sm" onClick={() => handleCreateShopClick(user)}>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => handleCreateShopClick(user)}
+                  >
                     Create Shop
                   </button>
                 </div>
@@ -147,7 +169,7 @@ function AllUsers() {
           </div>
         )}
 
-        {/* Modal */}
+        {/* Shop Modal */}
         {showShopForm && (
           <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
             <div className="modal-dialog">
@@ -198,6 +220,7 @@ function AllUsers() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
