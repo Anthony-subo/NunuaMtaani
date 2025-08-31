@@ -54,6 +54,7 @@ function MyProducts() {
         {myProducts.length === 0 ? (
           <p className="text-muted text-center">No products found.</p>
         ) : (
+
           myProducts.map((product) => (
             <div className="col-md-4 mb-4" key={product._id}>
               <div className="card h-100 shadow-sm">
