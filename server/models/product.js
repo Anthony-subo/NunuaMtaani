@@ -1,3 +1,4 @@
+// models/product.js
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
@@ -6,9 +7,23 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   location: { type: String, required: true },
-  images: [String], // array of image filenames
-  status: { type: String, enum: ['available', 'sold', 'out-of-stock'], default: 'available' },
-  timestamp: { type: String, default: () => new Date().toISOString() }
+
+  // Store image URLs instead of raw buffers
+  images: [
+    {
+      url: { type: String, required: true }
+    }
+  ],
+
+  status: {
+    type: String,
+    enum: ['available', 'sold', 'out-of-stock'],
+    default: 'available'
+  },
+  timestamp: {
+    type: String,
+    default: () => new Date().toISOString()
+  }
 });
 
 module.exports = mongoose.model('Product', productSchema);

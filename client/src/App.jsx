@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Signup from './assets/pages/signup';
 import Login from './assets/pages/Login';
 import Home from './assets/pages/home';
+import NunuaMtaaniLanding from './assets/pages/NunuaMtaaniLanding';
+
 
 import AdminDashboard from './assets/pages/AdminDashboard';
 import SellerDashboard from './assets/pages/SellerDashboard';
@@ -19,7 +21,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Routes WITHOUT header */}
-        <Route path="/" element={<Signup />} />
+        <Route path="/" element={<NunuaMtaaniLanding />} />
+        <Route path="/register" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 
         {/* Routes WITH header via Layout */}
