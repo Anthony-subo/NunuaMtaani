@@ -1,22 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
 const { addProduct, getAllProducts } = require('../controllers/productController');
 const Product = require('../models/product');
 const Shop = require('../models/shop');
 
-// Ensure the uploads folder exists
-const uploadPath = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
-
-// Multer config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadPath),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
+// ====================== MULTER CONFIG ======================
+// Store files in memory instead of writing them to disk
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ====================== ROUTES ======================

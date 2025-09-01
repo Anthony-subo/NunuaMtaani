@@ -32,10 +32,12 @@ function ProductImageSlider({ images }) {
   return (
     <div className="slider-wrapper">
        <img
-        src={`${API_URL}/uploads/${displayImages[currentIndex]}`}
-        className="slider-image"
-        alt={`Product image ${currentIndex + 1}`}
-      />
+  src={`${API_URL}/uploads/${displayImages[currentIndex]}`}
+  className="slider-image"
+  alt={`Product image ${currentIndex + 1}`}
+  onError={(e) => { e.target.src = "/placeholder.png"; }} // fallback
+/>
+
 
       {displayImages.length > 1 && (
         <>
