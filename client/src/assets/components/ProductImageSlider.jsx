@@ -4,9 +4,6 @@ import "../styles/productSlider.css";
 function ProductImageSlider({ images }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Backend base URL from .env
-  const API_URL = import.meta.env.VITE_API_URL;
-
   // Limit to at most 4 images
   const displayImages = images?.slice(0, 4) || [];
 
@@ -31,14 +28,28 @@ function ProductImageSlider({ images }) {
     );
   };
 
+  // Convert Mongo binary image to base64 string
+  const getImageSrc = (image) => {
+    if (image?.data?.data && image?.contentType) {
+      const base64String = btoa(
+        new Uint8Array(image.data.data).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ""
+        )
+      );
+      return `data:${image.contentType};base64,${base64String}`;
+    }
+    return "/placeholder.png";
+  };
+
   return (
     <div className="slider-wrapper">
       <img
-        src={`${API_URL}/uploads/${displayImages[currentIndex]}`}
+        src={getImageSrc(displayImages[currentIndex])}
         className="slider-image"
         alt={`Product image ${currentIndex + 1}`}
         onError={(e) => {
-          e.target.src = "/placeholder.png"; // fallback image in /public
+          e.target.src = "/placeholder.png"; // fallback image
         }}
       />
 
