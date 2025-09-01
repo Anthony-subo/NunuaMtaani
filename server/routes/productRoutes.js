@@ -74,5 +74,16 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+// routes/productRoutes.js
+router.get('/:id/image/:index', async (req, res) => {
+  const { id, index } = req.params;
+  const product = await Product.findById(id);
+  if (!product || !product.images[index]) {
+    return res.status(404).send('Image not found');
+  }
+  res.contentType(product.images[index].contentType);
+  res.send(product.images[index].data);
+});
+
 
 module.exports = router;

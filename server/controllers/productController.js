@@ -1,4 +1,3 @@
-const fs = require('fs');
 const Product = require('../models/product');
 
 // Add Product
@@ -10,9 +9,9 @@ const addProduct = async (req, res) => {
       return res.status(400).json({ message: "All required fields must be filled and at least 1 image provided." });
     }
 
-    // Convert uploaded files to Buffers for MongoDB
+    // Convert uploaded files (buffers) to MongoDB format
     const imageBuffers = req.files.map(file => ({
-      data: fs.readFileSync(file.path), // read file as buffer
+      data: file.buffer,       // 👈 use buffer, not fs
       contentType: file.mimetype
     }));
 
@@ -43,7 +42,6 @@ const addProduct = async (req, res) => {
 const getAllProducts = async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
-
     res.status(200).json(products);
   } catch (err) {
     console.error('Error fetching products:', err);
