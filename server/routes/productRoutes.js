@@ -1,14 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const { addProduct, getAllProducts } = require('../controllers/productController');
 const Product = require('../models/product');
 const Shop = require('../models/shop');
 
-// ====================== MULTER CONFIG ======================
-// Store files in memory instead of writing them to disk
-const storage = multer.memoryStorage();
+// Ensure the uploads folder exists
+const uploadPath = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
+
+// Multer config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadPath),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+});
 const upload = multer({ storage });
 
 // ====================== ROUTES ======================
@@ -16,7 +24,7 @@ const upload = multer({ storage });
 // POST /api/products - Add a new product
 router.post('/', upload.array('images', 4), addProduct);
 
-// GET /api/products - Get all products (lightweight: no binary images)
+// GET /api/products - Get all products
 router.get('/', getAllProducts);
 
 // GET /api/products/seller/products/:userId - Get all products for a seller
@@ -29,7 +37,7 @@ router.get('/seller/products/:userId', async (req, res) => {
       return res.status(404).json({ message: 'No shop found for this user' });
     }
 
-    const products = await Product.find({ shop_id: shop._id }).lean();
+    const products = await Product.find({ shop_id: shop._id });
     res.json(products);
   } catch (error) {
     console.error('Error fetching seller products:', error);
@@ -71,30 +79,6 @@ router.put('/:id', async (req, res) => {
     res.json({ status: 'success', message: 'Product updated', product: updatedProduct });
   } catch (error) {
     console.error('Error updating product:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// ====================== IMAGE ROUTES ======================
-// GET /api/products/:id/images/:index - fetch single image
-router.get('/:id/images/:index', async (req, res) => {
-  try {
-    const { id, index } = req.params;
-    const idx = parseInt(index, 10);
-
-    if (isNaN(idx)) {
-      return res.status(400).json({ message: 'Index must be a number' });
-    }
-
-    const product = await Product.findById(id);
-    if (!product || !product.images[idx]) {
-      return res.status(404).json({ message: 'Image not found' });
-    }
-
-    res.contentType(product.images[idx].contentType);
-    res.send(product.images[idx].data);
-  } catch (error) {
-    console.error('Error fetching image:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

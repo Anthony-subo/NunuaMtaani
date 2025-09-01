@@ -66,7 +66,7 @@ function AllProducts() {
                   <span className="verified-check">✅</span>
                 </div>
 
-                <ProductImageSlider productId={p._id} imageCount={p.imageCount || 4} />
+                <ProductImageSlider images={p.images} />
 
                 <div className="card-body">
                   <h5 className="card-title">{p.name}</h5>

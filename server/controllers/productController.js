@@ -1,6 +1,6 @@
 const Product = require('../models/product');
 
-// Add Product
+// Add Product (already exists)
 const addProduct = async (req, res) => {
   try {
     const { shop_id, name, price, location, status } = req.body;
@@ -9,11 +9,7 @@ const addProduct = async (req, res) => {
       return res.status(400).json({ message: "All required fields must be filled and at least 1 image provided." });
     }
 
-    // Convert uploaded files (buffers) to MongoDB format
-    const imageBuffers = req.files.map(file => ({
-      data: file.buffer,
-      contentType: file.mimetype,
-    }));
+    const imagePaths = req.files.map(file => file.filename);
 
     const newProduct = new Product({
       product_id: 'product-' + Date.now(),
@@ -22,104 +18,29 @@ const addProduct = async (req, res) => {
       price,
       location,
       status: status || 'available',
-      images: imageBuffers,
+      images: imagePaths
     });
 
     await newProduct.save();
-
-    res.status(201).json({
-      status: 'success',
-      message: 'Product added successfully',
-      product: {
-        _id: newProduct._id,
-        product_id: newProduct.product_id,
-        shop_id: newProduct.shop_id,
-        name: newProduct.name,
-        price: newProduct.price,
-        location: newProduct.location,
-        status: newProduct.status,
-        imageCount: newProduct.images.length, // return only count
-        createdAt: newProduct.createdAt,
-      },
-    });
+    res.status(201).json({ status: 'success', message: 'Product added successfully', product: newProduct });
   } catch (err) {
-    console.error('Error saving product:', err);
+    console.error(err);
     res.status(500).json({ status: 'error', message: 'Server error while saving product' });
   }
 };
 
-// Get All Products (with pagination + disk use)
+// ✅ Get All Products (NEW)
 const getAllProducts = async (req, res) => {
   try {
-    // pagination params
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    // query
-    const products = await Product.find(
-      {},
-      { images: 1, name: 1, price: 1, status: 1, shop_id: 1, createdAt: 1 }
-    )
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .allowDiskUse(true) // ✅ prevents memory limit errors
-      .lean();
-
-    // map with imageCount
-    const productsWithImageCount = products.map(p => ({
-      ...p,
-      imageCount: p.images?.length || 0,
-      images: undefined,
-    }));
-
-    // total count (for frontend pagination)
-    const total = await Product.countDocuments();
-
-    res.status(200).json({
-      status: "success",
-      page,
-      totalPages: Math.ceil(total / limit),
-      totalProducts: total,
-      products: productsWithImageCount,
-    });
+    const products = await Product.find().sort({ createdAt: -1 }); // optional sort
+    res.status(200).json(products);
   } catch (err) {
-    console.error("Error fetching products:", err);
-    res.status(500).json({
-      status: "error",
-      message: "Server error while fetching products",
-      error: err.message,
-    });
-  }
-};
-
-
-// Get Product Images (new endpoint)
-const getProductImages = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const product = await Product.findById(id, { images: 1 });
-
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    // return actual images as base64
-    const images = product.images.map(img => ({
-      contentType: img.contentType,
-      data: img.data.toString('base64'),
-    }));
-
-    res.status(200).json({ images });
-  } catch (err) {
-    console.error("Error fetching images:", err);
-    res.status(500).json({ status: "error", message: "Server error while fetching images" });
+    console.error(err);
+    res.status(500).json({ status: 'error', message: 'Server error while fetching products' });
   }
 };
 
 module.exports = {
   addProduct,
-  getAllProducts,
-  getProductImages,
+  getAllProducts, // make sure to export it
 };
