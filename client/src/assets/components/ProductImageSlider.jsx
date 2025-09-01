@@ -4,7 +4,7 @@ import "../styles/productSlider.css";
 function ProductImageSlider({ images }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Limit to at most 4 images
+  // Limit to 4 images
   const displayImages = images?.slice(0, 4) || [];
 
   if (displayImages.length === 0) {
@@ -28,17 +28,19 @@ function ProductImageSlider({ images }) {
     );
   };
 
-  // Convert Mongo binary image to base64 string
+  // Convert Mongo Binary → Base64 string
   const getImageSrc = (image) => {
-    if (image?.data?.data && image?.contentType) {
-      const base64String = btoa(
-        new Uint8Array(image.data.data).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ""
-        )
-      );
+    if (!image) return "/placeholder.png";
+
+    const arrayBuffer = image?.data?.data || image?.data;
+    if (arrayBuffer && image.contentType) {
+      const uint8Array = new Uint8Array(arrayBuffer);
+      let binary = "";
+      uint8Array.forEach((b) => (binary += String.fromCharCode(b)));
+      const base64String = window.btoa(binary);
       return `data:${image.contentType};base64,${base64String}`;
     }
+
     return "/placeholder.png";
   };
 
