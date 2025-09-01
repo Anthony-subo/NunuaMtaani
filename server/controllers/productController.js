@@ -48,20 +48,42 @@ const addProduct = async (req, res) => {
   }
 };
 
-// Get All Products (lightweight, no raw images)
+// Get All Products (with pagination + disk use)
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({}, { images: 1, name: 1, price: 1, status: 1, shop_id: 1, createdAt: 1 })
+    // pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // query
+    const products = await Product.find(
+      {},
+      { images: 1, name: 1, price: 1, status: 1, shop_id: 1, createdAt: 1 }
+    )
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .allowDiskUse(true) // ✅ prevents memory limit errors
       .lean();
 
+    // map with imageCount
     const productsWithImageCount = products.map(p => ({
       ...p,
       imageCount: p.images?.length || 0,
-      images: undefined, // remove binary data
+      images: undefined,
     }));
 
-    res.status(200).json(productsWithImageCount);
+    // total count (for frontend pagination)
+    const total = await Product.countDocuments();
+
+    res.status(200).json({
+      status: "success",
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalProducts: total,
+      products: productsWithImageCount,
+    });
   } catch (err) {
     console.error("Error fetching products:", err);
     res.status(500).json({
@@ -71,6 +93,7 @@ const getAllProducts = async (req, res) => {
     });
   }
 };
+
 
 // Get Product Images (new endpoint)
 const getProductImages = async (req, res) => {
