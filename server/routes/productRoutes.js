@@ -16,7 +16,7 @@ const upload = multer({ storage });
 // POST /api/products - Add a new product
 router.post('/', upload.array('images', 4), addProduct);
 
-// GET /api/products - Get all products
+// GET /api/products - Get all products (lightweight: no binary images)
 router.get('/', getAllProducts);
 
 // GET /api/products/seller/products/:userId - Get all products for a seller
@@ -29,7 +29,7 @@ router.get('/seller/products/:userId', async (req, res) => {
       return res.status(404).json({ message: 'No shop found for this user' });
     }
 
-    const products = await Product.find({ shop_id: shop._id });
+    const products = await Product.find({ shop_id: shop._id }).lean();
     res.json(products);
   } catch (error) {
     console.error('Error fetching seller products:', error);
@@ -74,16 +74,29 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
-// routes/productRoutes.js
-router.get('/:id/image/:index', async (req, res) => {
-  const { id, index } = req.params;
-  const product = await Product.findById(id);
-  if (!product || !product.images[index]) {
-    return res.status(404).send('Image not found');
-  }
-  res.contentType(product.images[index].contentType);
-  res.send(product.images[index].data);
-});
 
+// ====================== IMAGE ROUTES ======================
+// GET /api/products/:id/images/:index - fetch single image
+router.get('/:id/images/:index', async (req, res) => {
+  try {
+    const { id, index } = req.params;
+    const idx = parseInt(index, 10);
+
+    if (isNaN(idx)) {
+      return res.status(400).json({ message: 'Index must be a number' });
+    }
+
+    const product = await Product.findById(id);
+    if (!product || !product.images[idx]) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    res.contentType(product.images[idx].contentType);
+    res.send(product.images[idx].data);
+  } catch (error) {
+    console.error('Error fetching image:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 module.exports = router;

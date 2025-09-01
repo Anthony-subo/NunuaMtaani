@@ -1,13 +1,10 @@
 import { useState } from "react";
 import "../styles/productSlider.css";
 
-function ProductImageSlider({ images }) {
+function ProductImageSlider({ productId, imageCount = 1 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Limit to 4 images
-  const displayImages = images?.slice(0, 4) || [];
-
-  if (displayImages.length === 0) {
+  if (!productId) {
     return (
       <div
         className="d-flex align-items-center justify-content-center bg-light"
@@ -19,43 +16,29 @@ function ProductImageSlider({ images }) {
   }
 
   const next = () => {
-    setCurrentIndex((prev) => (prev + 1) % displayImages.length);
+    setCurrentIndex((prev) => (prev + 1) % imageCount);
   };
 
   const prev = () => {
-    setCurrentIndex(
-      (prev) => (prev - 1 + displayImages.length) % displayImages.length
-    );
+    setCurrentIndex((prev) => (prev - 1 + imageCount) % imageCount);
   };
 
-  // Convert Mongo Binary → Base64 string
-  const getImageSrc = (image) => {
-    if (!image) return "/placeholder.png";
-
-    const arrayBuffer = image?.data?.data || image?.data;
-    if (arrayBuffer && image.contentType) {
-      const uint8Array = new Uint8Array(arrayBuffer);
-      let binary = "";
-      uint8Array.forEach((b) => (binary += String.fromCharCode(b)));
-      const base64String = window.btoa(binary);
-      return `data:${image.contentType};base64,${base64String}`;
-    }
-
-    return "/placeholder.png";
-  };
+  // Build image URL from backend route
+  const getImageSrc = (index) =>
+    `${import.meta.env.VITE_API_URL}/api/products/${productId}/image/${index}`;
 
   return (
     <div className="slider-wrapper">
       <img
-        src={getImageSrc(displayImages[currentIndex])}
+        src={getImageSrc(currentIndex)}
         className="slider-image"
         alt={`Product image ${currentIndex + 1}`}
         onError={(e) => {
-          e.target.src = "/placeholder.png"; // fallback image
+          e.target.src = "/placeholder.png"; // fallback
         }}
       />
 
-      {displayImages.length > 1 && (
+      {imageCount > 1 && (
         <>
           <button className="slider-btn left" onClick={prev}>
             ‹
