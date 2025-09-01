@@ -8,17 +8,14 @@ function AddProduct() {
     name: '',
     price: '',
     location: '',
-    images: [],
     status: 'available',
-    timestamp: new Date().toISOString()
   });
-
+  const [images, setImages] = useState([]); // store File objects
   const [message, setMessage] = useState('');
 
-  // ✅ Use backend API URL from .env
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // Auto-fetch shop_id from logged-in user
+  // ✅ Auto-fetch shop_id from logged-in user
   useEffect(() => {
     const fetchShopId = async () => {
       try {
@@ -39,45 +36,48 @@ function AddProduct() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ✅ Convert images to Base64
-  const handleImageChange = async (e) => {
-    const files = Array.from(e.target.files);
-    const promises = files.map((file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-      });
-    });
-
-    const base64Images = await Promise.all(promises);
-    setForm(prev => ({ ...prev, images: base64Images }));
+  // ✅ Store File objects (max 4)
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files).slice(0, 4); // limit to 4
+    setImages(files);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
 
-    if (form.images.length === 0) {
+    if (images.length === 0) {
       setMessage('❌ Please upload at least 1 image');
       return;
     }
 
     try {
-      const res = await axios.post(`${API_URL}/api/products`, form);
+      const formData = new FormData();
+      formData.append('shop_id', form.shop_id);
+      formData.append('name', form.name);
+      formData.append('price', form.price);
+      formData.append('location', form.location);
+      formData.append('status', form.status);
 
-      if (res.data.status === 'success' || res.status === 201) {
+      // Append images
+      images.forEach((file) => {
+        formData.append('images', file);
+      });
+
+      const res = await axios.post(`${API_URL}/api/products`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.status === 201 || res.data.status === 'success') {
         setMessage('✅ Product added successfully!');
         setForm({
           shop_id: form.shop_id,
           name: '',
           price: '',
           location: '',
-          images: [],
           status: 'available',
-          timestamp: new Date().toISOString()
         });
+        setImages([]);
       } else {
         setMessage('❌ Failed to add product');
       }
@@ -126,7 +126,7 @@ function AddProduct() {
           required
         />
 
-        <label>Product Images (At least 1, multiple allowed)</label>
+        <label>Product Images (up to 4)</label>
         <input
           type="file"
           accept="image/*"
