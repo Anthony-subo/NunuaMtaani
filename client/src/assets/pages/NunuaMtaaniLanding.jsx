@@ -1,5 +1,7 @@
 import React, { useState } from "react"; 
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from 'react-router-dom';
+import { BsCartFill } from "react-icons/bs";
+import { AiFillHome } from "react-icons/ai";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/dashboard.css"; // reuse your color scheme
 
@@ -31,7 +33,25 @@ function NunuaMtaaniLanding() {
       {/* Header */}
       <header className="bg-white border-bottom shadow-sm">
         <div className="container d-flex justify-content-between align-items-center py-3">
-          <h3 className="fw-bold text-primary m-0">NunuaMtaani</h3>
+          <h3 className="fw-bold text-primary m-0">
+              {/* Brand (NunuaMtaani styled like Login with Home icon) */}
+                         <div className="d-flex align-items-center logo mb-3">
+                           <BsCartFill className="shopping-icon" size={28} />
+                           <div className="d-flex flex-column">
+                             <div className="d-flex align-items-center mb-1">
+                               <h3 className="brand mb-0 me-2">
+                                 <span className="nunua">Nunua</span>
+                                 <span className="m">M</span>
+                                 <span className="taani">taani</span>
+                               </h3>
+                               <Link to="/hh" className="home-icon-link ms-2" title="Home">
+                                 <AiFillHome size={22} className="text-dark" />
+                               </Link>
+                             </div>
+                             <small className="slogan">Your trusted online market</small>
+                           </div>
+                         </div>
+            </h3>
           <nav>
             <button
               className="btn btn-success ms-3"
