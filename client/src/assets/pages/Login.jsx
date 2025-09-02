@@ -34,7 +34,7 @@ function Login() {
     <div className="auth-container">
 
         {/* Brand (NunuaMtaani styled like Login with Home icon) */}
-            <div className="container d-flex align-items-center logo mb-3">
+            <div className="d-flex align-items-center logo mb-3">
               <BsCartFill className="shopping-icon" size={28} />
               <div className="d-flex flex-column">
                 <div className="d-flex align-items-center mb-1">
