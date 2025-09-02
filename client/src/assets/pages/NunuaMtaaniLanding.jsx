@@ -175,7 +175,7 @@ function NunuaMtaaniLanding() {
                 💻 GitHub
               </a>
               <a
-                href="#"
+                href="https://anthony-subo.github.io/my-portfolio/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white"
