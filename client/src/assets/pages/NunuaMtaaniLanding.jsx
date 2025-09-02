@@ -156,14 +156,6 @@ function NunuaMtaaniLanding() {
             {/* Footer */}
       <footer className="bg-dark text-white py-4">
         <div className="container d-flex flex-column flex-md-row justify-content-between align-items-center">
-          
-          {/* Left - Project Info */}
-          <div className="footer-box left-box text-center text-md-start mb-3 mb-md-0">
-            <p className="mb-0 small">
-              © {new Date().getFullYear()} NunuaMtaani — Built for Local Commerce
-            </p>
-          </div>
-
           {/* Right - Personal Details */}
           <div className="footer-box right-box text-center text-md-end">
             <h5 className="mb-1">Anthony Subo</h5>
