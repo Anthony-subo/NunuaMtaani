@@ -11,38 +11,28 @@
 
 .nm-header .container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;   /* keeps vertical alignment */
-  flex-wrap: nowrap;     /* prevent stacking */
+  justify-content: space-between; /* left & right */
+  align-items: center;
+  flex-wrap: nowrap;
 }
 
-/* Brand name */
-.brand {
-  font-weight: bold;
+/* Brand block (right side) */
+.logo {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.6rem;
 }
 
-.nunua {
-  color: #ff6b6b;
-}
-
-.m {
-  color: #4caf50;
-}
-
-.taani {
-  color: #2196f3;
-}
-
-/* Shopping cart icon */
 .shopping-icon {
   color: #4caf50;
-  margin-right: 0.6rem;
 }
 
-/* Home icon link */
+/* Brand colors */
+.nunua { color: #ff6b6b; font-weight: bold; }
+.m { color: #4caf50; font-weight: bold; }
+.taani { color: #2196f3; font-weight: bold; }
+
+/* Home icon beside brand */
 .home-icon-link {
   display: inline-flex;
   align-items: center;
@@ -62,26 +52,15 @@
   margin-top: 0.2rem;
 }
 
-/* User info (right side) */
+/* User info (left side) */
 .user-info {
-  text-align: right;
+  text-align: left;   /* ⬅ left aligned */
 }
 
-.user-info h6 {
-  color: #333;
-  margin: 0;
-}
-.user-info .role {
-  color: #0dcaf0;
-}
-.user-info .shop {
-  color: #ffc107;
-  display: block;
-}
-.user-info .email {
-  color: #444;
-  display: block;
-}
+.user-info h6 { color: #333; margin: 0; }
+.user-info .role { color: #0dcaf0; }
+.user-info .shop { color: #ffc107; display: block; }
+.user-info .email { color: #444; display: block; }
 
 /* Logout button */
 .logout-btn {
@@ -99,27 +78,16 @@
   color: #fff;
 }
 
-/* Responsive */
+/* ✅ Responsive: keep same left + right layout */
 @media (max-width: 768px) {
   .nm-header .container {
-    flex-direction: row;      /* keep row layout */
-    justify-content: space-between; /* left + right */
-    align-items: center;      /* vertically aligned */
+    flex-direction: row; 
+    justify-content: space-between; /* keep left/right */
+    align-items: center;
   }
 
-  .brand h3 {
-    font-size: 1rem;
-  }
-
-  .slogan {
-    font-size: 0.65rem;
-  }
-
-  .user-info h6 {
-    font-size: 0.8rem;
-  }
-
-  .user-info small {
-    font-size: 0.7rem;
-  }
+  .brand h3 { font-size: 1rem; }
+  .slogan { font-size: 0.65rem; }
+  .user-info h6 { font-size: 0.8rem; }
+  .user-info small { font-size: 0.7rem; }
 }

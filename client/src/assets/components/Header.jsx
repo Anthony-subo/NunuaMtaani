@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react"; 
 import { Link } from "react-router-dom";
 import { AiFillHome } from "react-icons/ai";     
 import { FiLogOut } from "react-icons/fi";       
 import { BsCartFill } from "react-icons/bs";     
-import '../styles/header.css';  // ✅ New file
+import '../styles/header.css';  
 
 const Header = () => {
   const [userName, setUserName] = useState('');
@@ -23,29 +23,10 @@ const Header = () => {
 
   return (
     <header className="nm-header">
-      <div className="container d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+      <div className="container">
 
-        {/* Brand with shopping cart and home icon */}
-        <div className="d-flex align-items-center logo">
-          <BsCartFill className="shopping-icon" size={28} />
-          <div className="d-flex flex-column">
-            <div className="d-flex align-items-center mb-1">
-              <h3 className="brand mb-0 me-2">
-                <span className="nunua">Nunua</span>
-                <span className="m">M</span>
-                <span className="taani">taani</span>
-              </h3>
-
-              <Link to="/home" className="home-icon-link ms-2" title="Home">
-                <AiFillHome size={22} className="text-dark" />
-              </Link>
-            </div>
-            <small className="slogan">Your trusted online market</small>
-          </div>
-        </div>
-
-        {/* User Info + Logout */}
-        <div className="user-info text-end mt-3 mt-md-0">
+        {/* LEFT → User Info */}
+        <div className="user-info">
           {userName ? (
             <>
               <h6 className="mb-0 fw-semibold">
@@ -68,6 +49,25 @@ const Header = () => {
             </Link>
           </nav>
         </div>
+
+        {/* RIGHT → Brand + Logo */}
+        <div className="d-flex align-items-center logo">
+          <BsCartFill className="shopping-icon" size={28} />
+          <div className="d-flex flex-column">
+            <div className="d-flex align-items-center mb-1">
+              <h3 className="brand mb-0 me-2">
+                <span className="nunua">Nunua</span>
+                <span className="m">M</span>
+                <span className="taani">taani</span>
+              </h3>
+              <Link to="/home" className="home-icon-link ms-2" title="Home">
+                <AiFillHome size={22} className="text-dark" />
+              </Link>
+            </div>
+            <small className="slogan">Your trusted online market</small>
+          </div>
+        </div>
+        
       </div>
     </header>
   );
