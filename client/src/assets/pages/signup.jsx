@@ -45,7 +45,7 @@ function Signup() {
                 <small className="slogan">Your trusted online market</small>
               </div>
             </div>
-      <h2>SignUp</h2>
+       <h3 className="text-center mb-3">SignUp</h3>
 
       {errMsg && <div className="alert alert-danger">{errMsg}</div>}
 
