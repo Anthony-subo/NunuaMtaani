@@ -23,13 +23,13 @@ const Header = () => {
 
   return (
     <header className="nm-header">
-      <div className="container d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+      <div className="container d-flex flex-column flex-md-row justify-content-between align-items-center">
 
         {/* Brand with shopping cart and home icon */}
-        <div className="container d-flex align-items-center logo">
+        <div className="d-flex align-items-center logo flex-wrap">
           <BsCartFill className="shopping-icon" size={26} />
 
-          <div className="d-flex flex--row">
+          <div className="d-flex flex-column flex-sm-row align-items-sm-center ms-2">
             <div className="d-flex align-items-center mb-1">
               <h3 className="mb-0 me-2 d-flex align-items-center">
                 <span className="nunua">Nunua</span>
@@ -43,12 +43,12 @@ const Header = () => {
               </Link>
             </div>
 
-            <small className="text-muted slogan">Your trusted online market</small>
+            <small className="text-muted slogan ms-sm-2 mt-1 mt-sm-0">Your trusted online market</small>
           </div>
         </div>
 
         {/* User Info + Logout */}
-        <div className="text-end mt-3 mt-md-0">
+        <div className="text-end text-sm-start mt-3 mt-md-0">
           {userName ? (
             <>
               <h6 className="mb-0 fw-semibold text-dark">
@@ -71,6 +71,7 @@ const Header = () => {
             </Link>
           </nav>
         </div>
+
       </div>
     </header>
   );

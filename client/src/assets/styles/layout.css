@@ -1,5 +1,3 @@
-/* layout.css */
-
 /* Make footer stay at bottom */
 html, body {
   height: 100%;
@@ -59,7 +57,7 @@ header, footer {
 }
 
 .nm-header small {
-  color: #ccc;
+  color: #555;
 }
 
 .nm-header .btn {
@@ -169,6 +167,11 @@ header, footer {
     display: block;
     margin: 0.3rem 0;
   }
+
+  /* Reduce slogan font size for mobile */
+  .slogan {
+    font-size: 0.65rem;
+  }
 }
 
 /* Desktop-specific logo layout */
@@ -178,4 +181,10 @@ header, footer {
     align-items: center;
     gap: 1rem;
   }
+}
+
+/* Flex improvements for small screens */
+.logo {
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
