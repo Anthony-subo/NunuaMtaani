@@ -6,6 +6,7 @@ import Orders from '../components/Orders';
 import AddProduct from '../components/AddProduct';
 import Cart from '../components/Cart';
 import Header from "../components/Header";
+import { FaStore, FaBox, FaClipboardList, FaPlusCircle, FaShoppingCart } from 'react-icons/fa';
 import '../styles/dashboard.css';
 
 function SellerDashboard() {
@@ -45,14 +46,51 @@ function SellerDashboard() {
     <div className="dashboard-container">
       <Header />
 
+      {/* Tabs (desktop top, mobile bottom) */}
       <div className="dashboard-tabs">
-        <button className={`btn ${activeTab === 'all' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setActiveTab('all')}>All Products</button>
-        <button className={`btn ${activeTab === 'my' ? 'btn-secondary' : 'btn-outline-secondary'}`} onClick={() => setActiveTab('my')}>My Products</button>
-        <button className={`btn ${activeTab === 'orders' ? 'btn-success' : 'btn-outline-success'}`} onClick={() => setActiveTab('orders')}>Orders</button>
-        <button className={`btn ${activeTab === 'add' ? 'btn-warning' : 'btn-outline-warning'}`} onClick={() => setActiveTab('add')}>Add Product</button>
-        <button className={`btn ${activeTab === 'cart' ? 'btn-info text-white' : 'btn-outline-info'}`} onClick={() => setActiveTab('cart')}>Cart</button>
+        <button
+          className={activeTab === 'all' ? 'active' : ''}
+          onClick={() => setActiveTab('all')}
+          title="All Products"
+        >
+          <FaStore size={20} />
+          <span className="tab-label">All</span>
+        </button>
+        <button
+          className={activeTab === 'my' ? 'active' : ''}
+          onClick={() => setActiveTab('my')}
+          title="My Products"
+        >
+          <FaBox size={20} />
+          <span className="tab-label">My Products</span>
+        </button>
+        <button
+          className={activeTab === 'orders' ? 'active' : ''}
+          onClick={() => setActiveTab('orders')}
+          title="Orders"
+        >
+          <FaClipboardList size={20} />
+          <span className="tab-label">Orders</span>
+        </button>
+        <button
+          className={activeTab === 'add' ? 'active' : ''}
+          onClick={() => setActiveTab('add')}
+          title="Add Product"
+        >
+          <FaPlusCircle size={20} />
+          <span className="tab-label">Add</span>
+        </button>
+        <button
+          className={activeTab === 'cart' ? 'active' : ''}
+          onClick={() => setActiveTab('cart')}
+          title="Cart"
+        >
+          <FaShoppingCart size={20} />
+          <span className="tab-label">Cart</span>
+        </button>
       </div>
 
+      {/* Dashboard Header */}
       <div className="dashboard-header">
         <h2>
           {loading
@@ -65,6 +103,7 @@ function SellerDashboard() {
         </p>
       </div>
 
+      {/* Dashboard Content */}
       <div className="dashboard-content">
         {renderTab()}
       </div>

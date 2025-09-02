@@ -3,6 +3,7 @@ import AllProducts from '../components/AllProducts';
 import Cart from '../components/Cart';
 import MyPurchases from '../components/MyPurchases';
 import Header from '../components/Header';
+import { FaStore, FaShoppingCart, FaBoxOpen } from 'react-icons/fa';
 import '../styles/dashboard.css';
 
 function BuyerDashboard() {
@@ -37,27 +38,35 @@ function BuyerDashboard() {
     <div className="buyer-dashboard">
       <Header />
 
-       <div className="dashboard-tabs d-flex justify-content-center mb-4">
+      {/* Tabs (works for both desktop and mobile) */}
+      <div className="dashboard-tabs">
         <button
-          className={`btn mx-1 ${activeTab === 'all' ? 'btn-outline-primary active' : 'btn-outline-primary'}`}
+          className={activeTab === 'all' ? 'active' : ''}
           onClick={() => setActiveTab('all')}
+          title="All Products"
         >
-          🛒 All Products
+          <FaStore size={22} />
+          <span className="tab-label">All Products</span>
         </button>
         <button
-          className={`btn mx-1 ${activeTab === 'cart' ? 'btn-outline-success active' : 'btn-outline-success'}`}
+          className={activeTab === 'cart' ? 'active' : ''}
           onClick={() => setActiveTab('cart')}
+          title="My Cart"
         >
-          🧺 My Cart
+          <FaShoppingCart size={22} />
+          <span className="tab-label">My Cart</span>
         </button>
         <button
-          className={`btn mx-1 ${activeTab === 'purchases' ? 'btn-outline-warning active' : 'btn-outline-warning'}`}
+          className={activeTab === 'purchases' ? 'active' : ''}
           onClick={() => setActiveTab('purchases')}
+          title="My Purchases"
         >
-          📦 My Purchases
+          <FaBoxOpen size={22} />
+          <span className="tab-label">Purchases</span>
         </button>
       </div>
 
+      {/* Dashboard Header */}
       <div className="dashboard-header text-center py-3 mb-3">
         <h2 className="fw-bold">
           {buyerName ? (
