@@ -14,7 +14,7 @@ app.use(cors({
     "http://localhost:5173",
     "https://nunua-mtaani.vercel.app"
   ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
+methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 
