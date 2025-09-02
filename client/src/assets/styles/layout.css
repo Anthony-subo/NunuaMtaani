@@ -1,181 +1,95 @@
-/* layout.css */
-
-/* Make footer stay at bottom */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  scroll-behavior: smooth;
-}
-
-.page-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #fff;
-}
-
-.content-wrap {
-  flex: 1;
-}
-
-/* General shared styling */
-header, footer {
-  font-family: 'Segoe UI', sans-serif;
-  padding: 0;
-}
-
-/* Brand colors */
-.nunua {
-  color: #ff6b6b;
-  font-weight: bold;
-}
-
-.m {
-  color: #4caf50;
-  font-weight: bold;
-}
-
-.taani {
-  color: #2196f3;
-  font-weight: bold;
-}
-
 /* HEADER */
 .nm-header {
   position: sticky;
   top: 0;
   z-index: 1000;
   background-color: #fff;
-  color: #fff;
-  padding: 0.5rem 1rem;
+  padding: 0.8rem 1.5rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #eee;
 }
 
-.nm-header h3 {
-  margin-bottom: 0.3rem;
+.nm-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Brand */
+.nm-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.nm-title {
+  margin: 0;
+  font-size: 1.3rem;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-.nm-header small {
-  color: #ccc;
-}
-
-.nm-header .btn {
-  margin-right: 0.5rem;
-}
-
-.nm-header .text-info {
-  color: #0dcaf0;
-}
-
-.nm-header .text-warning {
-  color: #ffc107;
-}
-
-.nm-header .text-light {
-  color: #f8f9fa;
-}
-
-/* Brand Logo Container */
-.nm-brand-box {
-  background-color: #f9f9f9;
-  padding: 0.7rem 1rem;
-  border-radius: 12px;
-  border: 1px solid #ddd;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Cart icon near brand */
-.shopping-icon {
-  color: #4caf50;
-  margin-right: 0.5rem;
-}
-
-/* Slogan styling */
 .slogan {
-  font-size: 0.75rem;
-  color: #555;
-  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: #666;
 }
 
-/* Make icon buttons uniform and hoverable */
-.nm-header .btn svg {
-  vertical-align: middle;
-  transition: color 0.3s ease;
+.home-icon-link {
+  color: #333;
+  transition: color 0.3s;
 }
 
-.nm-header .btn:hover svg {
+.home-icon-link:hover {
   color: #4caf50;
 }
 
-/* FOOTER */
-.nm-footer {
-  background: linear-gradient(135deg, #1d1f21, #2e343b);
-  color: #ffffff;
-  padding: 2rem 1rem;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.15);
-  font-family: 'Segoe UI', sans-serif;
+/* User Info */
+.nm-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  gap: 0.2rem;
 }
 
-.nm-footer .footer-brand {
-  font-size: 1.5rem;
-  font-weight: bold;
+.welcome-text {
+  font-weight: 600;
+  margin: 0;
+  color: #222;
 }
 
-.nm-footer .nunua {
-  color: #ff6b6b;
-}
-
-.nm-footer .m {
-  color: #4caf50;
-}
-
-.nm-footer .taani {
-  color: #2196f3;
-}
-
-.nm-footer h5 {
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #f1f1f1;
-}
-
-.nm-footer a {
-  color: #ccc;
-  margin: 0 0.5rem;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.nm-footer a:hover {
+.role {
   color: #0dcaf0;
-  text-decoration: underline;
 }
 
-.nm-footer .text-muted {
-  color: #aaaaaa !important;
-  font-size: 0.9rem;
+.shop-name {
+  color: #ffc107;
+  font-size: 0.8rem;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .nm-footer {
-    text-align: center;
-  }
-
-  .nm-footer a {
-    display: block;
-    margin: 0.3rem 0;
-  }
+.email {
+  font-size: 0.8rem;
+  color: #555;
 }
 
-/* Desktop-specific logo layout */
-@media (min-width: 768px) {
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
+/* Logout Button */
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: #ff6b6b;
+  color: #fff !important;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  transition: background 0.3s;
+  text-decoration: none;
+}
+
+.logout-btn:hover {
+  background: #e63946;
 }

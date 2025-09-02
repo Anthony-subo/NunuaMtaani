@@ -1,75 +1,64 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AiFillHome } from "react-icons/ai";     // Home icon
-import { FiLogOut } from "react-icons/fi";       // Logout icon
-import { BsCartFill } from "react-icons/bs";     // Shopping cart icon
-import '../styles/layout.css';
+import { AiFillHome } from "react-icons/ai";
+import { FiLogOut } from "react-icons/fi";
+import { BsCartFill } from "react-icons/bs";
+import "../styles/layout.css";
 
 const Header = () => {
-  const [userName, setUserName] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('');
-  const [shopName, setShopName] = useState('');
+  const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
+  const [shopName, setShopName] = useState("");
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem("user"));
     if (user) {
       setUserName(user.name);
       setEmail(user.email);
       setRole(user.role);
-      setShopName(user.shopName || '');
+      setShopName(user.shopName || "");
     }
   }, []);
 
   return (
     <header className="nm-header">
-      <div className="container d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+      <div className="nm-header-container">
 
-        {/* Brand with shopping cart and home icon */}
-        <div className="container d-flex align-items-center logo">
-          <BsCartFill className="shopping-icon" size={26} />
-
-          <div className="d-flex flex-column">
-            <div className="d-flex align-items-center mb-1">
-              <h3 className="mb-0 me-2 d-flex align-items-center">
-                <span className="nunua">Nunua</span>
-                <span className="m">M</span>
-                <span className="taani">taani</span>
-              </h3>
-
-              {/* Home icon beside NunuaMtaani */}
-              <Link to="/home" className="home-icon-link ms-2" title="Home">
-                <AiFillHome size={22} className="text-dark" />
+        {/* Left - Brand */}
+        <div className="nm-brand">
+          <BsCartFill className="shopping-icon" size={30} />
+          <div>
+            <h3 className="nm-title">
+              <span className="nunua">Nunua</span>
+              <span className="m">M</span>
+              <span className="taani">taani</span>
+              <Link to="/home" className="home-icon-link" title="Home">
+                <AiFillHome size={22} />
               </Link>
-            </div>
-
-            <small className="text-muted slogan">Your trusted online market</small>
+            </h3>
+            <small className="slogan">Your trusted online market</small>
           </div>
         </div>
 
-        {/* User Info + Logout */}
-        <div className="text-end mt-3 mt-md-0">
+        {/* Right - User Info */}
+        <div className="nm-user-info">
           {userName ? (
             <>
-              <h6 className="mb-0 fw-semibold text-dark">
-                Welcome, {userName} <span className="text-info">({role})</span>
-              </h6>
-              {shopName && (
-                <small className="text-warning d-block">Shop: {shopName}</small>
-              )}
-              {email && (
-                <small className="text-dark d-block">Logged in as: {email}</small>
-              )}
+              <p className="welcome-text">
+                Welcome, {userName} <span className="role">({role})</span>
+              </p>
+              {shopName && <small className="shop-name">Shop: {shopName}</small>}
+              {email && <small className="email">Logged in as: {email}</small>}
             </>
           ) : (
-            <h6 className="mb-0">Welcome, Guest</h6>
+            <p className="welcome-text">Welcome, Guest</p>
           )}
 
-          <nav className="mt-2">
-            <Link to="/login" className="btn btn-outline-warning btn-sm" title="Logout">
-              <FiLogOut size={18} />
-            </Link>
-          </nav>
+          <Link to="/login" className="logout-btn" title="Logout">
+            <FiLogOut size={18} />
+            <span>Logout</span>
+          </Link>
         </div>
       </div>
     </header>
