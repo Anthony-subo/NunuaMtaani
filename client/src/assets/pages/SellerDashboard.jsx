@@ -48,8 +48,9 @@ function SellerDashboard() {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="container dashboard-container">
       <Header />
+
 
       {/* Tabs (desktop top, mobile bottom) */}
       <div className="dashboard-tabs">
