@@ -36,9 +36,8 @@ function BuyerDashboard() {
   };
 
   return (
-    <div className="buyer-dashboard">
+    <div className="container dashboard-container">
       <Header />
-
       {/* Tabs (works for both desktop and mobile) */}
       <div className="dashboard-tabs">
         <button
