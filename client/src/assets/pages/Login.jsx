@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { BsCartFill } from "react-icons/bs";
-import '../styles/auth.css';
+import { AiFillHome } from "react-icons/ai";
+import '../styles/auth.css';     
+
 
 function Login() {
   const [email, setEmail] = useState('');
