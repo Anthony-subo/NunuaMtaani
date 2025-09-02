@@ -29,7 +29,7 @@ const Header = () => {
         <div className="container d-flex align-items-center logo">
           <BsCartFill className="shopping-icon" size={26} />
 
-          <div className="d-flex flex-column">
+          <div className="d-flex flex--row">
             <div className="d-flex align-items-center mb-1">
               <h3 className="mb-0 me-2 d-flex align-items-center">
                 <span className="nunua">Nunua</span>
