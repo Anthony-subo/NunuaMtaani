@@ -60,6 +60,7 @@ const Header = () => {
               {email && (
                 <small className="text-dark d-block">Logged in as: {email}</small>
               )}
+              
             </>
           ) : (
             <h6 className="mb-0">Welcome, Guest</h6>
