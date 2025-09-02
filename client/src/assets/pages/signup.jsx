@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { BsCartFill } from "react-icons/bs";
+import { AiFillHome } from "react-icons/ai";
 import '../styles/auth.css';
 
 function Signup() {
@@ -36,15 +37,20 @@ function Signup() {
   return (
     <div className="auth-container">
 
-      {/* Brand (NunuaMtaani styled like Login) */}
-      <div className="d-flex align-items-center justify-content-center logo mb-3">
-        <BsCartFill className="shopping-icon me-2" size={32} />
-        <div className="d-flex flex-column text-center">
-          <h2 className="brand mb-1">
-            <span className="nunua">Nunua</span>
-            <span className="m">M</span>
-            <span className="taani">taani</span>
-          </h2>
+      {/* Brand (NunuaMtaani styled like Login with Home icon) */}
+      <div className="d-flex align-items-center logo mb-3">
+        <BsCartFill className="shopping-icon" size={28} />
+        <div className="d-flex flex-column">
+          <div className="d-flex align-items-center mb-1">
+            <h3 className="brand mb-0 me-2">
+              <span className="nunua">Nunua</span>
+              <span className="m">M</span>
+              <span className="taani">taani</span>
+            </h3>
+            <Link to="/home" className="home-icon-link ms-2" title="Home">
+              <AiFillHome size={22} className="text-dark" />
+            </Link>
+          </div>
           <small className="slogan">Your trusted online market</small>
         </div>
       </div>
