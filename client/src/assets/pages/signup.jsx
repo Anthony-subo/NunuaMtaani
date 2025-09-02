@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import '../styles/auth.css';
 import axios from 'axios';
+import { BsCartFill } from "react-icons/bs";
+import '../styles/auth.css';
 
 function Signup() {
   const [name, setName] = useState('');
@@ -14,10 +15,11 @@ function Signup() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setErrMsg(''); // Clear previous error
+    setErrMsg('');
 
-    //axios.post('http://localhost:3001/api/auth/register', { name, phone, email, location, password })
-     axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, { name, phone, email, location, password })
+    axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, { 
+      name, phone, email, location, password 
+    })
       .then(result => {
         if (result.data.status === 'success') {
           navigate('/login');
@@ -33,11 +35,27 @@ function Signup() {
 
   return (
     <div className="auth-container">
-      <h2>NunuaMtaani</h2>
-      <h2>SignUp</h2>
 
+      {/* Brand (NunuaMtaani styled like Login) */}
+      <div className="d-flex align-items-center justify-content-center logo mb-3">
+        <BsCartFill className="shopping-icon me-2" size={32} />
+        <div className="d-flex flex-column text-center">
+          <h2 className="brand mb-1">
+            <span className="nunua">Nunua</span>
+            <span className="m">M</span>
+            <span className="taani">taani</span>
+          </h2>
+          <small className="slogan">Your trusted online market</small>
+        </div>
+      </div>
+
+      {/* Title */}
+      <h3 className="text-center mb-3">Sign Up</h3>
+
+      {/* Error Message */}
       {errMsg && <div className="alert alert-danger">{errMsg}</div>}
 
+      {/* Form */}
       <form onSubmit={handleSubmit}>
         <label htmlFor="name">Name</label>
         <input
@@ -88,9 +106,9 @@ function Signup() {
           required
         /><br />
 
-        <button type="submit" className="btn btn-primary">Register</button>
+        <button type="submit" className="btn btn-primary w-100">Register</button>
 
-        <p className="mt-3">
+        <p className="mt-3 text-center">
           Already have an account? <Link to="/login">Login</Link>
         </p>
       </form>
