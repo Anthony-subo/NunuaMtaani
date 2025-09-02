@@ -96,7 +96,7 @@ function SellerDashboard() {
       </div>
 
       {/* Dashboard Header */}
-      <div className="dashboard-header">
+      <div className="dashboard-header text-center py-3 mb-3">
         <h2>
           {loading
             ? <span className="text-muted">Loading Shop Info...</span>

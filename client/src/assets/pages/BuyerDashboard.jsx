@@ -68,18 +68,13 @@ function BuyerDashboard() {
 
       {/* Dashboard Header */}
       <div className="dashboard-header text-center py-3 mb-3">
-        <h2 className="fw-bold">
+        <h2>
           {buyerName ? (
             <span className="text-success">🛍️ Welcome, {buyerName}!</span>
           ) : (
             'Welcome to Your Dashboard'
           )}
         </h2>
-        {location && (
-          <p className="dashboard-subtext mb-1">
-            📍 <strong>Location:</strong> {location}
-          </p>
-        )}
         <p className="dashboard-subtext small text-muted">
           Browse local products, add them to your cart, and enjoy shopping within your area!
         </p>

@@ -81,8 +81,8 @@ function AdminDashboard() {
       </div>
 
       {/* Dashboard Header */}
-      <div className="dashboard-header">
-        <h2>
+      <div className="dashboard-header text-center py-3 mb-3">
+        <h2 >
           {adminName ? (
             <span className="text-success">🛡️ Welcome, {adminName} (Admin)</span>
           ) : (
