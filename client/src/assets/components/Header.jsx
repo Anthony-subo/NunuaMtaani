@@ -25,8 +25,26 @@ const Header = () => {
     <header className="nm-header">
       <div className="container">
 
-        {/* LEFT → User Info */}
-        <div className="user-info">
+        {/* LEFT → Brand + Logo */}
+        <div className="d-flex align-items-center logo">
+          <BsCartFill className="shopping-icon" size={28} />
+          <div className="d-flex flex-column">
+            <div className="d-flex align-items-center mb-1">
+              <h3 className="brand mb-0 me-2">
+                <span className="nunua">Nunua</span>
+                <span className="m">M</span>
+                <span className="taani">taani</span>
+              </h3>
+              <Link to="/home" className="home-icon-link ms-2" title="Home">
+                <AiFillHome size={22} className="text-dark" />
+              </Link>
+            </div>
+            <small className="slogan">Your trusted online market</small>
+          </div>
+        </div>
+
+        {/* RIGHT → User Info + Logout */}
+        <div className="user-info text-end">
           {userName ? (
             <>
               <h6 className="mb-0 fw-semibold">
@@ -50,24 +68,6 @@ const Header = () => {
           </nav>
         </div>
 
-        {/* RIGHT → Brand + Logo */}
-        <div className="d-flex align-items-center logo">
-          <BsCartFill className="shopping-icon" size={28} />
-          <div className="d-flex flex-column">
-            <div className="d-flex align-items-center mb-1">
-              <h3 className="brand mb-0 me-2">
-                <span className="nunua">Nunua</span>
-                <span className="m">M</span>
-                <span className="taani">taani</span>
-              </h3>
-              <Link to="/home" className="home-icon-link ms-2" title="Home">
-                <AiFillHome size={22} className="text-dark" />
-              </Link>
-            </div>
-            <small className="slogan">Your trusted online market</small>
-          </div>
-        </div>
-        
       </div>
     </header>
   );
