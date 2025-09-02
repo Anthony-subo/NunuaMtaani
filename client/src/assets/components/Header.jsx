@@ -23,10 +23,10 @@ const Header = () => {
 
   return (
     <header className="nm-header">
-      <div className="container">
+      <div className="container d-flex justify-content-between align-items-center flex-wrap">
 
-        {/* LEFT → Brand + Logo */}
-        <div className="d-flex align-items-center logo">
+        {/* LEFT → Unified Brand */}
+        <div className="d-flex align-items-center logo mb-2 mb-md-0">
           <BsCartFill className="shopping-icon" size={28} />
           <div className="d-flex flex-column">
             <div className="d-flex align-items-center mb-1">
@@ -44,17 +44,17 @@ const Header = () => {
         </div>
 
         {/* RIGHT → User Info + Logout */}
-        <div className="user-info text-end">
+        <div className="user-info text-md-end text-center">
           {userName ? (
             <>
               <h6 className="mb-0 fw-semibold">
                 Welcome, {userName} <span className="role">({role})</span>
               </h6>
               {shopName && (
-                <small className="shop">Shop: {shopName}</small>
+                <small className="shop d-block">Shop: {shopName}</small>
               )}
               {email && (
-                <small className="email">Logged in as: {email}</small>
+                <small className="email d-block">Logged in as: {email}</small>
               )}
             </>
           ) : (
