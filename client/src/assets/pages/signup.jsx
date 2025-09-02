@@ -47,7 +47,7 @@ function Signup() {
               <span className="m">M</span>
               <span className="taani">taani</span>
             </h3>
-            <Link to="/home" className="home-icon-link ms-2" title="Home">
+            <Link to="/#" className="home-icon-link ms-2" title="Home">
               <AiFillHome size={22} className="text-dark" />
             </Link>
           </div>
