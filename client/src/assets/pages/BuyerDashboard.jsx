@@ -19,6 +19,7 @@ function BuyerDashboard() {
       setBuyerName(user.name);
       setLocation(user.location || '');
     }
+    
   }, []);
 
   const renderTab = () => {

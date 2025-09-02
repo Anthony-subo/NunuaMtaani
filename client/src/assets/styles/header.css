@@ -1,0 +1,108 @@
+/* HEADER */
+.nm-header {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  background-color: #fff;
+  padding: 0.6rem 1.2rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid #eee;
+}
+
+/* Brand name */
+.brand {
+  font-weight: bold;
+}
+
+.nunua {
+  color: #ff6b6b;
+}
+
+.m {
+  color: #4caf50;
+}
+
+.taani {
+  color: #2196f3;
+}
+
+/* Shopping cart icon */
+.shopping-icon {
+  color: #4caf50;
+  margin-right: 0.6rem;
+}
+
+/* Home icon link */
+.home-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+.home-icon-link:hover {
+  background: #f5f5f5;
+}
+
+/* Slogan */
+.slogan {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 0.2rem;
+}
+
+/* User info */
+.user-info h6 {
+  color: #333;
+}
+.user-info .role {
+  color: #0dcaf0;
+}
+.user-info .shop {
+  color: #ffc107;
+  display: block;
+}
+.user-info .email {
+  color: #444;
+  display: block;
+}
+
+/* Logout button */
+.logout-btn {
+  background: transparent;
+  border: 1px solid #ffc107;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  color: #ffc107;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+.logout-btn:hover {
+  background: #ffc107;
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nm-header {
+    padding: 0.5rem 0.8rem;
+  }
+
+  .brand h3 {
+    font-size: 1.1rem;
+  }
+
+  .slogan {
+    font-size: 0.65rem;
+  }
+
+  .user-info h6 {
+    font-size: 0.85rem;
+  }
+
+  .user-info small {
+    font-size: 0.7rem;
+  }
+}
