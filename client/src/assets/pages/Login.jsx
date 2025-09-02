@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { BsCartFill } from "react-icons/bs";
 import '../styles/auth.css';
 
 function Login() {
@@ -28,9 +29,22 @@ function Login() {
   };
 
   return (
-   <div className="auth-container">
-    <h2>NunuaMtaani</h2>
-      <h2>Login</h2>
+    <div className="auth-container">
+
+      {/* Brand (NunuaMtaani styled like header) */}
+      <div className="d-flex align-items-center justify-content-center logo mb-3">
+        <BsCartFill className="shopping-icon me-2" size={32} />
+        <div className="d-flex flex-column text-center">
+          <h2 className="brand mb-1">
+            <span className="nunua">Nunua</span>
+            <span className="m">M</span>
+            <span className="taani">taani</span>
+          </h2>
+          <small className="slogan">Your trusted online market</small>
+        </div>
+      </div>
+
+      <h3 className="text-center mb-3">Login</h3>
 
       {errMsg && <div className="alert alert-danger">{errMsg}</div>}
 
@@ -55,9 +69,9 @@ function Login() {
           required
         /><br />
 
-        <button type="submit" className="btn btn-primary">Login</button>
+        <button type="submit" className="btn btn-primary w-100">Login</button>
 
-        <p className="mt-3">
+        <p className="mt-3 text-center">
           Don&apos;t have an account? <Link to="/register">Register</Link>
         </p>
       </form>

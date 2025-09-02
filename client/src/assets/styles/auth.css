@@ -7,62 +7,111 @@ body {
   padding: 0;
 }
 
+/* Main Auth Container */
 .auth-container {
   background-color: #fff;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 2rem;
-  margin: 4rem auto;
-  max-width: 400px;
+  margin: 3rem auto;
+  max-width: 420px;
+  width: 90%; /* mobile-friendly */
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.auth-container h2 {
-  text-align: center;
-  color: #0A8754;
-  margin-bottom: 1.5rem;
+/* NunuaMtaani Branding */
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2rem;
 }
 
+.shopping-icon {
+  color: #4caf50; /* cart in green */
+  margin-right: 0.6rem;
+}
+
+.brand {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 1.6rem;
+}
+
+.nunua {
+  color: #ff6b6b; /* red */
+}
+
+.m {
+  color: #4caf50; /* green */
+}
+
+.taani {
+  color: #2196f3; /* blue */
+}
+
+.slogan {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.2rem;
+  text-align: center;
+}
+
+/* Section title (Login/Signup) */
+.auth-container h3 {
+  text-align: center;
+  margin-bottom: 1.2rem;
+  color: #0A8754;
+}
+
+/* Labels & Inputs */
 .auth-container label {
   display: block;
   margin-bottom: 0.3rem;
   font-weight: 500;
+  color: #333;
 }
 
 .auth-container input {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.6rem;
   border: 1px solid #ccc;
   border-radius: 6px;
   margin-bottom: 1rem;
   font-size: 1rem;
+  transition: border-color 0.2s ease-in-out;
 }
 
 .auth-container input:focus {
   border-color: #0A8754;
   outline: none;
 }
+
 .auth-container input::placeholder {
   font-style: italic;
   color: #999;
 }
 
-
+/* Button */
 .auth-container button {
   width: 100%;
-  padding: 0.6rem;
+  padding: 0.7rem;
   background-color: #0A8754;
   color: white;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out, transform 0.15s ease;
 }
 
 .auth-container button:hover {
   background-color: #08734A;
+  transform: scale(1.02);
 }
 
+/* Error Alert */
 .auth-container .alert-danger {
   background-color: #F8D7DA;
   color: #D63031;
@@ -70,18 +119,51 @@ body {
   margin-bottom: 1rem;
   border-radius: 5px;
   border-left: 5px solid #D63031;
+  font-size: 0.9rem;
 }
 
+/* Footer text */
 .auth-container p {
   text-align: center;
   margin-top: 1rem;
+  font-size: 0.9rem;
 }
 
 .auth-container a {
   color: #D63031;
+  font-weight: 500;
   text-decoration: none;
 }
 
 .auth-container a:hover {
   text-decoration: underline;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 600px) {
+  .auth-container {
+    padding: 1.5rem;
+    margin: 2rem auto;
+  }
+
+  .brand {
+    font-size: 1.3rem;
+  }
+
+  .slogan {
+    font-size: 0.7rem;
+  }
+
+  .auth-container h3 {
+    font-size: 1.2rem;
+  }
+
+  .auth-container input {
+    font-size: 0.9rem;
+  }
+
+  .auth-container button {
+    font-size: 0.95rem;
+    padding: 0.6rem;
+  }
 }
