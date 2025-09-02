@@ -9,9 +9,19 @@
   border-bottom: 1px solid #eee;
 }
 
+.nm-header .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;   /* keeps vertical alignment */
+  flex-wrap: nowrap;     /* prevent stacking */
+}
+
 /* Brand name */
 .brand {
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .nunua {
@@ -52,9 +62,14 @@
   margin-top: 0.2rem;
 }
 
-/* User info */
+/* User info (right side) */
+.user-info {
+  text-align: right;
+}
+
 .user-info h6 {
   color: #333;
+  margin: 0;
 }
 .user-info .role {
   color: #0dcaf0;
@@ -86,12 +101,14 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .nm-header {
-    padding: 0.5rem 0.8rem;
+  .nm-header .container {
+    flex-direction: row;      /* keep row layout */
+    justify-content: space-between; /* left + right */
+    align-items: center;      /* vertically aligned */
   }
 
   .brand h3 {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .slogan {
@@ -99,7 +116,7 @@
   }
 
   .user-info h6 {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .user-info small {
