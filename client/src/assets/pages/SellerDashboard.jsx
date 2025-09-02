@@ -14,22 +14,27 @@ function SellerDashboard() {
   const [shopName, setShopName] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchShop = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user?._id) return;
-        const res = await axios.get(`http://localhost:3001/api/shops/user/${user._id}`);
-        setShopName(res.data.shop.shop_name);
-      } catch (err) {
-        console.error("Failed to fetch shop:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+ useEffect(() => {
+  const fetchShop = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user?._id) return;
 
-    fetchShop();
-  }, []);
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/shops/user/${user._id}`
+      );
+
+      setShopName(res.data.shop.shop_name);
+    } catch (err) {
+      console.error("Failed to fetch shop:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchShop();
+}, []);
+
 
   const renderTab = () => {
     switch (activeTab) {

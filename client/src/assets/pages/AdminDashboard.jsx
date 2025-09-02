@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import AllProducts from '../components/AllProducts';
 import AllUsers from '../components/AllUsers';
 import AllShops from '../components/AllShops';
-import Cart from '../components/Cart'; // Only one import
-import AllOrders from '../components/AllOrders.jsx'; // You must have this component
+import Cart from '../components/Cart';
+import AllOrders from '../components/AllOrders.jsx';
 import Header from "../components/Header";
-import '../styles/dashboard.css'; // Adjust path as needed
+import { FaBoxOpen, FaUsers, FaStore, FaShoppingCart, FaClipboardList } from 'react-icons/fa';
+import '../styles/dashboard.css';
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
@@ -22,18 +23,12 @@ function AdminDashboard() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'products':
-        return <AllProducts isAdminView={true} />;
-      case 'users':
-        return <AllUsers />;
-      case 'shops':
-        return <AllShops />;
-      case 'cart':
-        return <Cart />;
-      case 'orders':
-        return <AllOrders />; // Admin orders tab
-      default:
-        return <AllProducts isAdminView={true} />;
+      case 'products': return <AllProducts isAdminView={true} />;
+      case 'users': return <AllUsers />;
+      case 'shops': return <AllShops />;
+      case 'cart': return <Cart />;
+      case 'orders': return <AllOrders />;
+      default: return <AllProducts isAdminView={true} />;
     }
   };
 
@@ -41,39 +36,51 @@ function AdminDashboard() {
     <div className="container dashboard-container">
       <Header />
 
+      {/* Admin Tabs (desktop top, mobile bottom) */}
       <div className="dashboard-tabs">
         <button
-          className={`btn ${activeTab === 'products' ? 'btn-primary' : 'btn-outline-primary'}`}
+          className={activeTab === 'products' ? 'active' : ''}
           onClick={() => setActiveTab('products')}
+          title="All Products"
         >
-          All Products
+          <FaBoxOpen size={20} />
+          <span className="tab-label">Products</span>
         </button>
         <button
-          className={`btn ${activeTab === 'users' ? 'btn-secondary' : 'btn-outline-secondary'}`}
+          className={activeTab === 'users' ? 'active' : ''}
           onClick={() => setActiveTab('users')}
+          title="All Users"
         >
-          All Users
+          <FaUsers size={20} />
+          <span className="tab-label">Users</span>
         </button>
         <button
-          className={`btn ${activeTab === 'shops' ? 'btn-warning' : 'btn-outline-warning'}`}
+          className={activeTab === 'shops' ? 'active' : ''}
           onClick={() => setActiveTab('shops')}
+          title="All Shops"
         >
-          All Shops
+          <FaStore size={20} />
+          <span className="tab-label">Shops</span>
         </button>
         <button
-          className={`btn ${activeTab === 'cart' ? 'btn-success' : 'btn-outline-success'}`}
+          className={activeTab === 'cart' ? 'active' : ''}
           onClick={() => setActiveTab('cart')}
+          title="Carts"
         >
-          Carts
+          <FaShoppingCart size={20} />
+          <span className="tab-label">Carts</span>
         </button>
         <button
-          className={`btn ${activeTab === 'orders' ? 'btn-dark' : 'btn-outline-dark'}`}
+          className={activeTab === 'orders' ? 'active' : ''}
           onClick={() => setActiveTab('orders')}
+          title="All Orders"
         >
-          All Orders
+          <FaClipboardList size={20} />
+          <span className="tab-label">Orders</span>
         </button>
       </div>
 
+      {/* Dashboard Header */}
       <div className="dashboard-header">
         <h2>
           {adminName ? (
@@ -87,7 +94,10 @@ function AdminDashboard() {
         </p>
       </div>
 
-      <div>{renderTab()}</div>
+      {/* Content */}
+      <div className="dashboard-content">
+        {renderTab()}
+      </div>
     </div>
   );
 }
