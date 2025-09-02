@@ -33,21 +33,23 @@ function Login() {
   return (
     <div className="auth-container">
 
-      {/* Brand (NunuaMtaani styled like header) */}
-      <div className="d-flex align-items-center justify-content-center logo mb-3">
-        <BsCartFill className="shopping-icon me-2" size={32} />
-        <div className="d-flex flex-column text-center">
-          <h2 className="brand mb-1">
-            <span className="nunua">Nunua</span>
-            <span className="m">M</span>
-            <span className="taani">taani</span>
-          </h2>
-          <Link to="/hh" className="home-icon-link ms-2" title="Home">
-                        <AiFillHome size={22} className="text-dark" />
-          </Link>
-          <small className="slogan">Your trusted online market</small>
-        </div>
-      </div>
+        {/* Brand (NunuaMtaani styled like Login with Home icon) */}
+            <div className="d-flex align-items-center logo mb-3">
+              <BsCartFill className="shopping-icon" size={28} />
+              <div className="d-flex flex-column">
+                <div className="d-flex align-items-center mb-1">
+                  <h3 className="brand mb-0 me-2">
+                    <span className="nunua">Nunua</span>
+                    <span className="m">M</span>
+                    <span className="taani">taani</span>
+                  </h3>
+                  <Link to="/hh" className="home-icon-link ms-2" title="Home">
+                    <AiFillHome size={22} className="text-dark" />
+                  </Link>
+                </div>
+                <small className="slogan">Your trusted online market</small>
+              </div>
+            </div>
 
       <h3 className="text-center mb-3">Login</h3>
 
