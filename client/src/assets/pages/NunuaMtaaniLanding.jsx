@@ -157,7 +157,7 @@ function NunuaMtaaniLanding() {
       <footer className="bg-dark text-white py-4">
         <div className="container d-flex flex-column flex-md-row justify-content-between align-items-center">
           {/* Right - Personal Details */}
-          <div className="footer-box right-box text-center text-md-end">
+          <div className="footer-box  text-center text-md-end">
             <h5 className="mb-1">Anthony </h5>
             <p className="mb-1 small">
               Building digital experiences with passion and precision
