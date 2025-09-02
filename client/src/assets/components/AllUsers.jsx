@@ -112,10 +112,10 @@ function AllUsers() {
           <label>Filter by Role:</label>{' '}
           <select onChange={(e) => setRoleFilter(e.target.value)} value={roleFilter}>
             <option value="all">All</option>
-            <option value="buyer">Buyer</option>
-            <option value="seller">Seller</option>
-            <option value="admin">Admin</option>
-            <option value="rider">Rider</option>
+            <option value="buyer">buyer</option>
+            <option value="seller">seller</option>
+            <option value="admin">admin</option>
+            <option value="rider">rider</option>
           </select>
         </div>
 
