@@ -33,7 +33,18 @@ function Signup() {
 
   return (
     <div className="auth-container">
-      <h2>NunuaMtaani</h2>
+      {/* Brand (NunuaMtaani styled like header) */}
+            <div className="d-flex align-items-center justify-content-center logo mb-3">
+              <BsCartFill className="shopping-icon me-2" size={32} />
+              <div className="d-flex flex-column text-center">
+                <h2 className="brand mb-1">
+                  <span className="nunua">Nunua</span>
+                  <span className="m">M</span>
+                  <span className="taani">taani</span>
+                </h2>
+                <small className="slogan">Your trusted online market</small>
+              </div>
+            </div>
       <h2>SignUp</h2>
 
       {errMsg && <div className="alert alert-danger">{errMsg}</div>}
