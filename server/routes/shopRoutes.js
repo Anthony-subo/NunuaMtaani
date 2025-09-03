@@ -51,16 +51,17 @@ router.post('/', async (req, res) => {
 });
 
 // Get shop by user ID
-// ✅ Corrected GET /user/:userId
+// ✅ Correct: GET /api/shops/user/:userId
 router.get('/user/:userId', async (req, res) => {
   try {
-    const shop = await Shop.findOne({ user_id: req.params.userId });
+    const shop = await Shop.findOne({ user: req.params.userId }); // match your model field
     if (!shop) return res.status(404).json({ message: 'Shop not found' });
     res.json({ shop });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
 
 // ✅ New: Get all shops
 router.get('/', async (req, res) => {
