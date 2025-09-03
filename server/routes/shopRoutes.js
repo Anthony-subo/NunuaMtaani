@@ -4,6 +4,7 @@ const Shop = require('../models/shop');
 
 
 // Create a new shop linked to a user
+
 // Create a new shop linked to a user
 router.post('/', async (req, res) => {
   try {
@@ -12,7 +13,6 @@ router.post('/', async (req, res) => {
       owner_name, 
       email, 
       location, 
-      user_id, 
       payment_method, 
       payment_number, 
       commission_rate 
@@ -50,15 +50,17 @@ router.post('/', async (req, res) => {
 });
 
 // Get shop by user ID
+// ✅ Corrected GET /user/:userId
 router.get('/user/:userId', async (req, res) => {
   try {
-    const shop = await Shop.findOne({ user_id: req.params.userId });
+    const shop = await Shop.findOne({ user: req.params.userId });
     if (!shop) return res.status(404).json({ message: 'Shop not found' });
     res.json({ shop });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
 
 // ✅ New: Get all shops
 router.get('/', async (req, res) => {
