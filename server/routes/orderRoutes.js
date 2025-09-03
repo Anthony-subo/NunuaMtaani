@@ -2,16 +2,61 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/orders');
 const Shop = require('../models/shop');
+const Product = require('../models/Product');
 
+// POST /api/orders - create a new orde
 // POST /api/orders - create a new order
 router.post('/', async (req, res) => {
   try {
-    const newOrder = new Order(req.body);
+    const { buyer, sellerShop, items, total, payment } = req.body;
+
+    if (!buyer || !sellerShop || !items || items.length === 0 || !total) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // ✅ Check seller shop exists
+    const shop = await Shop.findById(sellerShop);
+    if (!shop) {
+      return res.status(404).json({ message: 'Seller shop not found' });
+    }
+
+    // ✅ Validate products exist
+    for (const item of items) {
+      const product = await Product.findById(item.product);
+      if (!product) {
+        return res.status(404).json({ message: `Product not found: ${item.product}` });
+      }
+    }
+
+    // ✅ Create new order
+    const newOrder = new Order({
+      buyer,
+      sellerShop,
+      items: items.map(i => ({
+        product: i.product,
+        name: i.name,
+        qty: i.qty,
+        price: i.price,
+        image: i.image,
+        location: i.location
+      })),
+      total,
+      payment: {
+        method: payment?.method || 'mpesa',
+        payerPhone: payment?.payerPhone || null,
+        paidTo: shop.payment_number, // take directly from seller shop
+        mpesaReceipt: null,
+        callbackAt: null,
+        raw: {}
+      }
+    });
+
     await newOrder.save();
     res.status(201).json(newOrder);
+
   } catch (err) {
-    console.error('Error placing order:', err);
-    res.status(500).json({ message: 'Failed to place order.' });
+    console.error('❌ Error placing order:', err);
+    res.status(500).json({ message: 'Failed to place order', error: err.message });
   }
 });
 
