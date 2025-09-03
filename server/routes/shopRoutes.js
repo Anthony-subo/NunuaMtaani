@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
       owner_name, 
       email, 
       location, 
-      user_id: user_id, 
+      user_id,
       payment_method, 
       payment_number, 
       commission_rate: commission_rate || 0.05 
