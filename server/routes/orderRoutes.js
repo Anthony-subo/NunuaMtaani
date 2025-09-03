@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/orders');
 const Shop = require('../models/shop');
-const Product = require('../models/Product');
+const Product = require('../models/product');
 
 // POST /api/orders - create a new orde
 // POST /api/orders - create a new order
