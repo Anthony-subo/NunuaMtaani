@@ -54,7 +54,7 @@ router.post('/', async (req, res) => {
 // ✅ Correct: GET /api/shops/user/:userId
 router.get('/user/:userId', async (req, res) => {
   try {
-    const shop = await Shop.findOne({ user: req.params.userId }); // match your model field
+    const shop = await Shop.findOne({ user_id: req.params.userId });
     if (!shop) return res.status(404).json({ message: 'Shop not found' });
     res.json({ shop });
   } catch (error) {
