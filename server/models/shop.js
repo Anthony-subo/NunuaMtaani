@@ -24,9 +24,9 @@ const SubscriptionSchema = new mongoose.Schema(
 // ================== SHOP SCHEMA ==================
 const ShopSchema = new mongoose.Schema(
   {
-    user: {
+      user_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'users',
       required: true
     },
     shop_name: { type: String, required: true },
