@@ -7,6 +7,7 @@ function Cart() {
   const [cart, setCart] = useState([]);
   const [userId, setUserId] = useState('');
   const [orderStatus, setOrderStatus] = useState('');
+  const [phone, setPhone] = useState(''); // ✅ payment phone
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -44,52 +45,53 @@ function Cart() {
     return grouped;
   };
 
-const handlePlaceOrder = async () => {
-  if (!userId) {
-    alert('Please log in to place an order.');
-    return;
-  }
+  const handlePlaceOrder = async () => {
+    if (!userId) {
+      alert('Please log in to place an order.');
+      return;
+    }
+    if (!phone) {
+      alert('Please enter your M-Pesa phone number.');
+      return;
+    }
 
-  // group cart items by shop
-  const groupedItems = groupByShop(cart);
+    const groupedItems = groupByShop(cart);
 
-  // create order requests per shop
-  const orderRequests = Object.entries(groupedItems).map(async ([shopId, items]) => {
-    const orderData = {
-      user_id: userId,
-      shop_id: shopId,
-      items: items.map(item => ({
-        product_id: item._id,             // ✅ matches backend schema
-        quantity: item.quantity || 1,
-        name: item.name,
-        price: item.price,
-        image: item.images?.[0] || '',
-        location: item.location,
-      })),
-      total: items.reduce(
-        (sum, item) => sum + (item.price * (item.quantity || 1)),
-        0
-      ),
-      payment: {
-        method: "mpesa",                  // ✅ default method
-        payerPhone: null                  // or grab from user profile later
-      }
-    };
+    const orderRequests = Object.entries(groupedItems).map(async ([shopId, items]) => {
+      const orderData = {
+        user_id: userId,
+        shop_id: shopId,
+        items: items.map(item => ({
+          product_id: item._id,
+          quantity: item.quantity || 1,
+          name: item.name,
+          price: item.price,
+          image: item.images?.[0] || '',
+          location: item.location,
+        })),
+        total: items.reduce(
+          (sum, item) => sum + (item.price * (item.quantity || 1)),
+          0
+        ),
+        payment: {
+          method: "mpesa",
+          payerPhone: phone, // ✅ phone captured from input
+        }
+      };
 
-    return axios.post(`${API_URL}/api/orders`, orderData);
-  });
+      return axios.post(`${API_URL}/api/orders`, orderData);
+    });
 
-  try {
-    await Promise.all(orderRequests);
-    setOrderStatus('Orders placed successfully!');
-    localStorage.removeItem(`cart_${userId}`);
-    setCart([]);
-  } catch (err) {
-    console.error('Order placement failed:', err.response?.data || err.message);
-    setOrderStatus('Failed to place one or more orders. Try again.');
-  }
-};
-
+    try {
+      await Promise.all(orderRequests);
+      setOrderStatus('Orders placed. Please check your phone to complete payment via M-Pesa.');
+      localStorage.removeItem(`cart_${userId}`);
+      setCart([]);
+    } catch (err) {
+      console.error('Order placement failed:', err.response?.data || err.message);
+      setOrderStatus('Failed to place one or more orders. Try again.');
+    }
+  };
 
   return (
     <div className="admin-table-container">
@@ -119,8 +121,21 @@ const handlePlaceOrder = async () => {
             </div>
 
             <h5 className="mt-4">Total: {getTotal()} KES</h5>
+
+            {/* ✅ Payment phone input */}
+            <div className="mt-3">
+              <label>Enter M-Pesa Number:</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="07XXXXXXXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+
             <button className="btn btn-success mt-3" onClick={handlePlaceOrder}>
-              ✅ Place Order
+              ✅ Place Order & Pay
             </button>
           </>
         )}
