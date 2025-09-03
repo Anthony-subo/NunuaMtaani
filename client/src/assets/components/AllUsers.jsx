@@ -9,12 +9,16 @@ function AllUsers() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [showShopForm, setShowShopForm] = useState(false);
   const [shopFormData, setShopFormData] = useState({
-    user_id: '',
-    shop_name: '',
-    owner_name: '',
-    email: '',
-    location: '',
-  });
+  user_id: '',
+  shop_name: '',
+  owner_name: '',
+  email: '',
+  location: '',
+  payment_method: '',
+  payment_number: '',
+  commission_rate: 0.05, // default 5%
+});
+
 
   // Fetch all users on mount
   useEffect(() => {
@@ -170,56 +174,95 @@ function AllUsers() {
         )}
 
         {/* Shop Modal */}
-        {showShopForm && (
-          <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
-            <div className="modal-dialog">
-              <div className="modal-content shadow-lg">
-                <div className="modal-header">
-                  <h5 className="modal-title">Create Shop for User</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setShowShopForm(false)}
-                  />
-                </div>
-                <div className="modal-body">
-                  <input
-                    className="form-control mb-2"
-                    name="shop_name"
-                    value={shopFormData.shop_name}
-                    onChange={handleShopInputChange}
-                    placeholder="Shop Name"
-                  />
-                  <input
-                    className="form-control mb-2"
-                    name="owner_name"
-                    value={shopFormData.owner_name}
-                    onChange={handleShopInputChange}
-                    placeholder="Owner Name"
-                  />
-                  <input
-                    className="form-control mb-2"
-                    name="email"
-                    value={shopFormData.email}
-                    onChange={handleShopInputChange}
-                    placeholder="Email"
-                  />
-                  <input
-                    className="form-control mb-2"
-                    name="location"
-                    value={shopFormData.location}
-                    onChange={handleShopInputChange}
-                    placeholder="Location"
-                  />
-                </div>
-                <div className="modal-footer">
-                  <button onClick={handleShopSubmit} className="btn btn-primary">Submit</button>
-                  <button onClick={() => setShowShopForm(false)} className="btn btn-secondary">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+{showShopForm && (
+  <div className="modal d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+    <div className="modal-dialog">
+      <div className="modal-content shadow-lg">
+        <div className="modal-header">
+          <h5 className="modal-title">Create Shop for User</h5>
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setShowShopForm(false)}
+          />
+        </div>
+
+        <div className="modal-body">
+          <input
+            className="form-control mb-2"
+            name="shop_name"
+            value={shopFormData.shop_name}
+            onChange={handleShopInputChange}
+            placeholder="Shop Name"
+          />
+          <input
+            className="form-control mb-2"
+            name="owner_name"
+            value={shopFormData.owner_name}
+            onChange={handleShopInputChange}
+            placeholder="Owner Name"
+          />
+          <input
+            className="form-control mb-2"
+            name="email"
+            value={shopFormData.email}
+            onChange={handleShopInputChange}
+            placeholder="Email"
+          />
+          <input
+            className="form-control mb-2"
+            name="location"
+            value={shopFormData.location}
+            onChange={handleShopInputChange}
+            placeholder="Location"
+          />
+
+          {/* New fields for Shop */}
+          <select
+            className="form-select mb-2"
+            name="payment_method"
+            value={shopFormData.payment_method}
+            onChange={handleShopInputChange}
+          >
+            <option value="">Select Payment Method</option>
+            <option value="phone">Phone</option>
+            <option value="till">Till</option>
+          </select>
+
+          <input
+            className="form-control mb-2"
+            name="payment_number"
+            value={shopFormData.payment_number}
+            onChange={handleShopInputChange}
+            placeholder="Payment Number (2547xxxx or Till No.)"
+          />
+
+          <input
+            type="number"
+            className="form-control mb-2"
+            name="commission_rate"
+            value={shopFormData.commission_rate}
+            onChange={handleShopInputChange}
+            placeholder="Commission Rate (default 0.05)"
+          />
+        </div>
+
+        <div className="modal-footer">
+          <button onClick={handleShopSubmit} className="btn btn-primary">
+            Submit
+          </button>
+          <button
+            onClick={() => setShowShopForm(false)}
+            className="btn btn-secondary"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
       </div>
     </div>
