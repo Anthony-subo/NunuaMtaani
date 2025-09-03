@@ -28,6 +28,7 @@ const orderSchema = new mongoose.Schema({
     payerPhone: String,
     paidTo: String,
     mpesaReceipt: String,
+    amount: Number,
     callbackAt: Date,
     raw: Object
   }

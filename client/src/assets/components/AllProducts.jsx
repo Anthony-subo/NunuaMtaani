@@ -9,52 +9,62 @@ function AllProducts() {
   const [userId, setUserId] = useState('');
 
   useEffect(() => {
+    // Fetch products
     axios.get(`${import.meta.env.VITE_API_URL}/api/products`)
       .then(res => setProducts(res.data))
       .catch(err => console.error('Failed to fetch products:', err));
 
+    // Fetch shops
     axios.get(`${import.meta.env.VITE_API_URL}/api/shops`)
       .then(res => setShops(res.data))
       .catch(err => console.error('Failed to fetch shops:', err));
 
+    // Load logged-in user
     const storedUser = JSON.parse(localStorage.getItem('user'));
     if (storedUser && storedUser._id) {
       setUserId(storedUser._id);
     }
   }, []);
 
-  const addToCart = (product) => {
-  if (!userId) {
-    alert('Please log in to add to cart.');
-    return;
-  }
+  // Add to cart (local + backend)
+  const addToCart = async (product) => {
+    if (!userId) {
+      alert('Please log in to add to cart.');
+      return;
+    }
 
-  const cartKey = `cart_${userId}`;
-  const cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+    const cartKey = `cart_${userId}`;
+    const cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
-  const existing = cart.find(item => item._id === product._id);
-  if (existing) {
-    alert(`${product.name} is already in the cart.`);
-    return;
-  }
+    const existing = cart.find(item => item._id === product._id);
+    if (existing) {
+      alert(`${product.name} is already in the cart.`);
+      return;
+    }
 
-  // ✅ Ensure shop_id is saved
-  const cartItem = {
-    _id: product._id,        // product id
-    name: product.name,
-    price: product.price,
-    shop_id: product.shop_id, // 🔑 required for grouping
-    location: product.location,
-    images: product.images,
-    quantity: 1
+    // Save to localStorage
+    const newCart = [...cart, { ...product, quantity: 1 }];
+    localStorage.setItem(cartKey, JSON.stringify(newCart));
+
+    // Save to backend (MongoDB)
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, {
+        userId,
+        productId: product._id,
+        shopId: product.shop_id,
+        quantity: 1,
+        price: product.price,
+        status: 'pending',
+      });
+
+      alert(`${product.name} added to cart.`);
+    } catch (error) {
+      console.error('Failed to save cart to backend:', error);
+      alert('Something went wrong while saving to server.');
+    }
   };
 
-  cart.push(cartItem);
-  localStorage.setItem(cartKey, JSON.stringify(cart));
-  alert(`${product.name} added to cart.`);
-};
-
-
+  // Find shop name
   const getShopName = (shop_id) => {
     const shop = shops.find(s => String(s._id) === String(shop_id));
     return shop ? shop.shop_name : 'Unknown Shop';

@@ -28,6 +28,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 connectDB();
 
 // Routes
+app.use('/api/payments', paymentsRouter);
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/products", require("./routes/productRoutes")); // <-- Add this line
 app.use('/api/users', require('./routes/userRoutes')); // ✅ Add this
