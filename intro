@@ -127,3 +127,14 @@ Nyayo Shoes (Nyayo = footprints/steps in Kiswahili)
 Twende Sole (Let’s go – Kiswahili)
 
 Uhuru Walk
+<tbody>
+  {orders.map(order => (
+    <tr key={order._id}>
+      <td>{order._id}</td>
+      <td>{order.user_id?.name || order.user_id?.email || 'N/A'}</td>
+      <td>{order.items?.length}</td>
+      <td>{order.status}</td>
+      <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+    </tr>
+  ))}
+</tbody>

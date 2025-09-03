@@ -44,41 +44,52 @@ function Cart() {
     return grouped;
   };
 
-  const handlePlaceOrder = async () => {
-    if (!userId) {
-      alert('Please log in to place an order.');
-      return;
-    }
+const handlePlaceOrder = async () => {
+  if (!userId) {
+    alert('Please log in to place an order.');
+    return;
+  }
 
-    const groupedItems = groupByShop(cart);
-    const orderRequests = Object.entries(groupedItems).map(async ([shopId, items]) => {
-      const orderData = {
-        user_id: userId,
-        shop_id: shopId,
-        items: items.map(item => ({
-          product_id: item._id,
-          quantity: item.quantity || 1,
-          name: item.name,
-          price: item.price,
-          image: item.images?.[0] || '',
-          location: item.location,
-        })),
-        total: items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0),
-      };
+  // group cart items by shop
+  const groupedItems = groupByShop(cart);
 
-      return axios.post(`${API_URL}/api/orders`, orderData);
-    });
+  // create order requests per shop
+  const orderRequests = Object.entries(groupedItems).map(async ([shopId, items]) => {
+    const orderData = {
+      user_id: userId,
+      shop_id: shopId,
+      items: items.map(item => ({
+        product_id: item._id,             // ✅ matches backend schema
+        quantity: item.quantity || 1,
+        name: item.name,
+        price: item.price,
+        image: item.images?.[0] || '',
+        location: item.location,
+      })),
+      total: items.reduce(
+        (sum, item) => sum + (item.price * (item.quantity || 1)),
+        0
+      ),
+      payment: {
+        method: "mpesa",                  // ✅ default method
+        payerPhone: null                  // or grab from user profile later
+      }
+    };
 
-    try {
-      await Promise.all(orderRequests);
-      setOrderStatus('Orders placed successfully!');
-      localStorage.removeItem(`cart_${userId}`);
-      setCart([]);
-    } catch (err) {
-      console.error('Order placement failed:', err);
-      setOrderStatus('Failed to place one or more orders. Try again.');
-    }
-  };
+    return axios.post(`${API_URL}/api/orders`, orderData);
+  });
+
+  try {
+    await Promise.all(orderRequests);
+    setOrderStatus('Orders placed successfully!');
+    localStorage.removeItem(`cart_${userId}`);
+    setCart([]);
+  } catch (err) {
+    console.error('Order placement failed:', err.response?.data || err.message);
+    setOrderStatus('Failed to place one or more orders. Try again.');
+  }
+};
+
 
   return (
     <div className="admin-table-container">
