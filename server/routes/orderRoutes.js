@@ -8,34 +8,34 @@ const Product = require('../models/product');
 // POST /api/orders - create a new order
 router.post('/', async (req, res) => {
   try {
-    const { buyer, sellerShop, items, total, payment } = req.body;
+    const { user_id, shop_id, items, total, payment } = req.body;
 
-    if (!buyer || !sellerShop || !items || items.length === 0 || !total) {
+    if (!user_id || !shop_id || !items || items.length === 0 || !total) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
     // ✅ Check seller shop exists
-    const shop = await Shop.findById(sellerShop);
+    const shop = await Shop.findById(shop_id);
     if (!shop) {
       return res.status(404).json({ message: 'Seller shop not found' });
     }
 
     // ✅ Validate products exist
     for (const item of items) {
-      const product = await Product.findById(item.product);
+      const product = await Product.findById(item.product_id);
       if (!product) {
-        return res.status(404).json({ message: `Product not found: ${item.product}` });
+        return res.status(404).json({ message: `Product not found: ${item.product_id}` });
       }
     }
 
     // ✅ Create new order
     const newOrder = new Order({
-      buyer,
-      sellerShop,
+      user_id,
+      shop_id,
       items: items.map(i => ({
-        product: i.product,
+        product_id: i.product_id,
+        quantity: i.quantity,
         name: i.name,
-        qty: i.qty,
         price: i.price,
         image: i.image,
         location: i.location
@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
       payment: {
         method: payment?.method || 'mpesa',
         payerPhone: payment?.payerPhone || null,
-        paidTo: shop.payment_number, // take directly from seller shop
+        paidTo: shop.payment_number, // seller phone/till
         mpesaReceipt: null,
         callbackAt: null,
         raw: {}
@@ -59,6 +59,7 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: 'Failed to place order', error: err.message });
   }
 });
+
 
 // GET /api/orders - fetch all orders (admin use)
 router.get('/', async (req, res) => {
