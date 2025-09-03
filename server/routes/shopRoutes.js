@@ -13,6 +13,7 @@ router.post('/', async (req, res) => {
       owner_name, 
       email, 
       location, 
+      user_id, 
       payment_method, 
       payment_number, 
       commission_rate 
@@ -60,7 +61,6 @@ router.get('/user/:userId', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
-
 
 // ✅ New: Get all shops
 router.get('/', async (req, res) => {
