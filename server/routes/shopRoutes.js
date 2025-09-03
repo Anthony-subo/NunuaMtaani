@@ -4,14 +4,48 @@ const Shop = require('../models/shop');
 
 
 // Create a new shop linked to a user
+// Create a new shop linked to a user
 router.post('/', async (req, res) => {
   try {
-    const { shop_name, owner_name, email, location, user_id } = req.body;
-    const newShop = new Shop({ shop_name, owner_name, email, location, user_id });
+    const { 
+      shop_name, 
+      owner_name, 
+      email, 
+      location, 
+      user_id, 
+      payment_method, 
+      payment_number, 
+      commission_rate 
+    } = req.body;
+
+    // ✅ Validate required fields
+    if (!shop_name || !owner_name || !email || !location || !user_id || !payment_method || !payment_number) {
+      return res.status(400).json({ message: "All required fields must be provided." });
+    }
+
+    // ✅ Validate payment method
+    if (!['phone', 'till'].includes(payment_method)) {
+      return res.status(400).json({ message: "Invalid payment method. Must be 'phone' or 'till'." });
+    }
+
+    // ✅ Commission defaults to 5% if not provided
+    const newShop = new Shop({ 
+      shop_name, 
+      owner_name, 
+      email, 
+      location, 
+      user: user_id, 
+      payment_method, 
+      payment_number, 
+      commission_rate: commission_rate || 0.05 
+    });
+
     await newShop.save();
     res.status(201).json(newShop);
+
   } catch (err) {
-    res.status(500).json({ message: 'Error creating shop', error: err.message });
+    console.error("Shop creation error:", err);
+    res.status(500).json({ message: "Error creating shop", error: err.message });
   }
 });
 
