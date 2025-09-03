@@ -24,24 +24,36 @@ function AllProducts() {
   }, []);
 
   const addToCart = (product) => {
-    if (!userId) {
-      alert('Please log in to add to cart.');
-      return;
-    }
+  if (!userId) {
+    alert('Please log in to add to cart.');
+    return;
+  }
 
-    const cartKey = `cart_${userId}`;
-    const cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+  const cartKey = `cart_${userId}`;
+  const cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
-    const existing = cart.find(item => item._id === product._id);
-    if (existing) {
-      alert(`${product.name} is already in the cart.`);
-      return;
-    }
+  const existing = cart.find(item => item._id === product._id);
+  if (existing) {
+    alert(`${product.name} is already in the cart.`);
+    return;
+  }
 
-    cart.push({ ...product, quantity: 1 });
-    localStorage.setItem(cartKey, JSON.stringify(cart));
-    alert(`${product.name} added to cart.`);
+  // ✅ Ensure shop_id is saved
+  const cartItem = {
+    _id: product._id,        // product id
+    name: product.name,
+    price: product.price,
+    shop_id: product.shop_id, // 🔑 required for grouping
+    location: product.location,
+    images: product.images,
+    quantity: 1
   };
+
+  cart.push(cartItem);
+  localStorage.setItem(cartKey, JSON.stringify(cart));
+  alert(`${product.name} added to cart.`);
+};
+
 
   const getShopName = (shop_id) => {
     const shop = shops.find(s => String(s._id) === String(shop_id));
