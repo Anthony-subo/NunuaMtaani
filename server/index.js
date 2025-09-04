@@ -29,7 +29,7 @@ connectDB();
 
 
 // Routes
-app.use("/api/payments", require("./routes/payments"));
+app.use("/api/payments", require("./routes/payments"));// ✅ Add this
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/products", require("./routes/productRoutes")); // <-- Add this line
 app.use('/api/users', require('./routes/userRoutes')); // ✅ Add this
