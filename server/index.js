@@ -27,6 +27,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Connect DB
 connectDB();
 
+
 // Routes
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/auth", require("./routes/authRoutes"));
