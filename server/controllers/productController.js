@@ -1,7 +1,6 @@
-const Product = require('../models/product');
-const bucket = require('../config/firebase');
-const path = require('path');
-const fs = require('fs');
+const Product = require("../models/product");
+const bucket = require("../config/firebase");
+const fs = require("fs");
 
 // Upload Product
 const addProduct = async (req, res) => {
@@ -18,33 +17,38 @@ const addProduct = async (req, res) => {
       const destFileName = `products/${Date.now()}-${file.originalname}`;
       await bucket.upload(file.path, {
         destination: destFileName,
-        public: true,
+        gzip: true,
         metadata: { cacheControl: "public, max-age=31536000" },
       });
 
-      // Push public URL
+      // Make file public
+      const fileRef = bucket.file(destFileName);
+      await fileRef.makePublic();
+
       uploadedImages.push(`https://storage.googleapis.com/${bucket.name}/${destFileName}`);
 
-      // remove temp file
-      fs.unlinkSync(file.path);
+      // Remove temp file
+      fs.unlink(file.path, (err) => {
+        if (err) console.error("Error deleting temp file:", err);
+      });
     }
 
     // Save product in MongoDB
     const newProduct = new Product({
-      product_id: 'product-' + Date.now(),
+      product_id: "product-" + Date.now(),
       shop_id,
       name,
       price,
       location,
-      status: status || 'available',
+      status: status || "available",
       images: uploadedImages,
     });
 
     await newProduct.save();
-    res.status(201).json({ status: 'success', message: 'Product added', product: newProduct });
+    res.status(201).json({ status: "success", message: "Product added", product: newProduct });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ status: 'error', message: 'Server error while saving product' });
+    console.error("Error adding product:", err);
+    res.status(500).json({ status: "error", message: "Server error while saving product" });
   }
 };
 
@@ -54,8 +58,8 @@ const getAllProducts = async (req, res) => {
     const products = await Product.find().sort({ createdAt: -1 });
     res.status(200).json(products);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ status: 'error', message: 'Server error while fetching products' });
+    console.error("Error fetching products:", err);
+    res.status(500).json({ status: "error", message: "Server error while fetching products" });
   }
 };
 
