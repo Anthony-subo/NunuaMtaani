@@ -1,5 +1,5 @@
 const Product = require('../models/product');
-const bucket = require('../firebase');
+const bucket = require('../config/firebase');
 const path = require('path');
 const fs = require('fs');
 
