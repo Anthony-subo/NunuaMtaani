@@ -8,9 +8,11 @@ const { addProduct, getAllProducts } = require("../controllers/productController
 const Product = require("../models/product");
 const Shop = require("../models/shop");
 
-// Ensure the temp folder exists
-const tempDir = path.join(__dirname, "../temp");
-if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+// ✅ Use an absolute path for the temp folder
+const tempDir = path.join(__dirname, "../uploads/temp");
+
+// ✅ Ensure folder exists at runtime
+if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
 // Multer config (save to temp folder)
 const storage = multer.diskStorage({
@@ -18,6 +20,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
+
 
 // ====================== ROUTES ======================
 
