@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import ProductImageSlider from '../components/ProductImageSlider';
 import '../styles/allproduct.css';
 
@@ -10,13 +9,15 @@ function AllProducts() {
 
   useEffect(() => {
     // Fetch products
-    axios.get(`${import.meta.env.VITE_API_URL}/api/products`)
-      .then(res => setProducts(res.data))
+    fetch(`${import.meta.env.VITE_API_URL}/api/products`)
+      .then(res => res.json())
+      .then(data => setProducts(data))
       .catch(err => console.error('Failed to fetch products:', err));
 
     // Fetch shops
-    axios.get(`${import.meta.env.VITE_API_URL}/api/shops`)
-      .then(res => setShops(res.data))
+    fetch(`${import.meta.env.VITE_API_URL}/api/shops`)
+      .then(res => res.json())
+      .then(data => setShops(data))
       .catch(err => console.error('Failed to fetch shops:', err));
 
     // Load logged-in user
@@ -26,8 +27,8 @@ function AllProducts() {
     }
   }, []);
 
-  // Add to cart (local + backend)
-  const addToCart = async (product) => {
+  // ✅ Only update localStorage
+  const addToCart = (product) => {
     if (!userId) {
       alert('Please log in to add to cart.');
       return;
@@ -42,26 +43,10 @@ function AllProducts() {
       return;
     }
 
-    // Save to localStorage
     const newCart = [...cart, { ...product, quantity: 1 }];
     localStorage.setItem(cartKey, JSON.stringify(newCart));
 
-    // Save to backend (MongoDB)
-    try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, {
-        userId,
-        productId: product._id,
-        shopId: product.shop_id,
-        quantity: 1,
-        price: product.price,
-        status: 'pending',
-      });
-
-      alert(`${product.name} added to cart.`);
-    } catch (error) {
-      console.error('Failed to save cart to backend:', error);
-      alert('Something went wrong while saving to server.');
-    }
+    alert(`${product.name} added to cart.`);
   };
 
   // Find shop name
