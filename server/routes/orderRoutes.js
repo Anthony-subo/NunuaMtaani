@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/orders');
-const Shop = require('../models/shop');
 
-// POST /api/orders - create a new order
+// ✅ POST /api/orders - create a new order
 router.post('/', async (req, res) => {
   try {
     const newOrder = new Order(req.body);
@@ -12,21 +11,21 @@ router.post('/', async (req, res) => {
   } catch (err) {
     console.error('Error placing order:', err);
     res.status(500).json({ message: 'Failed to place order.' });
-    }
+  }
 });
 
-// GET /api/orders - fetch all orders (admin use)
+// ✅ GET /api/orders - fetch all orders (admin use)
 router.get('/', async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
+    console.error('Error fetching all orders:', err);
     res.status(500).json({ message: 'Failed to fetch orders.' });
-      }
+  }
 });
 
-// GET /api/orders/seller/:shop_id - seller-specific orders
-
+// ✅ GET /api/orders/seller/:shop_id - seller-specific orders
 router.get('/seller/:shop_id', async (req, res) => {
   const { shop_id } = req.params;
   console.log("📦 Fetching orders for shop:", shop_id);
@@ -35,30 +34,27 @@ router.get('/seller/:shop_id', async (req, res) => {
     const orders = await Order.find({ shop_id }).sort({ createdAt: -1 });
     console.log("Found orders:", orders.length);
     res.json(orders);
-  } catch (error) {
-    console.error('Error fetching seller orders:', error);
-    res.status(500).json({ message: 'Failed to fetch orders' });
+  } catch (err) {
+    console.error('Error fetching seller orders:', err);
+    res.status(500).json({ message: 'Failed to fetch seller orders.' });
   }
 });
 
-
-// GET /api/orders/user/:userId
+// ✅ GET /api/orders/user/:userId - buyer-specific orders
 router.get('/user/:userId', async (req, res) => {
-      try {
+  try {
     const orders = await Order.find({ user_id: req.params.userId }).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     console.error('Error fetching user orders:', err);
-    res.status(500).json({ message: 'Failed to fetch orders.' });
+    res.status(500).json({ message: 'Failed to fetch user orders.' });
   }
 });
 
-
-
-// PUT /api/orders/:id/status - update order status
+// ✅ PUT /api/orders/:id/status - update order status
 router.put('/:id/status', async (req, res) => {
   const { status } = req.body;
-  const allowedStatuses = ['pending', 'completed', 'cancelled', 'deliver'];
+  const allowedStatuses = ['pending', 'paid', 'deliver', 'completed', 'cancelled', 'failed'];
 
   if (!allowedStatuses.includes(status)) {
     return res.status(400).json({ message: 'Invalid status value' });
@@ -78,7 +74,7 @@ router.put('/:id/status', async (req, res) => {
     res.json(updatedOrder);
   } catch (err) {
     console.error('Error updating order status:', err);
-    res.status(500).json({ message: 'Failed to update order status' });
+    res.status(500).json({ message: 'Failed to update order status.' });
   }
 });
 
