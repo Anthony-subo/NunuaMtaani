@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const bucket = require('../config/firebase');
 
 const { addProduct, getAllProducts } = require('../controllers/productController');
 const Product = require('../models/product');
@@ -13,11 +14,13 @@ const uploadPath = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
 
 // Multer config
+// Multer (store temp files before pushing to Firebase)
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadPath),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+  destination: (req, file, cb) => cb(null, 'temp/'),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
+
 
 // ====================== ROUTES ======================
 
