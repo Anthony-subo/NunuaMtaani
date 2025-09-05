@@ -30,12 +30,12 @@ function ProductImageSlider({ images }) {
   };
 
   return (
-    <div className="slider-wrapper">
-      <img
-        src={`${API_URL}/uploads/${displayImages[currentIndex]}`}
-        className="slider-image"
-        alt={`Product image ${currentIndex + 1}`}
-      />
+   <div className="slider-wrapper">
+  <img
+    src={product.images[currentIndex]}
+    className="slider-image"
+    alt={`Product image ${currentIndex + 1}`}
+  />
       {displayImages.length > 1 && (
         <>
           <button className="slider-btn left" onClick={prev}>‹</button>
