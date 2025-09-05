@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import '../styles/productSlider.css';
 
 function ProductImageSlider({ images }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const touchStartX = useRef(null);
 
   // Show at most 4 images
   const displayImages = images?.slice(0, 4) || [];
@@ -26,13 +27,35 @@ function ProductImageSlider({ images }) {
     setCurrentIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length);
   };
 
+  // ✅ Touch swipe handlers
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchStartX.current) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+
+    if (diff > 50) {
+      next(); // swipe left → next
+    } else if (diff < -50) {
+      prev(); // swipe right → prev
+    }
+    touchStartX.current = null;
+  };
+
   return (
-    <div className="slider-wrapper">
+    <div
+      className="slider-wrapper"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <img
         src={displayImages[currentIndex]}
         className="slider-image"
         alt={`Product image ${currentIndex + 1}`}
       />
+
       {displayImages.length > 1 && (
         <>
           <button className="slider-btn left" onClick={prev}>‹</button>
