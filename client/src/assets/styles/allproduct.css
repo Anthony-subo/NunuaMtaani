@@ -47,27 +47,3 @@
   justify-content: center;
   gap: 0.4rem;
 }
-/* Grid fixes */
-@media (max-width: 767px) {
-  .all-products-container .row {
-    display: grid;
-    grid-template-columns: 1fr; /* 1 column on mobile */
-    gap: 16px;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 991px) {
-  .all-products-container .row {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* 2 columns on tablets */
-    gap: 20px;
-  }
-}
-
-@media (min-width: 992px) {
-  .all-products-container .row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr; /* 3 columns on desktop */
-    gap: 24px;
-  }
-}
