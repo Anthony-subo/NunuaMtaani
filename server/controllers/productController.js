@@ -1,66 +1,118 @@
 const Product = require("../models/product");
+const Shop = require("../models/shop");
 const bucket = require("../config/firebase");
 const fs = require("fs");
+const path = require("path");
+const { v4: uuidv4 } = require("uuid");
 
-// Upload Product
-const addProduct = async (req, res) => {
+// ====================== ADD PRODUCT ======================
+exports.addProduct = async (req, res) => {
   try {
-    const { shop_id, name, price, location, status } = req.body;
+    const { shop_id, name, price, location, status, timestamp } = req.body;
 
-    if (!shop_id || !name || !price || !location || !req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "All required fields + at least 1 image required." });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "At least one image is required" });
     }
 
-    // Upload images to Firebase Storage
-    const uploadedImages = [];
+    // ✅ Upload images to Firebase
+    const imageUrls = [];
     for (const file of req.files) {
-      const destFileName = `products/${Date.now()}-${file.originalname}`;
-      await bucket.upload(file.path, {
-        destination: destFileName,
-        gzip: true,
-        metadata: { cacheControl: "public, max-age=31536000" },
+      const fileName = `${uuidv4()}${path.extname(file.originalname)}`;
+      const firebaseFile = bucket.file(`products/${fileName}`);
+
+      await firebaseFile.save(fs.readFileSync(file.path), {
+        metadata: { contentType: file.mimetype },
       });
 
-      // Make file public
-      const fileRef = bucket.file(destFileName);
-      await fileRef.makePublic();
-
-      uploadedImages.push(`https://storage.googleapis.com/${bucket.name}/${destFileName}`);
-
-      // Remove temp file
-      fs.unlink(file.path, (err) => {
-        if (err) console.error("Error deleting temp file:", err);
+      // Generate signed URL
+      const [url] = await firebaseFile.getSignedUrl({
+        action: "read",
+        expires: "03-09-2099", // long expiration
       });
+
+      imageUrls.push(url);
+
+      // Clean up local temp file
+      fs.unlinkSync(file.path);
     }
 
-    // Save product in MongoDB
+    // ✅ Save product in Mongo
     const newProduct = new Product({
-      product_id: "product-" + Date.now(),
+      product_id: uuidv4(),
       shop_id,
       name,
       price,
       location,
-      status: status || "available",
-      images: uploadedImages,
+      images: imageUrls,
+      status,
+      timestamp,
     });
 
     await newProduct.save();
-    res.status(201).json({ status: "success", message: "Product added", product: newProduct });
-  } catch (err) {
-    console.error("Error adding product:", err);
-    res.status(500).json({ status: "error", message: "Server error while saving product" });
+
+    res.json({
+      status: "success",
+      message: "Product added successfully",
+      product: newProduct,
+    });
+  } catch (error) {
+    console.error("Error adding product:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// Get all products
-const getAllProducts = async (req, res) => {
+// ====================== GET ALL PRODUCTS ======================
+exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    res.status(200).json(products);
-  } catch (err) {
-    console.error("Error fetching products:", err);
-    res.status(500).json({ status: "error", message: "Server error while fetching products" });
+    const products = await Product.find().populate("shop_id", "name");
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-module.exports = { addProduct, getAllProducts };
+// ====================== DELETE PRODUCT ======================
+exports.deleteProduct = async (req, res) => {
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+
+    if (!deletedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json({
+      status: "success",
+      message: "Product deleted successfully",
+      product: deletedProduct,
+    });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// ====================== UPDATE PRODUCT ======================
+exports.updateProduct = async (req, res) => {
+  try {
+    const { name, price, status } = req.body;
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      { name, price, status },
+      { new: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json({
+      status: "success",
+      message: "Product updated",
+      product: updatedProduct,
+    });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

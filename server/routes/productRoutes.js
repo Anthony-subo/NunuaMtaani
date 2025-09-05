@@ -4,23 +4,28 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const { addProduct, getAllProducts } = require("../controllers/productController");
+const {
+  addProduct,
+  getAllProducts,
+  deleteProduct,
+  updateProduct,
+} = require("../controllers/productController");
 const Product = require("../models/product");
 const Shop = require("../models/shop");
 
-// ✅ Use an absolute path for the temp folder
+// ✅ Use an absolute path for temp folder
 const tempDir = path.join(__dirname, "../uploads/temp");
 
 // ✅ Ensure folder exists at runtime
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-// Multer config (save to temp folder)
+// Multer config (save to temp folder before Firebase upload)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, tempDir),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
-
 
 // ====================== ROUTES ======================
 
@@ -49,41 +54,9 @@ router.get("/seller/products/:userId", async (req, res) => {
 });
 
 // DELETE /api/products/:id - Delete a product by _id
-router.delete("/:id", async (req, res) => {
-  try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-
-    if (!deletedProduct) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res.json({ status: "success", message: "Product deleted successfully", product: deletedProduct });
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
+router.delete("/:id", deleteProduct);
 
 // PUT /api/products/:id - Update a product by _id
-router.put("/:id", async (req, res) => {
-  try {
-    const { name, price, status } = req.body;
-
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      { name, price, status },
-      { new: true }
-    );
-
-    if (!updatedProduct) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res.json({ status: "success", message: "Product updated", product: updatedProduct });
-  } catch (error) {
-    console.error("Error updating product:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
+router.put("/:id", updateProduct);
 
 module.exports = router;
