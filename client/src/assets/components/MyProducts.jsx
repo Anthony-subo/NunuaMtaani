@@ -58,12 +58,13 @@ function MyProducts() {
             <div className="col-md-4 mb-4" key={product._id}>
               <div className="card h-100 shadow-sm">
                 {product.images?.[0] && (
-                  <img
-                    src={`${API_URL}/uploads/${product.images[0]}`}
+                 <img
+                    src={product.images[0]} // Base64 image string
                     className="card-img-top"
                     alt={product.name}
-                    style={{ height: '200px', objectFit: 'cover' }}
-                  />
+                 style={{ height: '200px', objectFit: 'cover' }}
+                />
+
                 )}
                 <div className="card-body d-flex flex-column">
                   <h5 className="card-title">{product.name}</h5>
