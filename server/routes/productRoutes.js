@@ -8,23 +8,12 @@ const { addProduct, getAllProducts } = require('../controllers/productController
 const Product = require('../models/product');
 const Shop = require('../models/shop');
 
-// Ensure the uploads folder exists
-const uploadPath = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
 
-// Multer config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadPath),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
+// ✅ Multer memory storage
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// ====================== ROUTES ======================
-
-// POST /api/products - Add a new product
-router.post("/", upload.array("images", 4), addProduct);
-
-// GET /api/products - Get all products
+router.post('/', upload.array('images', 4), addProduct);
 router.get('/', getAllProducts);
 
 // GET /api/products/seller/products/:userId - Get all products for a seller
