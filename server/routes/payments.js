@@ -35,22 +35,30 @@ router.post('/stk/initiate', async (req, res) => {
     const order = await Order.findById(orderId).populate('shop_id');
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    const sellerTarget = order.shop_id.payment_number; // must be a paybill/till number
     const token = await getDarajaToken();
     const timestamp = makeTimestamp();
-    const password = makePassword(process.env.MPESA_SHORTCODE, process.env.MPESA_PASSKEY, timestamp);
+    const password = makePassword(
+      process.env.MPESA_SHORTCODE,
+      process.env.MPESA_PASSKEY,
+      timestamp
+    );
+
+    // ✅ Normalize phone
+    const phone = buyerPhone.startsWith("254")
+      ? buyerPhone
+      : buyerPhone.replace(/^0/, "254");
 
     const payload = {
       BusinessShortCode: process.env.MPESA_SHORTCODE,
       Password: password,
       Timestamp: timestamp,
       TransactionType: "CustomerPayBillOnline",
-      Amount: Math.round(order.total),
-      PartyA: buyerPhone,
-      PartyB: sellerTarget,
-      PhoneNumber: buyerPhone,
+      Amount: order.total ? Math.round(order.total) : 1, // default to 1 for sandbox
+      PartyA: phone,                           // customer
+      PartyB: process.env.MPESA_SHORTCODE,     // ✅ your shortcode, not sellerTarget
+      PhoneNumber: phone,
       CallBackURL: `${process.env.API_URL}/api/payments/stk/callback`,
-      AccountReference: order.shop_id.shop_name.slice(0, 15),
+      AccountReference: order._id.toString().slice(-10), // safe fallback
       TransactionDesc: `Order ${order._id}`
     };
 
@@ -62,11 +70,10 @@ router.post('/stk/initiate', async (req, res) => {
 
     const checkoutId = response.data.CheckoutRequestID;
 
-    // Save initiation details in order
     order.payment = {
       ...order.payment,
-      payerPhone: buyerPhone,
-      paidTo: sellerTarget,
+      payerPhone: phone,
+      paidTo: process.env.MPESA_SHORTCODE,
       raw: { CheckoutRequestID: checkoutId }
     };
     await order.save();
@@ -77,6 +84,7 @@ router.post('/stk/initiate', async (req, res) => {
     res.status(500).json({ error: 'Failed to initiate STK' });
   }
 });
+
 
 // ------------------ Handle STK Callback ------------------ //
 router.post('/stk/callback', async (req, res) => {
