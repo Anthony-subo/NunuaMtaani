@@ -7,12 +7,7 @@ router.post('/', async (req, res) => {
   try {
     const newOrder = new Order(req.body);
     await newOrder.save();
-
-    res.status(201).json({
-      success: true,
-      orderId: newOrder._id,   // ✅ send back the ID
-      order: newOrder
-    });
+    res.status(201).json(newOrder);
   } catch (err) {
     console.error('Error placing order:', err);
     res.status(500).json({ message: 'Failed to place order.' });
@@ -33,8 +28,11 @@ router.get('/', async (req, res) => {
 // ✅ GET /api/orders/seller/:shop_id - seller-specific orders
 router.get('/seller/:shop_id', async (req, res) => {
   const { shop_id } = req.params;
+  console.log("📦 Fetching orders for shop:", shop_id);
+
   try {
     const orders = await Order.find({ shop_id }).sort({ createdAt: -1 });
+    console.log("Found orders:", orders.length);
     res.json(orders);
   } catch (err) {
     console.error('Error fetching seller orders:', err);

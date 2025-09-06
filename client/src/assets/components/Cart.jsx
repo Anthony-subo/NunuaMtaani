@@ -7,7 +7,7 @@ function Cart() {
   const [cart, setCart] = useState([]);
   const [userId, setUserId] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(""); // ✅ payment phone
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -39,18 +39,14 @@ function Cart() {
     );
   };
 
-  // ✅ Normalize phone numbers
-  const normalizePhone = (input) => {
-    if (!input) return "";
-    let phone = input.trim();
-    phone = phone.replace(/\s+/g, "").replace(/^\+/, "");
-    if (phone.startsWith("07")) {
-      phone = "254" + phone.substring(1);
-    }
-    if (phone.startsWith("7")) {
-      phone = "254" + phone;
-    }
-    return phone;
+  const groupByShop = (items) => {
+    const grouped = {};
+    items.forEach((item) => {
+      const shopId = item.shop_id;
+      if (!grouped[shopId]) grouped[shopId] = [];
+      grouped[shopId].push(item);
+    });
+    return grouped;
   };
 
   const handlePlaceOrder = async () => {
@@ -62,22 +58,11 @@ function Cart() {
       alert("Please enter your M-Pesa phone number.");
       return;
     }
-    if (cart.length === 0) {
-      alert("Your cart is empty.");
-      return;
-    }
 
-    const formattedPhone = normalizePhone(phone);
+    const groupedItems = groupByShop(cart);
 
-    try {
-      // 1️⃣ Save order(s) for each shop (backend tracks fulfillment)
-      const groupedOrders = {};
-      cart.forEach((item) => {
-        if (!groupedOrders[item.shop_id]) groupedOrders[item.shop_id] = [];
-        groupedOrders[item.shop_id].push(item);
-      });
-
-      for (const [shopId, items] of Object.entries(groupedOrders)) {
+    const orderRequests = Object.entries(groupedItems).map(
+      async ([shopId, items]) => {
         const orderData = {
           user_id: userId,
           shop_id: shopId,
@@ -85,26 +70,29 @@ function Cart() {
             product_id: item._id,
             quantity: item.quantity || 1,
             price: item.price,
-            name: item.name,
+            name: item.name, // ✅ only keep small text fields
           })),
           total: items.reduce(
             (sum, item) => sum + item.price * (item.quantity || 1),
             0
           ),
-          payment: { method: "mpesa", payerPhone: formattedPhone },
+          payment: {
+            method: "mpesa",
+            payerPhone: phone,
+          },
         };
 
-        await axios.post(`${API_URL}/api/orders`, orderData);
+        return axios.post(`${API_URL}/api/orders`, orderData, {
+          headers: { "Content-Type": "application/json" },
+          maxBodyLength: 5 * 1024 * 1024, // 5MB safety
+        });
       }
+    );
 
-      // 2️⃣ Single STK Push for full cart total (One Till Number)
-      await axios.post(`${API_URL}/api/payments/stk/initiate`, {
-        amount: getTotal(),
-        buyerPhone: formattedPhone,
-      });
-
+    try {
+      await Promise.all(orderRequests);
       setOrderStatus(
-        "✅ Order placed. Please check your phone for the M-Pesa payment prompt."
+        "✅ Orders placed. Please check your phone to complete payment via M-Pesa."
       );
       localStorage.removeItem(`cart_${userId}`);
       setCart([]);
@@ -136,10 +124,21 @@ function Cart() {
                       🗑 Remove
                     </button>
                   </div>
-                  <p><strong>Price:</strong> {item.price} KES</p>
-                  <p><strong>Quantity:</strong> {item.quantity || 1}</p>
-                  <p><strong>Subtotal:</strong> {item.price * (item.quantity || 1)} KES</p>
-                  {item.location && <p><strong>Location:</strong> {item.location}</p>}
+                  <p className="mb-1">
+                    <strong>Price:</strong> {item.price} KES
+                  </p>
+                  <p className="mb-1">
+                    <strong>Quantity:</strong> {item.quantity || 1}
+                  </p>
+                  <p className="mb-1">
+                    <strong>Subtotal:</strong>{" "}
+                    {item.price * (item.quantity || 1)} KES
+                  </p>
+                  {item.location && (
+                    <p className="mb-1">
+                      <strong>Location:</strong> {item.location}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -152,14 +151,14 @@ function Cart() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="2547XXXXXXXX"
+                placeholder="07XXXXXXXX"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
             </div>
 
             <button className="btn btn-success mt-3" onClick={handlePlaceOrder}>
-              ✅ Place Order & Pay via Till
+              ✅ Place Order & Pay
             </button>
           </>
         )}
