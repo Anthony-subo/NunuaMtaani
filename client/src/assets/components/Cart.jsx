@@ -39,34 +39,17 @@ function Cart() {
     );
   };
 
-  const groupByShop = (items) => {
-    const grouped = {};
-    items.forEach((item) => {
-      const shopId = item.shop_id;
-      if (!grouped[shopId]) grouped[shopId] = [];
-      grouped[shopId].push(item);
-    });
-    return grouped;
-  };
-
-  // ✅ Helper to normalize phone numbers for Daraja
+  // ✅ Normalize phone numbers
   const normalizePhone = (input) => {
     if (!input) return "";
     let phone = input.trim();
-
-    // Remove "+" and spaces
     phone = phone.replace(/\s+/g, "").replace(/^\+/, "");
-
-    // Convert "07XXXXXXXX" → "2547XXXXXXXX"
     if (phone.startsWith("07")) {
       phone = "254" + phone.substring(1);
     }
-
-    // Convert "7XXXXXXXX" → "2547XXXXXXXX"
     if (phone.startsWith("7")) {
       phone = "254" + phone;
     }
-
     return phone;
   };
 
@@ -79,12 +62,22 @@ function Cart() {
       alert("Please enter your M-Pesa phone number.");
       return;
     }
+    if (cart.length === 0) {
+      alert("Your cart is empty.");
+      return;
+    }
 
-    const groupedItems = groupByShop(cart);
     const formattedPhone = normalizePhone(phone);
 
     try {
-      for (const [shopId, items] of Object.entries(groupedItems)) {
+      // 1️⃣ Save order(s) for each shop (backend tracks fulfillment)
+      const groupedOrders = {};
+      cart.forEach((item) => {
+        if (!groupedOrders[item.shop_id]) groupedOrders[item.shop_id] = [];
+        groupedOrders[item.shop_id].push(item);
+      });
+
+      for (const [shopId, items] of Object.entries(groupedOrders)) {
         const orderData = {
           user_id: userId,
           shop_id: shopId,
@@ -98,31 +91,26 @@ function Cart() {
             (sum, item) => sum + item.price * (item.quantity || 1),
             0
           ),
-          payment: {
-            method: "mpesa",
-            payerPhone: formattedPhone,
-          },
+          payment: { method: "mpesa", payerPhone: formattedPhone },
         };
 
-        // 1️⃣ Create order
-        const res = await axios.post(`${API_URL}/api/orders`, orderData);
-        const orderId = res.data.orderId;
-
-        // 2️⃣ Trigger STK Push
-        await axios.post(`${API_URL}/api/payments/stk/initiate`, {
-          orderId,
-          buyerPhone: formattedPhone,
-        });
+        await axios.post(`${API_URL}/api/orders`, orderData);
       }
 
+      // 2️⃣ Single STK Push for full cart total (One Till Number)
+      await axios.post(`${API_URL}/api/payments/stk/initiate`, {
+        amount: getTotal(),
+        buyerPhone: formattedPhone,
+      });
+
       setOrderStatus(
-        "✅ Orders placed. Check your phone for the M-Pesa payment prompt."
+        "✅ Order placed. Please check your phone for the M-Pesa payment prompt."
       );
       localStorage.removeItem(`cart_${userId}`);
       setCart([]);
     } catch (err) {
       console.error("Order placement failed:", err.response?.data || err.message);
-      setOrderStatus("❌ Failed to place one or more orders. Try again.");
+      setOrderStatus("❌ Failed to place the order. Try again.");
     }
   };
 
@@ -171,7 +159,7 @@ function Cart() {
             </div>
 
             <button className="btn btn-success mt-3" onClick={handlePlaceOrder}>
-              ✅ Place Order & Pay
+              ✅ Place Order & Pay via Till
             </button>
           </>
         )}
