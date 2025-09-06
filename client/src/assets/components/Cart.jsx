@@ -142,7 +142,7 @@ function Cart() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="07XXXXXXXX"
+                placeholder="+2547XXXXXXXX"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
