@@ -7,7 +7,7 @@ function Cart() {
   const [cart, setCart] = useState([]);
   const [userId, setUserId] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
-  const [phone, setPhone] = useState(""); // ✅ payment phone
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -61,8 +61,8 @@ function Cart() {
 
     const groupedItems = groupByShop(cart);
 
-    const orderRequests = Object.entries(groupedItems).map(
-      async ([shopId, items]) => {
+    try {
+      for (const [shopId, items] of Object.entries(groupedItems)) {
         const orderData = {
           user_id: userId,
           shop_id: shopId,
@@ -70,7 +70,7 @@ function Cart() {
             product_id: item._id,
             quantity: item.quantity || 1,
             price: item.price,
-            name: item.name, // ✅ only keep small text fields
+            name: item.name,
           })),
           total: items.reduce(
             (sum, item) => sum + item.price * (item.quantity || 1),
@@ -82,17 +82,19 @@ function Cart() {
           },
         };
 
-        return axios.post(`${API_URL}/api/orders`, orderData, {
-          headers: { "Content-Type": "application/json" },
-          maxBodyLength: 5 * 1024 * 1024, // 5MB safety
+        // 1️⃣ Create order
+        const res = await axios.post(`${API_URL}/api/orders`, orderData);
+        const orderId = res.data.orderId;
+
+        // 2️⃣ Trigger STK Push
+        await axios.post(`${API_URL}/api/payments/stk/initiate`, {
+          orderId,
+          buyerPhone: phone,
         });
       }
-    );
 
-    try {
-      await Promise.all(orderRequests);
       setOrderStatus(
-        "✅ Orders placed. Please check your phone to complete payment via M-Pesa."
+        "✅ Orders placed. Check your phone for the M-Pesa payment prompt."
       );
       localStorage.removeItem(`cart_${userId}`);
       setCart([]);
@@ -124,21 +126,10 @@ function Cart() {
                       🗑 Remove
                     </button>
                   </div>
-                  <p className="mb-1">
-                    <strong>Price:</strong> {item.price} KES
-                  </p>
-                  <p className="mb-1">
-                    <strong>Quantity:</strong> {item.quantity || 1}
-                  </p>
-                  <p className="mb-1">
-                    <strong>Subtotal:</strong>{" "}
-                    {item.price * (item.quantity || 1)} KES
-                  </p>
-                  {item.location && (
-                    <p className="mb-1">
-                      <strong>Location:</strong> {item.location}
-                    </p>
-                  )}
+                  <p><strong>Price:</strong> {item.price} KES</p>
+                  <p><strong>Quantity:</strong> {item.quantity || 1}</p>
+                  <p><strong>Subtotal:</strong> {item.price * (item.quantity || 1)} KES</p>
+                  {item.location && <p><strong>Location:</strong> {item.location}</p>}
                 </div>
               ))}
             </div>
