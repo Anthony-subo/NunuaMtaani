@@ -28,6 +28,7 @@ async function getDarajaToken() {
 }
 
 // ------------------ Initiate STK ------------------ //
+// ------------------ Initiate STK ------------------ //
 router.post('/stk/initiate', async (req, res) => {
   try {
     const { orderId, buyerPhone } = req.body;
@@ -53,9 +54,9 @@ router.post('/stk/initiate', async (req, res) => {
       Password: password,
       Timestamp: timestamp,
       TransactionType: "CustomerPayBillOnline",
-      Amount: order.total ? Math.round(order.total) : 1, // default to 1 for sandbox
+      Amount: order.total ? Math.round(order.total) : 1, // fallback 1 for sandbox
       PartyA: phone,                           // customer
-      PartyB: process.env.MPESA_SHORTCODE,     // ✅ your shortcode, not sellerTarget
+      PartyB: process.env.MPESA_SHORTCODE,     // paybill/till
       PhoneNumber: phone,
       CallBackURL: `${process.env.API_URL}/api/payments/stk/callback`,
       AccountReference: order._id.toString().slice(-10), // safe fallback
@@ -80,10 +81,12 @@ router.post('/stk/initiate', async (req, res) => {
 
     res.json({ status: 'initiated', checkoutId });
   } catch (e) {
-    console.error("❌ STK initiation error:", e.response?.data || e.message);
-    res.status(500).json({ error: 'Failed to initiate STK' });
+    const safError = e.response?.data || e.message;
+    console.error("❌ STK initiation error:", safError);
+    res.status(500).json({ error: safError }); // ✅ send real Safaricom error back
   }
 });
+
 
 
 // ------------------ Handle STK Callback ------------------ //
