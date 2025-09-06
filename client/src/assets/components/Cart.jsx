@@ -49,6 +49,27 @@ function Cart() {
     return grouped;
   };
 
+  // ✅ Helper to normalize phone numbers for Daraja
+  const normalizePhone = (input) => {
+    if (!input) return "";
+    let phone = input.trim();
+
+    // Remove "+" and spaces
+    phone = phone.replace(/\s+/g, "").replace(/^\+/, "");
+
+    // Convert "07XXXXXXXX" → "2547XXXXXXXX"
+    if (phone.startsWith("07")) {
+      phone = "254" + phone.substring(1);
+    }
+
+    // Convert "7XXXXXXXX" → "2547XXXXXXXX"
+    if (phone.startsWith("7")) {
+      phone = "254" + phone;
+    }
+
+    return phone;
+  };
+
   const handlePlaceOrder = async () => {
     if (!userId) {
       alert("Please log in to place an order.");
@@ -60,6 +81,7 @@ function Cart() {
     }
 
     const groupedItems = groupByShop(cart);
+    const formattedPhone = normalizePhone(phone);
 
     try {
       for (const [shopId, items] of Object.entries(groupedItems)) {
@@ -78,7 +100,7 @@ function Cart() {
           ),
           payment: {
             method: "mpesa",
-            payerPhone: phone,
+            payerPhone: formattedPhone,
           },
         };
 
@@ -89,7 +111,7 @@ function Cart() {
         // 2️⃣ Trigger STK Push
         await axios.post(`${API_URL}/api/payments/stk/initiate`, {
           orderId,
-          buyerPhone: phone,
+          buyerPhone: formattedPhone,
         });
       }
 
@@ -142,7 +164,7 @@ function Cart() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="+2547XXXXXXXX"
+                placeholder="2547XXXXXXXX"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
