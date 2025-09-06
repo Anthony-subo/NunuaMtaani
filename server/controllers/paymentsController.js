@@ -65,3 +65,4 @@ const stkCallback = (req, res) => {
 };
 
 module.exports = { initiateSTK, stkCallback };
+
