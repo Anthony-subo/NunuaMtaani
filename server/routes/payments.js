@@ -36,6 +36,9 @@ router.post('/stk/initiate', async (req, res) => {
     const order = await Order.findById(orderId).populate('shop_id');
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
+    const shop = order.shop_id;
+    if (!shop) return res.status(400).json({ error: 'Shop not linked' });
+
     const token = await getDarajaToken();
     const timestamp = makeTimestamp();
     const password = makePassword(
@@ -44,27 +47,36 @@ router.post('/stk/initiate', async (req, res) => {
       timestamp
     );
 
-    // ✅ Normalize phone
-    const phone = buyerPhone.startsWith("254")
-      ? buyerPhone
-      : buyerPhone.replace(/^0/, "254");
+    // ✅ Normalize buyer phone
+    const phone = buyerPhone
+      .replace(/\s+/g, "")
+      .replace(/^\+/, "")
+      .replace(/^07/, "2547")
+      .replace(/^7/, "2547");
+
+    // ✅ Decide where money goes (seller)
+    let partyB = shop.payment_number;
+    if (shop.payment_method === "phone" && !partyB.startsWith("254")) {
+      // safety normalize phone type
+      partyB = partyB.replace(/^07/, "2547").replace(/^7/, "2547");
+    }
 
     const payload = {
-      BusinessShortCode: process.env.MPESA_SHORTCODE,
+      BusinessShortCode: process.env.MPESA_SHORTCODE, // still your shortcode
       Password: password,
       Timestamp: timestamp,
       TransactionType: "CustomerPayBillOnline",
-      Amount: order.total ? Math.round(order.total) : 1, // fallback 1 for sandbox
-      PartyA: phone,                           // customer
-      PartyB: process.env.MPESA_SHORTCODE,     // paybill/till
-      PhoneNumber: phone,
-      CallBackURL: `${process.env.API_URL}/api/payments/stk/callback`,
-      AccountReference: order._id.toString().slice(-10), // safe fallback
-      TransactionDesc: `Order ${order._id}`
+      Amount: order.total ? Math.round(order.total) : 1,
+      PartyA: phone,        // customer
+      PartyB: partyB,       // ✅ seller shop number / till
+      PhoneNumber: phone,   // customer again
+      CallBackURL: process.env.MPESA_CALLBACK_URL,
+      AccountReference: order._id.toString().slice(-10),
+      TransactionDesc: `Payment to ${shop.shop_name}`
     };
 
     const response = await axios.post(
-      'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+      "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
       payload,
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -74,18 +86,18 @@ router.post('/stk/initiate', async (req, res) => {
     order.payment = {
       ...order.payment,
       payerPhone: phone,
-      paidTo: process.env.MPESA_SHORTCODE,
+      paidTo: partyB,  // record shop number
       raw: { CheckoutRequestID: checkoutId }
     };
     await order.save();
 
-    res.json({ status: 'initiated', checkoutId });
+    res.json({ status: "initiated", checkoutId });
   } catch (e) {
-    const safError = e.response?.data || e.message;
-    console.error("❌ STK initiation error:", safError);
-    res.status(500).json({ error: safError }); // ✅ send real Safaricom error back
+    console.error("❌ STK initiation error:", e.response?.data || e.message);
+    res.status(500).json({ error: "Failed to initiate STK" });
   }
 });
+
 
 
 
