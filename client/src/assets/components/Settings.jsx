@@ -27,6 +27,7 @@ function Settings() {
       const res = await axios.put(`/api/users/settings/${user._id}`, formData);
       alert("Profile updated!");
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      setFormData(res.data.user);
     } catch (err) {
       console.error(err);
       alert("Update failed");
@@ -35,6 +36,8 @@ function Settings() {
 
   return (
     <form onSubmit={handleSubmit} className="settings-form">
+      <h3>⚙️ Settings</h3>
+
       <input
         type="text"
         name="name"
