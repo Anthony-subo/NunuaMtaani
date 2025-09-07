@@ -5,7 +5,8 @@ import AllShops from '../components/AllShops';
 import Cart from '../components/Cart';
 import AllOrders from '../components/AllOrders.jsx';
 import Header from "../components/Header";
-import { FaBoxOpen, FaUsers, FaStore, FaShoppingCart, FaClipboardList } from 'react-icons/fa';
+import Settings from '../components/Settings'; // ✅ new
+import { FaBoxOpen, FaUsers, FaStore, FaShoppingCart, FaClipboardList ,FaCog} from 'react-icons/fa';
 import '../styles/dashboard.css';
 
 function AdminDashboard() {
@@ -28,6 +29,7 @@ function AdminDashboard() {
       case 'shops': return <AllShops />;
       case 'cart': return <Cart />;
       case 'orders': return <AllOrders />;
+      case 'settings': return <Settings />;
       default: return <AllProducts isAdminView={true} />;
     }
   };
@@ -78,6 +80,14 @@ function AdminDashboard() {
           <FaClipboardList size={20} />
           <span className="tab-label">Orders</span>
         </button>
+           <button
+           className={activeTab === 'settings' ? 'active' : ''}
+            onClick={() => setActiveTab('settings')}
+            title="Settings"
+            >
+            <FaCog size={22} />
+            <span className="tab-label">Settings</span>
+            </button>
       </div>
 
       {/* Dashboard Header */}

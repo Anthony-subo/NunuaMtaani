@@ -6,7 +6,8 @@ import Orders from '../components/Orders';
 import AddProduct from '../components/AddProduct';
 import Cart from '../components/Cart';
 import Header from "../components/Header";
-import { FaStore, FaBox, FaClipboardList, FaPlusCircle, FaShoppingCart } from 'react-icons/fa';
+import Settings from '../components/Settings'; // ✅ new
+import { FaStore, FaBox, FaClipboardList, FaPlusCircle, FaShoppingCart, FaCog } from 'react-icons/fa';
 import '../styles/dashboard.css';
 
 function SellerDashboard() {
@@ -43,6 +44,7 @@ function SellerDashboard() {
       case 'orders': return <Orders />;
       case 'add': return <AddProduct />;
       case 'cart': return <Cart />;
+      case 'settings': return <Settings />;
       default: return <AllProducts />;
     }
   };
@@ -94,6 +96,14 @@ function SellerDashboard() {
           <FaShoppingCart size={20} />
           <span className="tab-label">Cart</span>
         </button>
+         <button
+                  className={activeTab === 'settings' ? 'active' : ''}
+                  onClick={() => setActiveTab('settings')}
+                  title="Settings"
+                >
+                  <FaCog size={22} />
+                  <span className="tab-label">Settings</span>
+                </button>
       </div>
 
       {/* Dashboard Header */}
