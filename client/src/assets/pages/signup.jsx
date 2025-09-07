@@ -19,15 +19,17 @@ function Signup() {
     setErrMsg('');
 
     axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, { 
-      name, phone, email, location, password 
-    })
-      .then(result => {
-        if (result.data.status === 'success') {
-          navigate('/login');
-        } else {
-          setErrMsg(result.data.message || 'Registration failed');
-        }
-      })
+  name, phone, email, location, password 
+})
+  .then(result => {
+    if (result.data.status === 'success') {
+      alert("✅ Registration successful! Check your email to verify your account.");
+      navigate('/login');
+    } else {
+      setErrMsg(result.data.message || 'Registration failed');
+    }
+  })
+
       .catch(err => {
         console.error(err);
         setErrMsg(err.response?.data?.message || 'Something went wrong');

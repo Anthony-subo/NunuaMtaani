@@ -7,6 +7,7 @@ import Signup from './assets/pages/signup';
 import Login from './assets/pages/Login';
 import Home from './assets/pages/home';
 import NunuaMtaaniLanding from './assets/pages/NunuaMtaaniLanding';
+import Verificat from './assets/pages/Verificat';
 
 
 import AdminDashboard from './assets/pages/AdminDashboard';
@@ -24,6 +25,8 @@ function App() {
         <Route path="/" element={<NunuaMtaaniLanding />} />
         <Route path="/register" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<Verificat />} />
+
 
         {/* Routes WITH header via Layout */}
         <Route element={<Layout />}>

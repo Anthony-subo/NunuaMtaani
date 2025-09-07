@@ -1,3 +1,4 @@
+// server/models/users.js
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
@@ -6,7 +7,11 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   location: { type: String },
   role: { type: String, enum: ['buyer', 'seller', 'admin', 'rider'], default: 'buyer' },
-  password: { type: String, required: true }
+  password: { type: String, required: true },
+
+  // New fields
+  isVerified: { type: Boolean, default: false },
+  verificationToken: { type: String },
 }, { timestamps: true });
 
 const UserModel = mongoose.model('users', UserSchema);
