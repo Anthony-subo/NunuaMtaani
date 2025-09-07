@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "../styles/settings.css"; // ✅ we'll add custom styles
+import "../styles/settings.css";
+
+const API_URL = import.meta.env.VITE_API_URL; // ✅ your API base URL
 
 function Settings() {
   const [formData, setFormData] = useState({
@@ -25,7 +27,11 @@ function Settings() {
     const user = JSON.parse(localStorage.getItem("user"));
 
     try {
-      const res = await axios.put(`/api/users/settings/${user._id}`, formData);
+      // ✅ use dynamic API_URL
+      const res = await axios.put(
+        `${API_URL}/api/users/settings/${user._id}`,
+        formData
+      );
       alert("Profile updated!");
       localStorage.setItem("user", JSON.stringify(res.data.user));
       setFormData(res.data.user);
@@ -45,7 +51,7 @@ function Settings() {
         </p>
 
         <div className="form-group">
-          <label htmlFor="name">Full Name</label>
+          <label>Full Name</label>
           <input
             type="text"
             name="name"
@@ -56,7 +62,7 @@ function Settings() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="phone">Phone Number</label>
+          <label>Phone Number</label>
           <input
             type="text"
             name="phone"
@@ -67,7 +73,7 @@ function Settings() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="location">Location</label>
+          <label>Location</label>
           <input
             type="text"
             name="location"
