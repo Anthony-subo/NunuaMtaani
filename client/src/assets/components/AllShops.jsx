@@ -35,6 +35,19 @@ function AllShops() {
     }
   };
 
+  // ✅ New: Delete shop
+  const handleDelete = async (shopId) => {
+    if (!window.confirm("Are you sure you want to delete this shop?")) return;
+    try {
+      await axios.delete(`${API_URL}/api/shops/${shopId}`);
+      setShops(prevShops => prevShops.filter(shop => shop._id !== shopId));
+      alert('🗑️ Shop deleted successfully');
+    } catch (err) {
+      console.error('Failed to delete shop:', err);
+      alert('❌ Error deleting shop');
+    }
+  };
+
   return (
     <div className="admin-table-container">
       <h4>All Shops</h4>
@@ -69,12 +82,20 @@ function AllShops() {
                   </select>
                 </div>
 
-                <button
-                  className="btn btn-success btn-sm"
-                  onClick={() => handleStatusUpdate(shop._id, shop.status)}
-                >
-                  Update
-                </button>
+                <div className="d-flex gap-2">
+                  <button
+                    className="btn btn-success btn-sm"
+                    onClick={() => handleStatusUpdate(shop._id, shop.status)}
+                  >
+                    Update
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDelete(shop._id)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
