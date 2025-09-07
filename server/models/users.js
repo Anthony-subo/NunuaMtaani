@@ -8,10 +8,8 @@ const UserSchema = new mongoose.Schema({
   location: { type: String },
   role: { type: String, enum: ['buyer', 'seller', 'admin', 'rider'], default: 'buyer' },
   password: { type: String, required: true },
-
-  // New fields
-  isVerified: { type: Boolean, default: false },
   verificationToken: { type: String },
+  isVerified: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const UserModel = mongoose.model('users', UserSchema);

@@ -48,12 +48,16 @@ exports.register = async (req, res) => {
       `
     });
 
-    res.status(201).json({ status: "success", message: "Check your email to verify your account." });
+    res.status(201).json({
+      status: "success",
+      message: "Check your email to verify your account.",
+      token: verificationToken,
+      email: newUser.email
+    });
   } catch (err) {
     res.status(500).json({ message: "Registration failed", error: err });
   }
 };
-
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -61,6 +65,11 @@ exports.login = async (req, res) => {
   try {
     const user = await UserModel.findOne({ email });
     if (!user) return res.status(404).json({ message: "No user found" });
+
+    // ✅ Prevent login if not verified
+    if (!user.isVerified) {
+      return res.status(403).json({ message: "Please verify your email before logging in." });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Incorrect password" });
@@ -70,6 +79,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Login failed", error: err });
   }
 };
+
 exports.verifyEmail = async (req, res) => {
   const { email, token } = req.body;
 
@@ -86,4 +96,3 @@ exports.verifyEmail = async (req, res) => {
     res.status(500).json({ message: "Verification failed", error: err });
   }
 };
-
