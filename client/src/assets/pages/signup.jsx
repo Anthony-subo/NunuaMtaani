@@ -108,6 +108,17 @@ function Signup() {
           onChange={(e) => setLocation(e.target.value)}
         /><br />
 
+        {/* Password Field */}
+        <label htmlFor="password">Password</label>
+        <input
+          type="password"
+          placeholder="Password"
+          name="password"
+          className="form-control"
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        /><br />
+
         {/* Confirm Password Field */}
         <label htmlFor="confirmPassword">Confirm Password</label>
         <input
@@ -119,16 +130,7 @@ function Signup() {
           required
         /><br />
 
-        {/* Password Field */}
-        <label htmlFor="password">Password</label>
-        <input
-          type="password"
-          placeholder="Password"
-          name="password"
-          className="form-control"
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        /><br />
+
 
         <button type="submit" className="btn btn-primary w-100">Register</button>
 
