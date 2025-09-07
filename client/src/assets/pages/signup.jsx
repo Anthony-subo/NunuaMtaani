@@ -24,7 +24,7 @@ function Signup() {
   .then(result => {
     if (result.data.status === 'success') {
       alert("✅ Registration successful! Check your email to verify your account.");
-      navigate('/login');
+      navigate('/verify-email');
     } else {
       setErrMsg(result.data.message || 'Registration failed');
     }
