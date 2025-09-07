@@ -11,6 +11,7 @@ function Signup() {
   const [email, setEmail] = useState('');
   const [location, setLocation] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errMsg, setErrMsg] = useState('');
   const navigate = useNavigate();
 
@@ -18,12 +19,17 @@ function Signup() {
     e.preventDefault();
     setErrMsg('');
 
+    if (password !== confirmPassword) {
+      setErrMsg("Passwords do not match");
+      return;
+    }
+
     axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, { 
       name, phone, email, location, password 
     })
       .then(result => {
         if (result.data.status === 'success') {
-          navigate('/home');
+          navigate('/login');
         } else {
           setErrMsg(result.data.message || 'Registration failed');
         }
@@ -37,7 +43,7 @@ function Signup() {
   return (
     <div className="auth-container">
 
-      {/* Brand (NunuaMtaani styled like Login with Home icon) */}
+      {/* Brand */}
       <div className="d-flex align-items-center logo mb-3">
         <BsCartFill className="shopping-icon" size={28} />
         <div className="d-flex flex-column">
@@ -102,6 +108,18 @@ function Signup() {
           onChange={(e) => setLocation(e.target.value)}
         /><br />
 
+        {/* Confirm Password Field */}
+        <label htmlFor="confirmPassword">Confirm Password</label>
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          name="confirmPassword"
+          className="form-control"
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+        /><br />
+
+        {/* Password Field */}
         <label htmlFor="password">Password</label>
         <input
           type="password"
