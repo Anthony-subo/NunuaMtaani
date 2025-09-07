@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import AllProducts from '../components/AllProducts';
 import Cart from '../components/Cart';
 import MyPurchases from '../components/MyPurchases';
+import Settings from '../components/Settings'; // ✅ new
 import Header from '../components/Header';
-import { FaStore, FaShoppingCart, FaBoxOpen } from 'react-icons/fa';
+import { FaStore, FaShoppingCart, FaBoxOpen, FaCog } from 'react-icons/fa'; // ✅ add FaCog
 import '../styles/dashboard.css';
 
 function BuyerDashboard() {
@@ -19,7 +20,6 @@ function BuyerDashboard() {
       setBuyerName(user.name);
       setLocation(user.location || '');
     }
-    
   }, []);
 
   const renderTab = () => {
@@ -30,6 +30,8 @@ function BuyerDashboard() {
         return <Cart />;
       case 'purchases':
         return <MyPurchases />;
+      case 'settings': // ✅ new case
+        return <Settings />;
       default:
         return <AllProducts />;
     }
@@ -38,7 +40,7 @@ function BuyerDashboard() {
   return (
     <div className="container dashboard-container">
       <Header />
-      {/* Tabs (works for both desktop and mobile) */}
+      {/* Tabs */}
       <div className="dashboard-tabs">
         <button
           className={activeTab === 'all' ? 'active' : ''}
@@ -63,6 +65,14 @@ function BuyerDashboard() {
         >
           <FaBoxOpen size={22} />
           <span className="tab-label">Purchases</span>
+        </button>
+        <button
+          className={activeTab === 'settings' ? 'active' : ''}
+          onClick={() => setActiveTab('settings')}
+          title="Settings"
+        >
+          <FaCog size={22} />
+          <span className="tab-label">Settings</span>
         </button>
       </div>
 
