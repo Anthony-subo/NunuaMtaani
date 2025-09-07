@@ -11,6 +11,7 @@
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
   max-width: 500px;
   width: 100%;
+  transition: all 0.3s ease-in-out;
 }
 
 .settings-title {
@@ -74,4 +75,30 @@
 
 .save-btn:hover {
   background: #218838;
+}
+
+/* ========== MOBILE / SMALL SCREENS ========== */
+@media (max-width: 600px) {
+  .settings-form {
+    padding: 20px;
+    max-width: 95%;
+  }
+
+  .settings-title {
+    font-size: 1.4rem;
+  }
+
+  .settings-subtext {
+    font-size: 0.85rem;
+  }
+
+  .form-group input {
+    font-size: 0.95rem;
+    padding: 9px;
+  }
+
+  .save-btn {
+    font-size: 0.95rem;
+    padding: 10px;
+  }
 }
