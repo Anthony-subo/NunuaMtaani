@@ -23,7 +23,7 @@ function Signup() {
     })
       .then(result => {
         if (result.data.status === 'success') {
-          navigate('/login');
+          navigate('/home');
         } else {
           setErrMsg(result.data.message || 'Registration failed');
         }
