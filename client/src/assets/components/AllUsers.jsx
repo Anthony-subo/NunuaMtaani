@@ -7,20 +7,33 @@ const API_URL = import.meta.env.VITE_API_URL;
 function AllUsers() {
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState('all');
+
+  // Shop states
   const [showShopForm, setShowShopForm] = useState(false);
   const [shopFormData, setShopFormData] = useState({
-  user_id: '',
-  shop_name: '',
-  owner_name: '',
-  email: '',
-  location: '',
-  payment_method: '',
-  payment_number: '',
-  commission_rate: 0.05, // default 5%
-});
+    user_id: '',
+    shop_name: '',
+    owner_name: '',
+    email: '',
+    location: '',
+    payment_method: '',
+    payment_number: '',
+    commission_rate: 0.05, // default 5%
+  });
 
+  // Rider states
+  const [showRiderForm, setShowRiderForm] = useState(false);
+  const [riderFormData, setRiderFormData] = useState({
+    user_id: '',
+    rider_name: '',
+    email: '',
+    phone: '',
+    vehicle_type: '',
+    license_number: '',
+    payment_number: '',
+  });
 
-  // Fetch all users on mount
+  // Fetch all users
   useEffect(() => {
     axios.get(`${API_URL}/api/users`)
       .then((res) => setUsers(res.data))
@@ -58,7 +71,7 @@ function AllUsers() {
       });
   };
 
-  // Show shop form modal
+  // Show shop modal
   const handleCreateShopClick = (user) => {
     setShopFormData({
       user_id: user._id,
@@ -66,17 +79,20 @@ function AllUsers() {
       owner_name: user.name,
       email: user.email,
       location: user.location,
+      payment_method: '',
+      payment_number: '',
+      commission_rate: 0.05,
     });
     setShowShopForm(true);
   };
 
-  // Shop form input change
+  // Shop input change
   const handleShopInputChange = (e) => {
     const { name, value } = e.target;
     setShopFormData({ ...shopFormData, [name]: value.trimStart() });
   };
 
-  // Submit shop creation
+  // Submit shop
   const handleShopSubmit = () => {
     const { shop_name, owner_name, email, location } = shopFormData;
     if (!shop_name || !owner_name || !email || !location) {
@@ -94,14 +110,55 @@ function AllUsers() {
       });
   };
 
-  // Filtered users based on role
+  // Show rider modal
+  const handleCreateRiderClick = (user) => {
+    setRiderFormData({
+      user_id: user._id,
+      rider_name: user.name,
+      email: user.email,
+      phone: user.phone || '',
+      vehicle_type: '',
+      license_number: '',
+      payment_number: '',
+    });
+    setShowRiderForm(true);
+  };
+
+  // Rider input change
+  const handleRiderInputChange = (e) => {
+    const { name, value } = e.target;
+    setRiderFormData({ ...riderFormData, [name]: value.trimStart() });
+  };
+
+  // Submit rider
+  const handleRiderSubmit = () => {
+    const { rider_name, email, vehicle_type, license_number } = riderFormData;
+    if (!rider_name || !email || !vehicle_type || !license_number) {
+      return alert('All required fields must be filled.');
+    }
+
+    axios.post(`${API_URL}/api/riders`, riderFormData)
+      .then(() => {
+        alert('✅ Rider created successfully!');
+        setShowRiderForm(false);
+      })
+      .catch(err => {
+        console.error('Rider creation error:', err);
+        alert('❌ Failed to create rider');
+      });
+  };
+
+  // Filter users
   const filteredUsers =
     roleFilter === 'all' ? users : users.filter((user) => user.role === roleFilter);
 
-  // Close modal on Esc key
+  // Esc closes modals
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === 'Escape') setShowShopForm(false);
+      if (e.key === 'Escape') {
+        setShowShopForm(false);
+        setShowRiderForm(false);
+      }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
@@ -167,6 +224,12 @@ function AllUsers() {
                   >
                     Create Shop
                   </button>
+                  <button
+                    className="btn btn-warning btn-sm"
+                    onClick={() => handleCreateRiderClick(user)}
+                  >
+                    Create Rider
+                  </button>
                 </div>
               </div>
             ))}
@@ -174,95 +237,73 @@ function AllUsers() {
         )}
 
         {/* Shop Modal */}
-{showShopForm && (
-  <div className="modal d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-    <div className="modal-dialog">
-      <div className="modal-content shadow-lg">
-        <div className="modal-header">
-          <h5 className="modal-title">Create Shop for User</h5>
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setShowShopForm(false)}
-          />
-        </div>
+        {showShopForm && (
+          <div className="modal d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+            <div className="modal-dialog">
+              <div className="modal-content shadow-lg">
+                <div className="modal-header">
+                  <h5 className="modal-title">Create Shop for User</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowShopForm(false)}
+                  />
+                </div>
+                <div className="modal-body">
+                  <input className="form-control mb-2" name="shop_name" value={shopFormData.shop_name} onChange={handleShopInputChange} placeholder="Shop Name" />
+                  <input className="form-control mb-2" name="owner_name" value={shopFormData.owner_name} onChange={handleShopInputChange} placeholder="Owner Name" />
+                  <input className="form-control mb-2" name="email" value={shopFormData.email} onChange={handleShopInputChange} placeholder="Email" />
+                  <input className="form-control mb-2" name="location" value={shopFormData.location} onChange={handleShopInputChange} placeholder="Location" />
+                  <select className="form-select mb-2" name="payment_method" value={shopFormData.payment_method} onChange={handleShopInputChange}>
+                    <option value="">Select Payment Method</option>
+                    <option value="phone">Phone</option>
+                    <option value="till">Till</option>
+                  </select>
+                  <input className="form-control mb-2" name="payment_number" value={shopFormData.payment_number} onChange={handleShopInputChange} placeholder="Payment Number" />
+                  <input type="number" className="form-control mb-2" name="commission_rate" value={shopFormData.commission_rate} onChange={handleShopInputChange} placeholder="Commission Rate" />
+                </div>
+                <div className="modal-footer">
+                  <button onClick={handleShopSubmit} className="btn btn-primary">Submit</button>
+                  <button onClick={() => setShowShopForm(false)} className="btn btn-secondary">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-        <div className="modal-body">
-          <input
-            className="form-control mb-2"
-            name="shop_name"
-            value={shopFormData.shop_name}
-            onChange={handleShopInputChange}
-            placeholder="Shop Name"
-          />
-          <input
-            className="form-control mb-2"
-            name="owner_name"
-            value={shopFormData.owner_name}
-            onChange={handleShopInputChange}
-            placeholder="Owner Name"
-          />
-          <input
-            className="form-control mb-2"
-            name="email"
-            value={shopFormData.email}
-            onChange={handleShopInputChange}
-            placeholder="Email"
-          />
-          <input
-            className="form-control mb-2"
-            name="location"
-            value={shopFormData.location}
-            onChange={handleShopInputChange}
-            placeholder="Location"
-          />
-
-          {/* New fields for Shop */}
-          <select
-            className="form-select mb-2"
-            name="payment_method"
-            value={shopFormData.payment_method}
-            onChange={handleShopInputChange}
-          >
-            <option value="">Select Payment Method</option>
-            <option value="phone">Phone</option>
-            <option value="till">Till</option>
-          </select>
-
-          <input
-            className="form-control mb-2"
-            name="payment_number"
-            value={shopFormData.payment_number}
-            onChange={handleShopInputChange}
-            placeholder="Payment Number (2547xxxx or Till No.)"
-          />
-
-          <input
-            type="number"
-            className="form-control mb-2"
-            name="commission_rate"
-            value={shopFormData.commission_rate}
-            onChange={handleShopInputChange}
-            placeholder="Commission Rate (default 0.05)"
-          />
-        </div>
-
-        <div className="modal-footer">
-          <button onClick={handleShopSubmit} className="btn btn-primary">
-            Submit
-          </button>
-          <button
-            onClick={() => setShowShopForm(false)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
+        {/* Rider Modal */}
+        {showRiderForm && (
+          <div className="modal d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+            <div className="modal-dialog">
+              <div className="modal-content shadow-lg">
+                <div className="modal-header">
+                  <h5 className="modal-title">Create Rider Profile</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowRiderForm(false)}
+                  />
+                </div>
+                <div className="modal-body">
+                  <input className="form-control mb-2" name="rider_name" value={riderFormData.rider_name} onChange={handleRiderInputChange} placeholder="Rider Name" />
+                  <input className="form-control mb-2" name="email" value={riderFormData.email} onChange={handleRiderInputChange} placeholder="Email" />
+                  <input className="form-control mb-2" name="phone" value={riderFormData.phone} onChange={handleRiderInputChange} placeholder="Phone Number" />
+                  <select className="form-select mb-2" name="vehicle_type" value={riderFormData.vehicle_type} onChange={handleRiderInputChange}>
+                    <option value="">Select Vehicle Type</option>
+                    <option value="bike">Motorbike</option>
+                    <option value="car">Car</option>
+                  </select>
+                  <input className="form-control mb-2" name="license_number" value={riderFormData.license_number} onChange={handleRiderInputChange} placeholder="License Number" />
+                  <input className="form-control mb-2" name="payment_number" value={riderFormData.payment_number} onChange={handleRiderInputChange} placeholder="Payment Number (Mpesa/Till)" />
+                </div>
+                <div className="modal-footer">
+                  <button onClick={handleRiderSubmit} className="btn btn-primary">Submit</button>
+                  <button onClick={() => setShowRiderForm(false)} className="btn btn-secondary">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

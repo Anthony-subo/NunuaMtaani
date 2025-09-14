@@ -35,6 +35,8 @@ app.use("/api/products", require("./routes/productRoutes")); // <-- Add this lin
 app.use('/api/users', require('./routes/userRoutes')); // ✅ Add this
 app.use('/api/shops', require('./routes/shopRoutes')); // ✅ Add this
 app.use('/api/orders', require('./routes/orderRoutes')); // ✅ Add this
+app.use('/api/riders', require('./routes/riderRoutes')); 
+
 
 // Server
 app.listen(port, () => {

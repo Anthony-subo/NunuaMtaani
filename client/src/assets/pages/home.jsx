@@ -15,6 +15,9 @@ function Home() {
         case "seller":
           navigate("/seller-dashboard");
           break;
+        case "rider":
+          navigate("/rider-dashboard");
+          break;
         case "buyer":
           navigate("/buyer-dashboard");
           break;

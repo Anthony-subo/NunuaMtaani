@@ -1,3 +1,4 @@
 @import './allproduct.css';
 @import 'productSlider.css';
 @import 'auth.css';
+@import "leaflet/dist/leaflet.css";
