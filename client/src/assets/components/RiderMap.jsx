@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
 
 // Default icon fix for leaflet
@@ -49,7 +50,7 @@ function RiderMap() {
           </Marker>
         </MapContainer>
       ) : (
-        <p className="text-center p-3">📍 Loading your location...</p>
+        <p className="text-center p-3">📍 Loading your locationn...</p>
       )}
     </div>
   );
