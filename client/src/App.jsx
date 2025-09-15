@@ -8,6 +8,10 @@ import Login from './assets/pages/Login';
 import Home from './assets/pages/home';
 import NunuaMtaaniLanding from './assets/pages/NunuaMtaaniLanding';
 import Verificat from './assets/pages/Verificat';
+import RiderDashboard from './assets/pages/RiderDashboard';
+import RiderTrips from './assets/pages/RiderTrips';
+import RiderEarnings from './assets/pages/RiderEarnings';
+
 
 
 import AdminDashboard from './assets/pages/AdminDashboard';
@@ -56,6 +60,31 @@ function App() {
             }
           />
         </Route>
+        <Route
+  path="/rider-dashboard"
+  element={
+    <ProtectedRoute role="rider">
+      <RiderDashboard />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/rider-trips"
+  element={
+    <ProtectedRoute role="rider">
+      <RiderTrips />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/rider-earnings"
+  element={
+    <ProtectedRoute role="rider">
+      <RiderEarnings />
+    </ProtectedRoute>
+  }
+/>
+
       </Routes>
     </BrowserRouter>
   );
