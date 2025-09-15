@@ -44,6 +44,7 @@ function RiderDashboard() {
           className={activeTab === 'map' ? 'active' : ''}
           onClick={() => setActiveTab('map')}
           title="Live Map"
+          
         >
           <FaMapMarkedAlt size={22} />
           <span className="tab-label">Map</span>
