@@ -7,7 +7,9 @@ const API_URL = import.meta.env.VITE_API_URL;
 function MyPurchases() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [userId, setUserId] = useState(null);
+  const [cancelingId, setCancelingId] = useState(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -20,11 +22,12 @@ function MyPurchases() {
 
     const fetchOrders = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/orders`);
-        const userOrders = res.data.filter(order => order.user_id === user._id);
-        setOrders(userOrders);
+        // 🚀 better: fetch only user’s orders
+        const res = await axios.get(`${API_URL}/api/orders/user/${user._id}`);
+        setOrders(res.data);
       } catch (err) {
         console.error('Failed to fetch orders:', err);
+        setError('Unable to load your purchases. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -36,13 +39,14 @@ function MyPurchases() {
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm('Cancel this order?')) return;
 
+    setCancelingId(orderId);
     try {
       await axios.put(`${API_URL}/api/orders/${orderId}/status`, {
-        status: 'cancelled'
+        status: 'cancelled',
       });
 
-      setOrders(prev =>
-        prev.map(order =>
+      setOrders((prev) =>
+        prev.map((order) =>
           order._id === orderId ? { ...order, status: 'cancelled' } : order
         )
       );
@@ -51,10 +55,18 @@ function MyPurchases() {
     } catch (err) {
       console.error('Failed to cancel order:', err);
       alert('Error cancelling order');
+    } finally {
+      setCancelingId(null);
     }
   };
 
-  if (loading) return <div className="orders-container">Loading your purchases...</div>;
+  if (loading) {
+    return <div className="orders-container">⏳ Loading your purchases...</div>;
+  }
+
+  if (error) {
+    return <div className="orders-container text-danger">{error}</div>;
+  }
 
   return (
     <div className="orders-container">
@@ -70,11 +82,13 @@ function MyPurchases() {
 
               <div className="order-meta">
                 📅 Placed on:{' '}
-                {new Date(order.createdAt).toLocaleDateString('en-KE', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
+                {order.createdAt
+                  ? new Date(order.createdAt).toLocaleDateString('en-KE', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })
+                  : 'N/A'}
               </div>
 
               <ul className="order-items">
@@ -87,7 +101,7 @@ function MyPurchases() {
               </ul>
 
               <div className="order-total">
-                Total: <strong>KES {order.total}</strong>
+                Total: <strong>KES {order.total || 0}</strong>
               </div>
 
               <div className="order-status mb-2">
@@ -103,16 +117,17 @@ function MyPurchases() {
                       : 'bg-secondary'
                   }`}
                 >
-                  {order.status}
+                  {order.status || 'unknown'}
                 </span>
               </div>
 
               {order.status === 'pending' && (
                 <button
                   className="btn btn-sm btn-outline-danger"
+                  disabled={cancelingId === order._id}
                   onClick={() => handleCancelOrder(order._id)}
                 >
-                  Cancel Order
+                  {cancelingId === order._id ? 'Cancelling...' : 'Cancel Order'}
                 </button>
               )}
             </li>
