@@ -30,3 +30,28 @@ exports.deleteRider = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// 🚲 Nearby riders (placeholder for now)
+exports.getNearbyRiders = (req, res) => {
+  res.send("Nearby riders");
+};
+
+// 🚕 Start trip (placeholder for now)
+exports.startTrip = (req, res) => {
+  res.send("Trip started");
+};
+
+// ✅ Complete trip (placeholder for now)
+exports.completeTrip = (req, res) => {
+  res.send("Trip completed");
+};
+
+// 📦 Rider trips (placeholder for now)
+exports.getRiderTrips = (req, res) => {
+  res.send("Rider trips");
+};
+
+// 💵 Rider earnings (placeholder for now)
+exports.getRiderEarnings = (req, res) => {
+  res.send("Rider earnings");
+};
