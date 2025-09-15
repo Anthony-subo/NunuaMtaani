@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const {
   createRider,
+  getRiders,
+  deleteRider,
   getNearbyRiders,
   startTrip,
   completeTrip,
@@ -10,6 +12,9 @@ const {
 } = require("../controllers/riderController");
 
 router.post("/", createRider);
+router.get("/", getRiders);
+router.delete("/:id", deleteRider);
+
 router.get("/nearby", getNearbyRiders);
 router.post("/trips/start", startTrip);
 router.post("/trips/complete/:tripId", completeTrip);
