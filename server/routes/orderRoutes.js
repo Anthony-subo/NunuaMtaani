@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/orders');
-const express = require('express');
-const Order = require('../models/orders');
 const crypto = require('crypto');
 
 // ✅ POST /api/orders - create a new order
