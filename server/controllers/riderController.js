@@ -1,7 +1,7 @@
 const Trip = require("../models/trip");
 const Rider = require("../models/rider");
 
-// 🚀 Start Trip (called when seller assigns a rider)
+// 🚀 Start Trip
 exports.startTrip = async (req, res) => {
   try {
     const {
@@ -75,7 +75,7 @@ exports.getRiderTrips = async (req, res) => {
   }
 };
 
-// 💰 Get rider earnings summary
+// 💰 Get rider earnings
 exports.getRiderEarnings = async (req, res) => {
   try {
     const trips = await Trip.find({ rider_id: req.params.riderId, status: "completed" });

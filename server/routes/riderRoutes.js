@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+
 const {
   createRider,
   getRiders,
@@ -20,9 +21,9 @@ router.delete("/:id", deleteRider);
 router.get("/nearby", getNearbyRiders);
 
 // Trips
-router.post("/trips/start", startTrip);          // 🚀 Start trip when seller assigns rider
+router.post("/trips/start", startTrip);          
 router.post("/trips/complete/:tripId", completeTrip); 
-router.get("/:riderId/trips", getRiderTrips);    // 📋 Rider’s completed trips
-router.get("/:riderId/earnings", getRiderEarnings); // 💰 Earnings dashboard
+router.get("/:riderId/trips", getRiderTrips);    
+router.get("/:riderId/earnings", getRiderEarnings); 
 
 module.exports = router;
