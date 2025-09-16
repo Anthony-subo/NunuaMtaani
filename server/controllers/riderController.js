@@ -1,93 +1,79 @@
-const Trip = require("../models/trip");
 const Rider = require("../models/rider");
+const { v4: uuidv4 } = require("uuid");
 
-// 🚀 Start Trip
-exports.startTrip = async (req, res) => {
+// Create rider
+exports.createRider = async (req, res) => {
   try {
-    const {
-      order_id,
-      rider_id,
-      user_id,
-      shop_id,
-      startLocation,
-      endLocation,
-      distanceKm,
-      fare
-    } = req.body;
+    const data = req.body;
 
-    const trip = new Trip({
-      order_id,
-      rider_id,
-      user_id,
-      shop_id,
-      startLocation,
-      endLocation,
-      distanceKm,
-      fare,
+    // generate unique rider_id
+    const rider = new Rider({
+      ...data,
+      rider_id: "RDR-" + uuidv4().slice(0, 8),
     });
 
-    await trip.save();
-    res.status(201).json(trip);
+    await rider.save();
+    res.status(201).json(rider);
   } catch (err) {
-    console.error("Error starting trip:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(400).json({ error: err.message });
   }
+};
+
+// Get all riders
+exports.getRiders = async (req, res) => {
+  try {
+    const riders = await Rider.find().populate("user_id", "name email role");
+    res.json(riders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Delete rider
+exports.deleteRider = async (req, res) => {
+  try {
+    await Rider.findByIdAndDelete(req.params.id);
+    res.json({ message: "Rider deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 🚲 Nearby riders (within 5km)
+exports.getNearbyRiders = async (req, res) => {
+  try {
+    const { lng, lat } = req.query;
+    const riders = await Rider.find({
+      location: {
+        $near: {
+          $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
+          $maxDistance: 5000, // 5km
+        },
+      },
+      isAvailable: true,
+    });
+    res.json(riders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 🚕 Start trip
+exports.startTrip = (req, res) => {
+  res.send("Trip started");
 };
 
 // ✅ Complete trip
-exports.completeTrip = async (req, res) => {
-  try {
-    const trip = await Trip.findById(req.params.tripId);
-    if (!trip) return res.status(404).json({ message: "Trip not found" });
-
-    if (trip.status !== "pending") {
-      return res.status(400).json({ message: "Trip already closed" });
-    }
-
-    trip.status = "completed";
-    await trip.save();
-
-    // Update rider earnings
-    const rider = await Rider.findById(trip.rider_id);
-    if (rider) {
-      rider.bikerData.totalTrips += 1;
-      rider.bikerData.totalKm += trip.distanceKm;
-      rider.bikerData.totalPay += trip.fare;
-      rider.bikerData.pendingPay += trip.fare;
-      await rider.save();
-    }
-
-    res.json({ message: "Trip completed", trip, bikerData: rider?.bikerData });
-  } catch (err) {
-    console.error("Error completing trip:", err);
-    res.status(500).json({ message: "Server error" });
-  }
+exports.completeTrip = (req, res) => {
+  res.send("Trip completed");
 };
 
-// 📋 Get rider trips
-exports.getRiderTrips = async (req, res) => {
-  try {
-    const trips = await Trip.find({ rider_id: req.params.riderId }).sort({ createdAt: -1 });
-    res.json(trips);
-  } catch (err) {
-    console.error("Error fetching trips:", err);
-    res.status(500).json({ message: "Server error" });
-  }
+// 📦 Rider trips
+exports.getRiderTrips = (req, res) => {
+  res.send("Rider trips");
 };
 
-// 💰 Get rider earnings
-exports.getRiderEarnings = async (req, res) => {
-  try {
-    const trips = await Trip.find({ rider_id: req.params.riderId, status: "completed" });
-
-    const totalTrips = trips.length;
-    const totalKm = trips.reduce((sum, t) => sum + t.distanceKm, 0);
-    const totalPay = trips.reduce((sum, t) => sum + t.fare, 0);
-    const pendingPay = trips.reduce((sum, t) => sum + (t.status === "completed" ? t.fare : 0), 0);
-
-    res.json({ totalTrips, totalKm, totalPay, pendingPay });
-  } catch (err) {
-    console.error("Error fetching earnings:", err);
-    res.status(500).json({ message: "Server error" });
-  }
+// 💵 Rider earnings
+exports.getRiderEarnings = (req, res) => {
+  res.send("Rider earnings");
 };

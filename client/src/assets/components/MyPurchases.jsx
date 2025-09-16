@@ -10,8 +10,6 @@ function MyPurchases() {
   const [error, setError] = useState('');
   const [userId, setUserId] = useState(null);
   const [cancelingId, setCancelingId] = useState(null);
-  const [riders, setRiders] = useState([]);
-  const [selectingOrder, setSelectingOrder] = useState(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -19,10 +17,12 @@ function MyPurchases() {
       setLoading(false);
       return;
     }
+
     setUserId(user._id);
 
     const fetchOrders = async () => {
       try {
+        // 🚀 better: fetch only user’s orders
         const res = await axios.get(`${API_URL}/api/orders/user/${user._id}`);
         setOrders(res.data);
       } catch (err) {
@@ -33,31 +33,24 @@ function MyPurchases() {
       }
     };
 
-    const fetchRiders = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/api/riders`);
-        setRiders(res.data);
-      } catch (err) {
-        console.error('Failed to fetch riders:', err);
-      }
-    };
-
     fetchOrders();
-    fetchRiders();
   }, []);
 
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm('Cancel this order?')) return;
+
     setCancelingId(orderId);
     try {
       await axios.put(`${API_URL}/api/orders/${orderId}/status`, {
         status: 'cancelled',
       });
+
       setOrders((prev) =>
         prev.map((order) =>
           order._id === orderId ? { ...order, status: 'cancelled' } : order
         )
       );
+
       alert('Order cancelled successfully');
     } catch (err) {
       console.error('Failed to cancel order:', err);
@@ -67,22 +60,13 @@ function MyPurchases() {
     }
   };
 
-  const handleAssignRider = async (orderId, riderId) => {
-    try {
-      const res = await axios.put(`${API_URL}/api/orders/${orderId}/assign-rider`, { riderId });
-      setOrders((prev) =>
-        prev.map((o) => (o._id === orderId ? res.data : o))
-      );
-      setSelectingOrder(null);
-      alert(`Rider assigned! Delivery code: ${res.data.delivery.code}`);
-    } catch (err) {
-      console.error('Failed to assign rider:', err);
-      alert('Error assigning rider');
-    }
-  };
+  if (loading) {
+    return <div className="orders-container">⏳ Loading your purchases...</div>;
+  }
 
-  if (loading) return <div className="orders-container">⏳ Loading your purchases...</div>;
-  if (error) return <div className="orders-container text-danger">{error}</div>;
+  if (error) {
+    return <div className="orders-container text-danger">{error}</div>;
+  }
 
   return (
     <div className="orders-container">
@@ -146,30 +130,6 @@ function MyPurchases() {
                   >
                     {cancelingId === order._id ? 'Cancelling...' : 'Cancel Order'}
                   </button>
-
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => setSelectingOrder(order._id)}
-                  >
-                    Assign Rider
-                  </button>
-                </>
-              )}
-
-              {selectingOrder === order._id && (
-                <div className="mt-2">
-                  <select
-                    className="form-select form-select-sm"
-                    onChange={(e) => handleAssignRider(order._id, e.target.value)}
-                  >
-                    <option>Select Rider...</option>
-                    {riders.map((rider) => (
-                      <option key={rider._id} value={rider._id}>
-                        {rider.name} ({rider.phone})
-                      </option>
-                    ))}
-                  </select>
-                </div>
               )}
             </li>
           ))}
