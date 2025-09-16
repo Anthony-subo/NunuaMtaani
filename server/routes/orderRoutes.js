@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/orders');
+const express = require('express');
+const Order = require('../models/orders');
+const crypto = require('crypto');
 
 // ✅ POST /api/orders - create a new order
 router.post('/', async (req, res) => {
@@ -77,5 +80,58 @@ router.put('/:id/status', async (req, res) => {
     res.status(500).json({ message: 'Failed to update order status.' });
   }
 });
+
+
+// ✅ Assign rider to order
+router.put('/:id/assign-rider', async (req, res) => {
+  try {
+    const { riderId } = req.body;
+
+    if (!riderId) return res.status(400).json({ message: 'Rider ID required' });
+
+    const code = crypto.randomBytes(3).toString('hex'); // short 6-digit code
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      {
+        delivery: { rider_id: riderId, code, status: 'assigned' },
+        status: 'deliver'
+      },
+      { new: true }
+    ).populate('delivery.rider_id');
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    res.json(order);
+  } catch (err) {
+    console.error('Error assigning rider:', err);
+    res.status(500).json({ message: 'Failed to assign rider.' });
+  }
+});
+
+// ✅ Verify delivery code (rider confirms delivery)
+router.post('/:id/verify-delivery', async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (!order.delivery || order.delivery.code !== code) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    order.delivery.status = 'delivered';
+    order.status = 'completed';
+    await order.save();
+
+    res.json({ message: 'Delivery confirmed successfully', order });
+  } catch (err) {
+    console.error('Error verifying delivery:', err);
+    res.status(500).json({ message: 'Failed to verify delivery.' });
+  }
+});
+
 
 module.exports = router;

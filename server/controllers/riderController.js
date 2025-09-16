@@ -77,3 +77,40 @@ exports.getRiderTrips = (req, res) => {
 exports.getRiderEarnings = (req, res) => {
   res.send("Rider earnings");
 };
+
+exports.completeTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ message: "Trip not found" });
+
+    if (trip.status !== "pending") {
+      return res.status(400).json({ message: "Trip already closed" });
+    }
+
+    // Mark as completed
+    trip.status = "completed";
+    await trip.save();
+
+    // Update Rider earnings
+    const rider = await Rider.findById(trip.rider_id);
+    if (rider) {
+      rider.bikerData.totalTrips += 1;
+      rider.bikerData.totalKm += trip.distanceKm;
+      rider.bikerData.totalPay += trip.fare;
+      rider.bikerData.pendingPay += trip.fare;
+      await rider.save();
+    }
+
+    // Update Order status
+    const order = await Order.findById(trip.order_id);
+    if (order) {
+      order.status = "delivered";
+      await order.save();
+    }
+
+    res.json({ message: "Trip completed", trip, bikerData: rider?.bikerData, order });
+  } catch (err) {
+    console.error("Error completing trip:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

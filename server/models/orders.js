@@ -31,6 +31,13 @@ const orderSchema = new mongoose.Schema({
     amount: Number,
     callbackAt: Date,
     raw: Object
+  },
+
+  // 🚚 Rider assignment
+  delivery: {
+    rider_id: { type: mongoose.Schema.Types.ObjectId, ref: 'riders' },
+    code: String,  // Verification code
+    status: { type: String, enum: ['not_assigned', 'assigned', 'delivered'], default: 'not_assigned' }
   }
 }, { timestamps: true });
 
