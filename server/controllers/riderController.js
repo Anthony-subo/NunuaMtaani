@@ -1,116 +1,114 @@
 const Rider = require("../models/rider");
-const { v4: uuidv4 } = require("uuid");
+const Trip = require("../models/trip");
 
-// Create rider
+// Create Rider
 exports.createRider = async (req, res) => {
   try {
-    const data = req.body;
-
-    // generate unique rider_id
-    const rider = new Rider({
-      ...data,
-      rider_id: "RDR-" + uuidv4().slice(0, 8),
-    });
-
+    const rider = new Rider(req.body);
     await rider.save();
     res.status(201).json(rider);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Error creating rider:", err);
+    res.status(500).json({ message: "Failed to create rider" });
   }
 };
 
-// Get all riders
+// Get All Riders
 exports.getRiders = async (req, res) => {
   try {
-    const riders = await Rider.find().populate("user_id", "name email role");
+    const riders = await Rider.find();
     res.json(riders);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Failed to fetch riders" });
   }
 };
 
-// Delete rider
+// Delete Rider
 exports.deleteRider = async (req, res) => {
   try {
     await Rider.findByIdAndDelete(req.params.id);
-    res.json({ message: "Rider deleted successfully" });
+    res.json({ message: "Rider deleted" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Failed to delete rider" });
   }
 };
 
-// 🚲 Nearby riders (within 5km)
+// Get Nearby Riders (Geo search)
 exports.getNearbyRiders = async (req, res) => {
+  const { lng, lat, radius } = req.query;
   try {
-    const { lng, lat } = req.query;
     const riders = await Rider.find({
       location: {
         $near: {
           $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: 5000, // 5km
-        },
+          $maxDistance: parseInt(radius) || 5000 // 5km default
+        }
       },
-      isAvailable: true,
+      isAvailable: true
     });
     res.json(riders);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Failed to fetch nearby riders" });
   }
 };
 
-// 🚕 Start trip
-exports.startTrip = (req, res) => {
-  res.send("Trip started");
+// Start Trip
+exports.startTrip = async (req, res) => {
+  try {
+    const trip = new Trip(req.body);
+    await trip.save();
+
+    // mark rider unavailable
+    await Rider.findByIdAndUpdate(trip.rider_id, { isAvailable: false });
+
+    res.status(201).json(trip);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to start trip" });
+  }
 };
 
-// ✅ Complete trip
-exports.completeTrip = (req, res) => {
-  res.send("Trip completed");
-};
-
-// 📦 Rider trips
-exports.getRiderTrips = (req, res) => {
-  res.send("Rider trips");
-};
-
-// 💵 Rider earnings
-exports.getRiderEarnings = (req, res) => {
-  res.send("Rider earnings");
-};
-
+// Complete Trip
 exports.completeTrip = async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id);
+    const trip = await Trip.findById(req.params.tripId);
     if (!trip) return res.status(404).json({ message: "Trip not found" });
 
-    if (trip.status !== "pending") {
-      return res.status(400).json({ message: "Trip already closed" });
-    }
-
-    // Mark as completed
     trip.status = "completed";
     await trip.save();
 
-    // Update Rider earnings
     const rider = await Rider.findById(trip.rider_id);
     if (rider) {
       rider.bikerData.totalTrips += 1;
       rider.bikerData.totalKm += trip.distanceKm;
       rider.bikerData.totalPay += trip.fare;
       rider.bikerData.pendingPay += trip.fare;
+      rider.isAvailable = true; // back to available
       await rider.save();
     }
 
-    // Update Order status
-    const order = await Order.findById(trip.order_id);
-    if (order) {
-      order.status = "delivered";
-      await order.save();
-    }
-
-    res.json({ message: "Trip completed", trip, bikerData: rider?.bikerData, order });
+    res.json({ message: "Trip completed", trip, bikerData: rider?.bikerData });
   } catch (err) {
-    console.error("Error completing trip:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to complete trip" });
+  }
+};
+
+// Get Rider Trips
+exports.getRiderTrips = async (req, res) => {
+  try {
+    const trips = await Trip.find({ rider_id: req.params.riderId }).sort({ createdAt: -1 });
+    res.json(trips);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch trips" });
+  }
+};
+
+// Get Rider Earnings
+exports.getRiderEarnings = async (req, res) => {
+  try {
+    const rider = await Rider.findById(req.params.riderId);
+    if (!rider) return res.status(404).json({ message: "Rider not found" });
+    res.json(rider.bikerData);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch earnings" });
   }
 };
