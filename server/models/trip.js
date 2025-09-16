@@ -25,4 +25,7 @@ const tripSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// Enable geospatial queries
+tripSchema.index({ startLocation: "2dsphere", endLocation: "2dsphere" });
+
 module.exports = mongoose.model("trips", tripSchema);
