@@ -10,6 +10,7 @@ const {
   completeTrip,
   getRiderTrips,
   getRiderEarnings,
+  updateLocation,   // ✅ imported here
 } = require("../controllers/riderController");
 
 // Rider CRUD
@@ -20,12 +21,13 @@ router.delete("/:id", deleteRider);
 // Rider services
 router.get("/nearby", getNearbyRiders);
 
+// Update live location
+router.put("/:id/location", updateLocation);   // ✅ works now
+
 // Trips
-router.post("/trips/start", startTrip);          
-router.post("/trips/complete/:tripId", completeTrip); 
-router.get("/:riderId/trips", getRiderTrips);    
-router.get("/:riderId/earnings", getRiderEarnings); 
-// routes/riderRoutes.js
-router.put("/:id/location", updateLocation);
+router.post("/trips/start", startTrip);
+router.post("/trips/complete/:tripId", completeTrip);
+router.get("/:riderId/trips", getRiderTrips);
+router.get("/:riderId/earnings", getRiderEarnings);
 
 module.exports = router;
