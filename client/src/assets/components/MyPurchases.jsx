@@ -22,9 +22,12 @@ function MyPurchases() {
 
     const fetchOrders = async () => {
       try {
-        // 🚀 better: fetch only this user’s orders
+        // 🚀 fetch only this user’s orders
         const res = await axios.get(`${API_URL}/api/orders/user/${user._id}`);
-        setOrders(res.data);
+        // Ensure we always set an array
+        const data = res.data;
+        const ordersArray = Array.isArray(data) ? data : data.orders || [];
+        setOrders(ordersArray);
       } catch (err) {
         console.error('Failed to fetch orders:', err);
         setError('Unable to load your purchases. Please try again later.');
@@ -72,9 +75,7 @@ function MyPurchases() {
     <div className="orders-container">
       <h3 className="orders-title">🧾 My Purchases</h3>
 
-      {orders.length === 0 ? (
-        <p className="text-muted">🕐 You have not placed any orders yet.</p>
-      ) : (
+      {Array.isArray(orders) && orders.length > 0 ? (
         <ul className="list-unstyled">
           {orders.map((order) => (
             <li key={order._id} className="order-card">
@@ -124,21 +125,21 @@ function MyPurchases() {
               </div>
 
               {order.status === 'pending' && (
-                <>
-                  <button
-                    className="btn btn-sm btn-outline-danger me-2"
-                    disabled={cancelingId === order._id}
-                    onClick={() => handleCancelOrder(order._id)}
-                  >
-                    {cancelingId === order._id
-                      ? 'Cancelling...'
-                      : 'Cancel Order'}
-                  </button>
-                </>
+                <button
+                  className="btn btn-sm btn-outline-danger me-2"
+                  disabled={cancelingId === order._id}
+                  onClick={() => handleCancelOrder(order._id)}
+                >
+                  {cancelingId === order._id
+                    ? 'Cancelling...'
+                    : 'Cancel Order'}
+                </button>
               )}
             </li>
           ))}
         </ul>
+      ) : (
+        <p className="text-muted">🕐 You have not placed any orders yet.</p>
       )}
     </div>
   );
