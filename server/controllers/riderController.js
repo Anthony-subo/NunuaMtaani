@@ -6,7 +6,6 @@ exports.createRider = async (req, res) => {
   try {
     const data = req.body;
 
-    // generate unique rider_id
     const rider = new Rider({
       ...data,
       rider_id: "RDR-" + uuidv4().slice(0, 8),
@@ -18,11 +17,13 @@ exports.createRider = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
-// 🚀 Get rider by user_id
+
+// Get rider by user_id
 exports.getRiderByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
     const rider = await Rider.findOne({ user_id: userId }).populate("user_id", "name email role");
+
     if (!rider) return res.status(404).json({ error: "Rider not found" });
     res.json(rider);
   } catch (err) {
@@ -30,12 +31,10 @@ exports.getRiderByUserId = async (req, res) => {
   }
 };
 
-
-// Get riders (optionally filter by userId)
+// Get riders
 exports.getRiders = async (req, res) => {
   try {
     if (req.query.userId) {
-      // fetch rider(s) for a specific user
       const rider = await Rider.find({ user_id: req.query.userId }).populate(
         "user_id",
         "name email role"
@@ -43,14 +42,12 @@ exports.getRiders = async (req, res) => {
       return res.json(rider);
     }
 
-    // default: return all riders
     const riders = await Rider.find().populate("user_id", "name email role");
     res.json(riders);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 // Delete rider
 exports.deleteRider = async (req, res) => {
@@ -62,7 +59,7 @@ exports.deleteRider = async (req, res) => {
   }
 };
 
-// 🚲 Nearby riders (within 5km)
+// Nearby riders (within 5km)
 exports.getNearbyRiders = async (req, res) => {
   try {
     const { lng, lat } = req.query;
@@ -70,7 +67,7 @@ exports.getNearbyRiders = async (req, res) => {
       location: {
         $near: {
           $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: 5000, // 5km
+          $maxDistance: 5000,
         },
       },
       isAvailable: true,
@@ -81,27 +78,27 @@ exports.getNearbyRiders = async (req, res) => {
   }
 };
 
-// 🚕 Start trip
+// Start trip
 exports.startTrip = (req, res) => {
   res.send("Trip started");
 };
 
-// ✅ Complete trip
+// Complete trip
 exports.completeTrip = (req, res) => {
   res.send("Trip completed");
 };
 
-// 📦 Rider trips
+// Rider trips
 exports.getRiderTrips = (req, res) => {
   res.send("Rider trips");
 };
 
-// 💵 Rider earnings
+// Rider earnings
 exports.getRiderEarnings = (req, res) => {
   res.send("Rider earnings");
 };
-// riderController.js
-// riderController.js
+
+// Update location
 exports.updateLocation = async (req, res) => {
   try {
     const { lat, lng } = req.body;
@@ -123,5 +120,3 @@ exports.updateLocation = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-

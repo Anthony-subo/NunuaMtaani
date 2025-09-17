@@ -11,7 +11,7 @@ const {
   getRiderTrips,
   getRiderEarnings,
   updateLocation,
-  getRiderByUserId   // ✅ add this
+  getRiderByUserId
 } = require("../controllers/riderController");
 
 // Rider CRUD
@@ -19,8 +19,8 @@ router.post("/", createRider);
 router.get("/", getRiders);
 router.delete("/:id", deleteRider);
 
-// ✅ Get rider by user id
-router.get("/me/:userId", getRiderByUserId);   // new route
+// Get rider by user id
+router.get("/me/:userId", getRiderByUserId);
 
 // Rider services
 router.get("/nearby", getNearbyRiders);

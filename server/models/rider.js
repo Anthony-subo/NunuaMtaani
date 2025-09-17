@@ -1,11 +1,10 @@
-// models/rider.js
 const mongoose = require("mongoose");
 
 const riderSchema = new mongoose.Schema(
   {
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
 
-    rider_id: { type: String, unique: true, required: true }, // generated unique rider code
+    rider_id: { type: String, unique: true, required: true }, 
     rider_name: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },
@@ -15,7 +14,6 @@ const riderSchema = new mongoose.Schema(
 
     isAvailable: { type: Boolean, default: true },
 
-    // 🌍 GeoJSON + raw lat/lng
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },
       coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]

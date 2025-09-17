@@ -12,6 +12,7 @@ function RiderDashboard() {
   const [activeTab, setActiveTab] = useState('map');
   const [riderName, setRiderName] = useState('');
   const [riderId, setRiderId] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -20,16 +21,20 @@ function RiderDashboard() {
     } else {
       setRiderName(user.name);
 
-      // ✅ Fetch rider document by userId
       axios.get(`/api/riders/me/${user._id}`)
         .then(res => {
-          setRiderId(res.data._id);  // store rider’s Mongo _id
+          setRiderId(res.data._id);
         })
-        .catch(err => console.error("Error fetching rider:", err));
+        .catch(err => {
+          console.error("Error fetching rider:", err);
+          setError("No rider profile found. Please contact admin.");
+        });
     }
   }, []);
 
   const renderTab = () => {
+    if (error) return <p className="text-danger">{error}</p>;
+
     switch (activeTab) {
       case 'map':
         return riderId ? <RiderMap riderId={riderId} /> : <p>Loading map...</p>;
