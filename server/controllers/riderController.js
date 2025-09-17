@@ -19,15 +19,26 @@ exports.createRider = async (req, res) => {
   }
 };
 
-// Get all riders
+// Get riders (optionally filter by userId)
 exports.getRiders = async (req, res) => {
   try {
+    if (req.query.userId) {
+      // fetch rider(s) for a specific user
+      const rider = await Rider.find({ user_id: req.query.userId }).populate(
+        "user_id",
+        "name email role"
+      );
+      return res.json(rider);
+    }
+
+    // default: return all riders
     const riders = await Rider.find().populate("user_id", "name email role");
     res.json(riders);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // Delete rider
 exports.deleteRider = async (req, res) => {
@@ -78,21 +89,27 @@ exports.getRiderEarnings = (req, res) => {
   res.send("Rider earnings");
 };
 // riderController.js
+// riderController.js
 exports.updateLocation = async (req, res) => {
   try {
     const { lat, lng } = req.body;
+
     const rider = await Rider.findByIdAndUpdate(
       req.params.id,
       {
         location: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
-        updatedAt: new Date()
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        updatedAt: new Date(),
       },
       { new: true }
     );
+
     if (!rider) return res.status(404).json({ error: "Rider not found" });
     res.json(rider);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
