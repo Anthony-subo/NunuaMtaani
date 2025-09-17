@@ -1,9 +1,11 @@
+// routes/tripRoutes.js
 const express = require("express");
 const router = express.Router();
-const { createTrip, completeTrip } = require("../controllers/tripController");
+const { createTrip, completeTrip, startTrip } = require("../controllers/tripController");
 
-// Trips (system perspective)
-router.post("/", createTrip);            // Create new trip
-router.put("/:id/complete", completeTrip); // Complete trip + update bikersData
+router.post("/", createTrip);             // raw create trip
+router.post("/start", startTrip);         // ✅ assign rider + create trip
+router.put("/:id/complete", completeTrip);
 
 module.exports = router;
+

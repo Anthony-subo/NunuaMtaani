@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Fix Leaflet default marker icons
+// ✅ Fix Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -18,6 +18,7 @@ L.Icon.Default.mergeOptions({
 function DeliveryMap() {
   const [buyerLocation, setBuyerLocation] = useState(null); // [lat, lng]
   const [riders, setRiders] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // ✅ Get buyer location (saved OR fallback to browser geolocation)
   useEffect(() => {
@@ -37,9 +38,7 @@ function DeliveryMap() {
   // ✅ Fetch riders near buyer
   const fetchRiders = async (lat, lng) => {
     try {
-      const res = await axios.get(
-        `/api/riders/nearby?lat=${lat}&lng=${lng}`
-      );
+      const res = await axios.get(`/api/riders/nearby?lat=${lat}&lng=${lng}`);
       setRiders(res.data || []);
     } catch (err) {
       console.error("Error fetching riders:", err);
@@ -57,6 +56,52 @@ function DeliveryMap() {
 
     return () => clearInterval(interval);
   }, [buyerLocation]);
+
+  // ✅ Assign a rider + start trip
+  const assignRider = async (riderId) => {
+    try {
+      setLoading(true);
+      const user = JSON.parse(localStorage.getItem("user"));
+      const orderId = localStorage.getItem("currentOrderId");
+      const shopId = localStorage.getItem("currentShopId"); // 👈 save this when order is created
+
+      if (!orderId || !shopId) {
+        alert("No active order found.");
+        return;
+      }
+
+      // Buyer = startLocation
+      const startLocation = {
+        type: "Point",
+        coordinates: [buyerLocation[1], buyerLocation[0]], // [lng, lat]
+      };
+
+      // For now: delivery destination = shop location (replace with real one later)
+      const endLocation = {
+        type: "Point",
+        coordinates: [37.0, -1.0], // TODO: replace with buyer’s delivery destination
+      };
+
+      // Call backend trip creation
+      const res = await axios.post("/api/trips/start", {
+        orderId,
+        riderId,
+        userId: user._id,
+        shopId,
+        startLocation,
+        endLocation,
+        distanceKm: 5, // 👉 placeholder (backend can compute haversine)
+        fare: 200,     // 👉 placeholder (backend can compute dynamic fare)
+      });
+
+      alert(`✅ Trip started with rider: ${res.data.trip.rider_id}`);
+    } catch (err) {
+      console.error("Error starting trip:", err);
+      alert("❌ Failed to start trip");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!buyerLocation)
     return (
@@ -88,27 +133,29 @@ function DeliveryMap() {
         </Marker>
 
         {/* Rider Markers */}
-        {riders.map((rider) => (
-          <Marker
-            key={rider._id}
-            position={[
-              rider.location.coordinates[1],
-              rider.location.coordinates[0],
-            ]}
-          >
-            <Popup>
-              🚴 Rider: <b>{rider.rider_name}</b> <br />
-              Vehicle: {rider.vehicle_type} <br />
-              Phone: {rider.phone} <br />
-              <button
-                className="btn btn-sm btn-success mt-2"
-                onClick={() => alert(`Request sent to ${rider.rider_name}`)}
-              >
-                Request Delivery
-              </button>
-            </Popup>
-          </Marker>
-        ))}
+        {Array.isArray(riders) &&
+          riders.map((rider) => (
+            <Marker
+              key={rider._id}
+              position={[
+                rider.location.coordinates[1],
+                rider.location.coordinates[0],
+              ]}
+            >
+              <Popup>
+                🚴 Rider: <b>{rider.rider_name}</b> <br />
+                Vehicle: {rider.vehicle_type} <br />
+                Phone: {rider.phone} <br />
+                <button
+                  className="btn btn-sm btn-success mt-2"
+                  disabled={loading}
+                  onClick={() => assignRider(rider._id)}
+                >
+                  {loading ? "Assigning..." : "Request Delivery"}
+                </button>
+              </Popup>
+            </Marker>
+          ))}
       </MapContainer>
     </div>
   );

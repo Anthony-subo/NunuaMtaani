@@ -1,14 +1,22 @@
+// controllers/tripController.js
 const Trip = require("../models/trip");
 const Rider = require("../models/rider");
+const Order = require("../models/orders"); // ensure this exists
 
-// Create a new trip
-exports.createTrip = async (req, res) => {
+// ✅ Create a trip when assigning rider
+exports.startTrip = async (req, res) => {
   try {
-    const { rider_id, user_id, startLocation, endLocation, distanceKm, fare } = req.body;
+    const { orderId, riderId, userId, shopId, startLocation, endLocation, distanceKm, fare } = req.body;
+
+    if (!orderId || !riderId || !userId || !shopId || !startLocation || !endLocation) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
     const trip = new Trip({
-      rider_id,
-      user_id,
+      order_id: orderId,
+      rider_id: riderId,
+      user_id: userId,
+      shop_id: shopId,
       startLocation,
       endLocation,
       distanceKm,
@@ -16,9 +24,13 @@ exports.createTrip = async (req, res) => {
     });
 
     await trip.save();
-    res.status(201).json(trip);
+
+    // Optionally mark the order as "assigned"
+    await Order.findByIdAndUpdate(orderId, { status: "assigned", assignedRider: riderId });
+
+    res.status(201).json({ message: "Trip started", trip });
   } catch (err) {
-    console.error("Error creating trip:", err);
+    console.error("Error starting trip:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
