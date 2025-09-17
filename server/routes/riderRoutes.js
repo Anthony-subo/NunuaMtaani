@@ -25,5 +25,7 @@ router.post("/trips/start", startTrip);
 router.post("/trips/complete/:tripId", completeTrip); 
 router.get("/:riderId/trips", getRiderTrips);    
 router.get("/:riderId/earnings", getRiderEarnings); 
+// routes/riderRoutes.js
+router.put("/:id/location", updateLocation);
 
 module.exports = router;

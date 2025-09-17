@@ -77,3 +77,22 @@ exports.getRiderTrips = (req, res) => {
 exports.getRiderEarnings = (req, res) => {
   res.send("Rider earnings");
 };
+// riderController.js
+exports.updateLocation = async (req, res) => {
+  try {
+    const { lat, lng } = req.body;
+    const rider = await Rider.findByIdAndUpdate(
+      req.params.id,
+      {
+        location: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    if (!rider) return res.status(404).json({ error: "Rider not found" });
+    res.json(rider);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
