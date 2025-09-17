@@ -6,10 +6,12 @@ import Settings from '../components/Settings';
 import Header from '../components/Header';
 import { FaMapMarkedAlt, FaMotorcycle, FaWallet, FaCog } from 'react-icons/fa';
 import '../styles/dashboard.css';
+import axios from "axios";
 
 function RiderDashboard() {
   const [activeTab, setActiveTab] = useState('map');
   const [riderName, setRiderName] = useState('');
+  const [riderId, setRiderId] = useState(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -17,13 +19,20 @@ function RiderDashboard() {
       window.location.href = '/login';
     } else {
       setRiderName(user.name);
+
+      // ✅ Fetch rider document by userId
+      axios.get(`/api/riders/me/${user._id}`)
+        .then(res => {
+          setRiderId(res.data._id);  // store rider’s Mongo _id
+        })
+        .catch(err => console.error("Error fetching rider:", err));
     }
   }, []);
 
   const renderTab = () => {
     switch (activeTab) {
       case 'map':
-        return <RiderMap />;
+        return riderId ? <RiderMap riderId={riderId} /> : <p>Loading map...</p>;
       case 'trips':
         return <RiderTrips />;
       case 'earnings':
@@ -31,45 +40,29 @@ function RiderDashboard() {
       case 'settings':
         return <Settings />;
       default:
-        return <RiderMap />;
+        return riderId ? <RiderMap riderId={riderId} /> : <p>Loading map...</p>;
     }
   };
 
   return (
     <div className="container dashboard-container">
       <Header />
+
       {/* Tabs */}
       <div className="dashboard-tabs">
-        <button
-          className={activeTab === 'map' ? 'active' : ''}
-          onClick={() => setActiveTab('map')}
-          title="Live Map"
-          
-        >
+        <button className={activeTab === 'map' ? 'active' : ''} onClick={() => setActiveTab('map')}>
           <FaMapMarkedAlt size={22} />
           <span className="tab-label">Map</span>
         </button>
-        <button
-          className={activeTab === 'trips' ? 'active' : ''}
-          onClick={() => setActiveTab('trips')}
-          title="My Trips"
-        >
+        <button className={activeTab === 'trips' ? 'active' : ''} onClick={() => setActiveTab('trips')}>
           <FaMotorcycle size={22} />
           <span className="tab-label">Trips</span>
         </button>
-        <button
-          className={activeTab === 'earnings' ? 'active' : ''}
-          onClick={() => setActiveTab('earnings')}
-          title="Earnings"
-        >
+        <button className={activeTab === 'earnings' ? 'active' : ''} onClick={() => setActiveTab('earnings')}>
           <FaWallet size={22} />
           <span className="tab-label">Earnings</span>
         </button>
-        <button
-          className={activeTab === 'settings' ? 'active' : ''}
-          onClick={() => setActiveTab('settings')}
-          title="Settings"
-        >
+        <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>
           <FaCog size={22} />
           <span className="tab-label">Settings</span>
         </button>

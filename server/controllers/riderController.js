@@ -18,6 +18,18 @@ exports.createRider = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+// 🚀 Get rider by user_id
+exports.getRiderByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const rider = await Rider.findOne({ user_id: userId }).populate("user_id", "name email role");
+    if (!rider) return res.status(404).json({ error: "Rider not found" });
+    res.json(rider);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 
 // Get riders (optionally filter by userId)
 exports.getRiders = async (req, res) => {
