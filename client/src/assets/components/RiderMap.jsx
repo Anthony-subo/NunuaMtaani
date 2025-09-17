@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
+import axios from "axios";
 
 // Fix Leaflet default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -11,14 +12,28 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-function RiderMap() {
+function RiderMap({ riderId }) {   // ✅ pass riderId from props or context
   const [position, setPosition] = useState(null);
 
   useEffect(() => {
     let watchId;
     if (navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
-        ({ coords }) => setPosition([coords.latitude, coords.longitude]),
+        async ({ coords }) => {
+          const newPos = [coords.latitude, coords.longitude];
+          setPosition(newPos);
+
+          // ✅ Send to backend
+          try {
+            await axios.put(`/api/riders/${riderId}/location`, {
+              lat: coords.latitude,
+              lng: coords.longitude,
+            });
+            console.log("Location saved:", newPos);
+          } catch (err) {
+            console.error("Error saving location:", err);
+          }
+        },
         (err) => console.error("Error getting location:", err),
         { enableHighAccuracy: true }
       );
@@ -26,7 +41,7 @@ function RiderMap() {
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
-  }, []);
+  }, [riderId]);
 
   return (
     <div className="rounded-xl shadow-md" style={{ height: "500px", width: "100%", overflow: "hidden" }}>
