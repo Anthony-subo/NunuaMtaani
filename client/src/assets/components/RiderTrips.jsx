@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/trips.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function RiderTrips() {
   const [trips, setTrips] = useState([]);
 
@@ -9,7 +11,7 @@ function RiderTrips() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user && user.role === "rider") {
       axios
-        .get(`/api/rider/trips/${user._id}`) // ✅ backend route for trips
+        .get(`${API_URL}/api/trips/rider/${user._id}`)
         .then((res) => {
           setTrips(res.data);
         })
@@ -36,17 +38,17 @@ function RiderTrips() {
           <tbody>
             {trips.map((trip, i) => (
               <tr key={i}>
-                <td>{new Date(trip.timestamp).toLocaleString()}</td>
+                <td>{new Date(trip.createdAt).toLocaleString()}</td>
                 <td>
-                  {trip.start_location?.lat.toFixed(3)},{" "}
-                  {trip.start_location?.lng.toFixed(3)}
+                  {trip.startLocation?.coordinates[1].toFixed(3)},{" "}
+                  {trip.startLocation?.coordinates[0].toFixed(3)}
                 </td>
                 <td>
-                  {trip.end_location?.lat.toFixed(3)},{" "}
-                  {trip.end_location?.lng.toFixed(3)}
+                  {trip.endLocation?.coordinates[1].toFixed(3)},{" "}
+                  {trip.endLocation?.coordinates[0].toFixed(3)}
                 </td>
-                <td>{trip.distance_km.toFixed(2)}</td>
-                <td>{trip.payment.toFixed(2)}</td>
+                <td>{trip.distanceKm.toFixed(2)}</td>
+                <td>{trip.fare.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>

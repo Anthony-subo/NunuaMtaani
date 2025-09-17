@@ -1,9 +1,8 @@
-// controllers/tripController.js
 const Trip = require("../models/trip");
 const Rider = require("../models/rider");
 const Order = require("../models/orders");
 
-// Start a trip (assign rider + create trip)
+// Start a trip (buyer assigns rider)
 exports.startTrip = async (req, res) => {
   try {
     const {
@@ -26,15 +25,21 @@ exports.startTrip = async (req, res) => {
       rider_id: riderId,
       user_id: userId,
       shop_id: shopId,
-      startLocation,
-      endLocation,
+      startLocation: {
+        type: "Point",
+        coordinates: [startLocation.lng, startLocation.lat],
+      },
+      endLocation: {
+        type: "Point",
+        coordinates: [endLocation.lng, endLocation.lat],
+      },
       distanceKm,
       fare,
     });
 
     await trip.save();
 
-    // Update order to show it's assigned
+    // Update order status
     await Order.findByIdAndUpdate(orderId, {
       status: "assigned",
       assignedRider: riderId,
@@ -47,7 +52,7 @@ exports.startTrip = async (req, res) => {
   }
 };
 
-// Mark trip as completed
+// Complete trip
 exports.completeTrip = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id);
@@ -60,19 +65,32 @@ exports.completeTrip = async (req, res) => {
     trip.status = "completed";
     await trip.save();
 
-    // Update rider stats
+    // Update rider earnings instead of bikerData
     const rider = await Rider.findById(trip.rider_id);
     if (rider) {
-      rider.bikerData.totalTrips += 1;
-      rider.bikerData.totalKm += trip.distanceKm;
-      rider.bikerData.totalPay += trip.fare;
-      rider.bikerData.pendingPay += trip.fare;
+      rider.earnings.totalTrips += 1;
+      rider.earnings.totalKm += trip.distanceKm;
+      rider.earnings.totalPay += trip.fare;
+      rider.earnings.pendingPay += trip.fare;
       await rider.save();
     }
 
-    res.json({ message: "Trip completed", trip, bikerData: rider?.bikerData });
+    res.json({ message: "Trip completed", trip, earnings: rider?.earnings });
   } catch (err) {
     console.error("Error completing trip:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get all trips for a rider
+exports.getRiderTrips = async (req, res) => {
+  try {
+    const { riderId } = req.params;
+    const trips = await Trip.find({ rider_id: riderId }).sort({ createdAt: -1 });
+
+    res.json(trips);
+  } catch (err) {
+    console.error("Error fetching trips:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
