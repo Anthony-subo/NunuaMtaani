@@ -6,12 +6,10 @@ import Settings from '../components/Settings';
 import Header from '../components/Header';
 import { FaMapMarkedAlt, FaMotorcycle, FaWallet, FaCog } from 'react-icons/fa';
 import '../styles/dashboard.css';
-import axios from 'axios';
 
 function RiderDashboard() {
   const [activeTab, setActiveTab] = useState('map');
   const [riderName, setRiderName] = useState('');
-  const [riderId, setRiderId] = useState(null); // ✅ Mongo _id of rider
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -19,23 +17,13 @@ function RiderDashboard() {
       window.location.href = '/login';
     } else {
       setRiderName(user.name);
-
-      // ✅ fetch rider profile using user._id
-      axios
-        .get(`/api/riders?userId=${user._id}`)
-        .then((res) => {
-          if (res.data && res.data.length > 0) {
-            setRiderId(res.data[0]._id); // save Mongo _id
-          }
-        })
-        .catch((err) => console.error('Error fetching rider profile:', err));
     }
   }, []);
 
   const renderTab = () => {
     switch (activeTab) {
       case 'map':
-        return riderId ? <RiderMap riderId={riderId} /> : <p>Loading rider...</p>;
+        return <RiderMap />;
       case 'trips':
         return <RiderTrips />;
       case 'earnings':
@@ -43,20 +31,20 @@ function RiderDashboard() {
       case 'settings':
         return <Settings />;
       default:
-        return riderId ? <RiderMap riderId={riderId} /> : <p>Loading rider...</p>;
+        return <RiderMap />;
     }
   };
 
   return (
     <div className="container dashboard-container">
       <Header />
-
       {/* Tabs */}
       <div className="dashboard-tabs">
         <button
           className={activeTab === 'map' ? 'active' : ''}
           onClick={() => setActiveTab('map')}
           title="Live Map"
+          
         >
           <FaMapMarkedAlt size={22} />
           <span className="tab-label">Map</span>
