@@ -4,6 +4,9 @@ import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
 import axios from "axios";
 
+// ✅ Import API URL from env
+const API_URL = import.meta.env.VITE_API_URL;
+
 // Fix Leaflet default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -23,9 +26,9 @@ function RiderMap({ riderId }) {   // ✅ pass riderId from props or context
           const newPos = [coords.latitude, coords.longitude];
           setPosition(newPos);
 
-          // ✅ Send to backend
+          // ✅ Send to backend with API_URL
           try {
-            await axios.put(`/api/riders/${riderId}/location`, {
+            await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
               lat: coords.latitude,
               lng: coords.longitude,
             });

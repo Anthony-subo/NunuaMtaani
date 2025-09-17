@@ -2,6 +2,7 @@ const Rider = require("../models/rider");
 const { v4: uuidv4 } = require("uuid");
 
 // Create rider
+// Create rider
 exports.createRider = async (req, res) => {
   try {
     const data = req.body;
@@ -23,10 +24,8 @@ exports.createRider = async (req, res) => {
 exports.getRiderEarnings = async (req, res) => {
   try {
     const { riderId } = req.params;
-
-    const rider = await Rider.findOne({ user_id: riderId }); // look up by user_id
+    const rider = await Rider.findOne({ user_id: riderId }); // ✅ match DB structure
     if (!rider) return res.status(404).json({ error: "Rider not found" });
-
     res.json(rider.earnings);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -37,7 +36,10 @@ exports.getRiderEarnings = async (req, res) => {
 exports.getRiderByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
-    const rider = await Rider.findOne({ user_id: userId }).populate("user_id", "name email role");
+    const rider = await Rider.findOne({ user_id: userId }).populate(
+      "user_id",
+      "name email role"
+    );
 
     if (!rider) return res.status(404).json({ error: "Rider not found" });
     res.json(rider);
@@ -46,7 +48,7 @@ exports.getRiderByUserId = async (req, res) => {
   }
 };
 
-// Get riders
+// Get all riders
 exports.getRiders = async (req, res) => {
   try {
     if (req.query.userId) {
@@ -108,12 +110,7 @@ exports.getRiderTrips = (req, res) => {
   res.send("Rider trips");
 };
 
-// Rider earnings
-exports.getRiderEarnings = (req, res) => {
-  res.send("Rider earnings");
-};
-
-// Update location
+// Update rider location
 exports.updateLocation = async (req, res) => {
   try {
     const { lat, lng } = req.body;
@@ -121,9 +118,10 @@ exports.updateLocation = async (req, res) => {
     const rider = await Rider.findByIdAndUpdate(
       req.params.id,
       {
-        location: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
-        lat: parseFloat(lat),
-        lng: parseFloat(lng),
+        location: {
+          type: "Point",
+          coordinates: [parseFloat(lng), parseFloat(lat)], // ✅ GeoJSON expects [lng, lat]
+        },
         updatedAt: new Date(),
       },
       { new: true }
@@ -135,3 +133,8 @@ exports.updateLocation = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+
+
+

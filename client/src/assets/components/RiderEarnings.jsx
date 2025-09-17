@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/earnings.css";
 
+const API_URL = import.meta.env.VITE_API_URL; // ✅ use environment variable
+
 function RiderEarnings() {
   const [earnings, setEarnings] = useState({
     totalTrips: 0,
@@ -14,7 +16,7 @@ function RiderEarnings() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user && user.role === "rider") {
       axios
-        .get(`/api/rider/earnings/${user._id}`)
+        .get(`${API_URL}/api/riders/${user._id}/earnings`) // ✅ use API_URL here
         .then((res) => setEarnings(res.data))
         .catch((err) => console.error("Error fetching earnings:", err));
     }
