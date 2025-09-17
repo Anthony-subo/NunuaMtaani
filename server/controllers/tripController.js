@@ -3,6 +3,7 @@ const Trip = require("../models/trip");
 const Rider = require("../models/rider");
 const Order = require("../models/orders"); // ensure this exists
 
+
 // ✅ Create a trip when assigning rider
 exports.startTrip = async (req, res) => {
   try {
