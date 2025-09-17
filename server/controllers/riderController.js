@@ -9,12 +9,27 @@ exports.createRider = async (req, res) => {
     const rider = new Rider({
       ...data,
       rider_id: "RDR-" + uuidv4().slice(0, 8),
+      earnings: { totalTrips: 0, totalKm: 0, totalPay: 0, pendingPay: 0 }, // ✅ init earnings
     });
 
     await rider.save();
     res.status(201).json(rider);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+};
+
+// Rider earnings
+exports.getRiderEarnings = async (req, res) => {
+  try {
+    const { riderId } = req.params;
+
+    const rider = await Rider.findOne({ user_id: riderId }); // look up by user_id
+    if (!rider) return res.status(404).json({ error: "Rider not found" });
+
+    res.json(rider.earnings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 

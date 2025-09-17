@@ -4,7 +4,7 @@ const riderSchema = new mongoose.Schema(
   {
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
 
-    rider_id: { type: String, unique: true, required: true }, 
+    rider_id: { type: String, unique: true, required: true },
     rider_name: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },
@@ -16,10 +16,18 @@ const riderSchema = new mongoose.Schema(
 
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
+      coordinates: { type: [Number], default: [0, 0] },
     },
     lat: { type: Number, default: 0 },
     lng: { type: Number, default: 0 },
+
+    // 🟢 Earnings start at zero
+    earnings: {
+      totalTrips: { type: Number, default: 0 },
+      totalKm: { type: Number, default: 0 },
+      totalPay: { type: Number, default: 0 },
+      pendingPay: { type: Number, default: 0 },
+    },
   },
   { timestamps: true }
 );
