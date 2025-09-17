@@ -22,7 +22,7 @@ function MyPurchases() {
 
     const fetchOrders = async () => {
       try {
-        // 🚀 better: fetch only user’s orders
+        // 🚀 better: fetch only this user’s orders
         const res = await axios.get(`${API_URL}/api/orders/user/${user._id}`);
         setOrders(res.data);
       } catch (err) {
@@ -78,7 +78,9 @@ function MyPurchases() {
         <ul className="list-unstyled">
           {orders.map((order) => (
             <li key={order._id} className="order-card">
-              <div className="order-header">Order #{order._id.slice(-6)}</div>
+              <div className="order-header">
+                Order #{order._id.slice(-6)}
+              </div>
 
               <div className="order-meta">
                 📅 Placed on:{' '}
@@ -128,8 +130,11 @@ function MyPurchases() {
                     disabled={cancelingId === order._id}
                     onClick={() => handleCancelOrder(order._id)}
                   >
-                    {cancelingId === order._id ? 'Cancelling...' : 'Cancel Order'}
+                    {cancelingId === order._id
+                      ? 'Cancelling...'
+                      : 'Cancel Order'}
                   </button>
+                </>
               )}
             </li>
           ))}
