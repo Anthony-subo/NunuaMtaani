@@ -24,6 +24,7 @@ router.get("/nearby", getNearbyRiders);
 // Update live location
 router.put("/:id/location", updateLocation);   // ✅ works now
 
+
 // Trips
 router.post("/trips/start", startTrip);
 router.post("/trips/complete/:tripId", completeTrip);
