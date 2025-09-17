@@ -76,25 +76,25 @@ function DeliveryMap() {
         coordinates: [buyerLocation[1], buyerLocation[0]], // [lng, lat]
       };
 
-      // For now: delivery destination = shop location (replace with real one later)
+      // TODO: Replace with real delivery destination
       const endLocation = {
         type: "Point",
-        coordinates: [37.0, -1.0], // TODO: replace with buyer’s delivery destination
+        coordinates: [37.0, -1.0],
       };
 
-      // Call backend trip creation
-      const res = await axios.post("/api/trips/start", {
-        orderId,
-        riderId,
-        userId: user._id,
-        shopId,
+      // ✅ Call backend trip creation (correct route)
+      const res = await axios.post("/api/trips", {
+        order_id: orderId,
+        rider_id: riderId,
+        user_id: user._id,
+        shop_id: shopId,
         startLocation,
         endLocation,
-        distanceKm: 5, // 👉 placeholder (backend can compute haversine)
-        fare: 200,     // 👉 placeholder (backend can compute dynamic fare)
+        distanceKm: 5, // 👉 placeholder
+        fare: 200,     // 👉 placeholder
       });
 
-      alert(`✅ Trip started with rider: ${res.data.trip.rider_id}`);
+      alert(`✅ Trip started with rider: ${res.data.rider_id}`);
     } catch (err) {
       console.error("Error starting trip:", err);
       alert("❌ Failed to start trip");
