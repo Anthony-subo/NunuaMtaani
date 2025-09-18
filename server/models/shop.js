@@ -1,58 +1,66 @@
 // models/Shop.js
 const mongoose = require('mongoose');
 
-const SubscriptionSchema = new mongoose.Schema({
+// ================== SUBSCRIPTION SCHEMA ==================
+const SubscriptionSchema = new mongoose.Schema(
+  {
   status: {
     type: String,
     enum: ['active', 'grace', 'inactive'],
     default: 'inactive'
   },
-  plan: { type: String, default: 'standard-300' },
+    plan: {
+      type: String,
+      default: 'standard-300' // can support future tiers later
+    },
   currentPeriodStart: Date,
-  currentPeriodEnd: Date,
-  graceUntil: Date,
-  lastPaymentRef: String
-}, { _id: false });
+    currentPeriodEnd: Date,   // last paid date (monthly subscription)
+    graceUntil: Date,         // optional grace days (3–7 days after expiry)
+    lastPaymentRef: String    // Mpesa ref or manual note
+  },
+  { _id: false }
+);
 
-const ShopSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+// ================== SHOP SCHEMA ==================
+const ShopSchema = new mongoose.Schema(
+  {
+      user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'users',
+      required: true
+    },
   shop_name: { type: String, required: true },
   owner_name: { type: String, required: true },
   email: { type: String, required: true },
-  
-  // keep plain text for display
   location: { type: String, required: true },
 
-  // NEW field: GeoJSON for geo queries
-  geoLocation: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point'
-    },
-    coordinates: {
-      type: [Number], // [lng, lat]
-      default: [0, 0]
-    }
-  },
-
+    // Payment setup (phone or till)
   payment_method: {
     type: String,
     enum: ['phone', 'till'],
     required: true
   },
-  payment_number: { type: String, required: true },
+    payment_number: {
+      type: String,
+      required: true // 2547XXXXXXXX or Till Number
+    },
 
-  commission_rate: { type: Number, default: 0.05 },
+    // Commission logic
+    commission_rate: { type: Number, default: 0.05 }, // 5%
 
+    // Subscription
   subscription: {
     type: SubscriptionSchema,
     default: () => ({})
   },
 
-  isVisible: { type: Boolean, default: false }
-}, { timestamps: true });
-
-ShopSchema.index({ geoLocation: '2dsphere' }); // ✅ for near queries
+    // Visibility toggle
+    isVisible: {
+      type: Boolean,
+      default: false // inactive shops won’t show in marketplace
+    }
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('Shop', ShopSchema);
