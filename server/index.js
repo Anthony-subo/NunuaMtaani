@@ -37,7 +37,7 @@ app.use('/api/shops', require('./routes/shopRoutes')); // ✅ Add this
 app.use('/api/orders', require('./routes/orderRoutes')); // ✅ Add this
 app.use('/api/riders', require('./routes/riderRoutes')); 
 app.use("/api/trips", require('./routes/tripRoutes')); // <-- Add this line
-app.use("/api/settings", require('./routes/tripRoutes'));
+app.use("/api/settings", require('./routes/settingsRoutes'));
 
 
 // Server
