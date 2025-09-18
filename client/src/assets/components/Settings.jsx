@@ -8,14 +8,46 @@ function Settings() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    location: "",
     email: "",
-    status: ""
+    role: "",
+    location: "",
+    coordinates: [0, 0], // [lng, lat]
   });
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (user) setFormData(user);
+    if (!user) return;
+
+    // Load saved settings from backend
+    const fetchSettings = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/settings/${user._id}`);
+        if (res.data.settings) {
+          setFormData({
+            ...formData,
+            name: user.name,
+            phone: user.phone,
+            email: user.email,
+            role: user.role,
+            location: res.data.settings.location || "",
+            coordinates: res.data.settings.geo?.coordinates || [0, 0],
+          });
+        } else {
+          // fallback → just user info if no settings yet
+          setFormData({
+            ...formData,
+            name: user.name,
+            phone: user.phone,
+            email: user.email,
+            role: user.role,
+          });
+        }
+      } catch (err) {
+        console.error("⚠️ Failed to load settings", err);
+      }
+    };
+
+    fetchSettings();
   }, []);
 
   const handleChange = (e) => {
@@ -27,17 +59,20 @@ function Settings() {
     const user = JSON.parse(localStorage.getItem("user"));
 
     try {
-      // ✅ use dynamic API_URL
       const res = await axios.put(
-        `${API_URL}/api/users/settings/${user._id}`,
+        `${API_URL}/api/settings/${user._id}`,
         formData
       );
-      alert("Profile updated!");
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      setFormData(res.data.user);
+
+      alert("✅ Settings updated!");
+      setFormData({
+        ...formData,
+        location: res.data.settings.location,
+        coordinates: res.data.settings.geo?.coordinates || [0, 0],
+      });
     } catch (err) {
       console.error(err);
-      alert("Update failed");
+      alert("❌ Failed to update settings");
     }
   };
 
@@ -46,8 +81,8 @@ function Settings() {
       <form onSubmit={handleSubmit} className="settings-form">
         <h3 className="settings-title">⚙️ Profile Settings</h3>
         <p className="settings-subtext">
-          Update your personal details below. <br />
-          (Email and status cannot be changed)
+          Update your details below. Location will be used for shop/rider/buyer
+          matching.
         </p>
 
         <div className="form-group">
@@ -79,7 +114,7 @@ function Settings() {
             name="location"
             value={formData.location || ""}
             onChange={handleChange}
-            placeholder="Enter your location"
+            placeholder="Enter your location (e.g. Nairobi, Bahati)"
           />
         </div>
 
@@ -89,8 +124,8 @@ function Settings() {
         </div>
 
         <div className="form-group">
-          <label>Status (read-only)</label>
-          <input type="text" value={formData.status || ""} disabled />
+          <label>Role (read-only)</label>
+          <input type="text" value={formData.role || ""} disabled />
         </div>
 
         <button type="submit" className="save-btn">
