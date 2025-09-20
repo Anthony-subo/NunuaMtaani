@@ -4,6 +4,19 @@
   padding: 1rem;
   background-color: #fff;
 }
+.shop-settings-btn {
+  margin-left: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  transition: color 0.2s ease-in-out;
+}
+
+.shop-settings-btn:hover {
+  color: #007bff;
+}
+
 
 /* Dashboard Tabs (Desktop default: top tabs) */
 .dashboard-tabs {

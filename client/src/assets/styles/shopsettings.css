@@ -1,0 +1,36 @@
+.shop-settings {
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.shop-settings h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.4rem;
+}
+
+.shop-info p, 
+.subscription-box p {
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
+
+.subscription-box {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f9fafc;
+  border: 1px solid #eee;
+  border-radius: 10px;
+}
+
+.loading {
+  text-align: center;
+  color: #888;
+}
+
+.error {
+  text-align: center;
+  color: red;
+}
