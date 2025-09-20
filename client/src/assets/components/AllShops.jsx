@@ -11,41 +11,36 @@ function AllShops() {
     fetchShops();
   }, []);
 
-  // ✅ Fetch all shops
   const fetchShops = () => {
-    axios
-      .get(`${API_URL}/api/shops`)
-      .then((res) => setShops(res.data))
-      .catch((err) => console.error('Error fetching shops:', err));
+    axios.get(`${API_URL}/api/shops`)
+      .then(res => setShops(res.data))
+      .catch(err => console.error('Error fetching shops:', err));
   };
 
-  // ✅ Update local state when dropdown changes
   const handleStatusChange = (shopId, newStatus) => {
-    setShops((prevShops) =>
-      prevShops.map((shop) =>
+    setShops(prevShops =>
+      prevShops.map(shop =>
         shop._id === shopId ? { ...shop, status: newStatus } : shop
       )
     );
   };
 
-  // ✅ Save new status to backend
-  const handleStatusUpdate = async (shopId, newStatus) => {
+  const handleStatusUpdate = async (shopId, status) => {
     try {
-      await axios.put(`${API_URL}/api/shops/${shopId}/status`, { status: newStatus });
+      await axios.put(`${API_URL}/api/shops/${shopId}/status`, { status });
       alert('✅ Status updated');
-      fetchShops(); // refresh UI from DB
     } catch (err) {
       console.error('Failed to update status:', err);
       alert('❌ Error updating status');
     }
   };
 
-  // ✅ Delete shop
+  // ✅ New: Delete shop
   const handleDelete = async (shopId) => {
-    if (!window.confirm('Are you sure you want to delete this shop?')) return;
+    if (!window.confirm("Are you sure you want to delete this shop?")) return;
     try {
       await axios.delete(`${API_URL}/api/shops/${shopId}`);
-      setShops((prevShops) => prevShops.filter((shop) => shop._id !== shopId));
+      setShops(prevShops => prevShops.filter(shop => shop._id !== shopId));
       alert('🗑️ Shop deleted successfully');
     } catch (err) {
       console.error('Failed to delete shop:', err);
@@ -64,40 +59,22 @@ function AllShops() {
             {shops.map((shop) => (
               <div key={shop._id} className="shop-card shadow-sm">
                 <h5>{shop.shop_name}</h5>
+                <p className="mb-1"><strong>Owner:</strong> {shop.owner_name}</p>
+                <p className="mb-1"><strong>Email:</strong> {shop.email}</p>
+                <p className="mb-1"><strong>Location:</strong> {shop.location}</p>
                 <p className="mb-1">
-                  <strong>Owner:</strong> {shop.owner_name}
-                </p>
-                <p className="mb-1">
-                  <strong>Email:</strong> {shop.email}
-                </p>
-                <p className="mb-1">
-                  <strong>Location:</strong> {shop.location}
-                </p>
-                <p className="mb-1">
-                  <strong>Status:</strong>{' '}
-                  <span
-                    className={`badge bg-${
-                      shop.status === 'success'
-                        ? 'success'
-                        : shop.status === 'pending'
-                        ? 'warning text-dark'
-                        : 'danger'
-                    }`}
-                  >
+                  <strong>Status:</strong>{" "}
+                  <span className={`badge bg-${shop.status === 'success' ? 'success' : shop.status === 'pending' ? 'warning text-dark' : 'danger'}`}>
                     {shop.status || 'pending'}
                   </span>
                 </p>
 
                 <div className="mb-2">
-                  <label>
-                    <strong>Change Status:</strong>
-                  </label>
+                  <label><strong>Change Status:</strong></label>
                   <select
                     className="form-select form-select-sm"
                     value={shop.status || 'pending'}
-                    onChange={(e) =>
-                      handleStatusChange(shop._id, e.target.value)
-                    }
+                    onChange={(e) => handleStatusChange(shop._id, e.target.value)}
                   >
                     <option value="pending">Pending</option>
                     <option value="success">Success</option>
