@@ -11,31 +11,37 @@ function AllShops() {
     fetchShops();
   }, []);
 
+  // ✅ Fetch all shops
   const fetchShops = () => {
     axios.get(`${API_URL}/api/shops`)
       .then(res => setShops(res.data))
       .catch(err => console.error('Error fetching shops:', err));
   };
 
+  // ✅ Change dropdown value locally
   const handleStatusChange = (shopId, newStatus) => {
     setShops(prevShops =>
       prevShops.map(shop =>
-        shop._id === shopId ? { ...shop, status: newStatus } : shop
+        shop._id === shopId
+          ? { ...shop, subscription: { ...shop.subscription, status: newStatus } }
+          : shop
       )
     );
   };
 
-  const handleStatusUpdate = async (shopId, status) => {
+  // ✅ Save new status to backend
+  const handleStatusUpdate = async (shopId, newStatus) => {
     try {
-      await axios.put(`${API_URL}/api/shops/${shopId}/status`, { status });
+      await axios.put(`${API_URL}/api/shops/${shopId}/status`, { status: newStatus });
       alert('✅ Status updated');
+      fetchShops();
     } catch (err) {
       console.error('Failed to update status:', err);
       alert('❌ Error updating status');
     }
   };
 
-  // ✅ New: Delete shop
+  // ✅ Delete shop
   const handleDelete = async (shopId) => {
     if (!window.confirm("Are you sure you want to delete this shop?")) return;
     try {
@@ -64,8 +70,14 @@ function AllShops() {
                 <p className="mb-1"><strong>Location:</strong> {shop.location}</p>
                 <p className="mb-1">
                   <strong>Status:</strong>{" "}
-                  <span className={`badge bg-${shop.status === 'success' ? 'success' : shop.status === 'pending' ? 'warning text-dark' : 'danger'}`}>
-                    {shop.status || 'pending'}
+                  <span className={`badge bg-${
+                    shop.subscription?.status === 'active'
+                      ? 'success'
+                      : shop.subscription?.status === 'grace'
+                      ? 'warning text-dark'
+                      : 'danger'
+                  }`}>
+                    {shop.subscription?.status || 'inactive'}
                   </span>
                 </p>
 
@@ -73,19 +85,19 @@ function AllShops() {
                   <label><strong>Change Status:</strong></label>
                   <select
                     className="form-select form-select-sm"
-                    value={shop.status || 'pending'}
+                    value={shop.subscription?.status || 'inactive'}
                     onChange={(e) => handleStatusChange(shop._id, e.target.value)}
                   >
-                    <option value="pending">Pending</option>
-                    <option value="success">Success</option>
-                    <option value="failed">Failed</option>
+                    <option value="active">Active</option>
+                    <option value="grace">Grace</option>
+                    <option value="inactive">Inactive</option>
                   </select>
                 </div>
 
                 <div className="d-flex gap-2">
                   <button
                     className="btn btn-success btn-sm"
-                    onClick={() => handleStatusUpdate(shop._id, shop.status)}
+                    onClick={() => handleStatusUpdate(shop._id, shop.subscription?.status)}
                   >
                     Update
                   </button>
