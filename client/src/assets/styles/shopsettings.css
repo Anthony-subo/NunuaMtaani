@@ -1,74 +1,36 @@
 .shop-settings {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 25px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  font-family: "Inter", sans-serif;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .shop-settings h3 {
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.4rem;
 }
 
-.shop-info, 
-.subscription-box {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 20px;
-  margin-bottom: 25px;
-}
-
-.shop-info p,
+.shop-info p, 
 .subscription-box p {
-  margin: 0;
+  margin: 6px 0;
   font-size: 0.95rem;
-  color: #444;
-}
-
-.shop-info strong,
-.subscription-box strong {
-  color: #1a202c;
 }
 
 .subscription-box {
-  padding: 18px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  margin-top: 20px;
+  padding: 15px;
   background: #f9fafc;
-}
-
-.subscription-box h4 {
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin-bottom: 12px;
-  color: #2b6cb0;
+  border: 1px solid #eee;
+  border-radius: 10px;
 }
 
 .loading {
   text-align: center;
-  color: #666;
-  font-size: 1rem;
+  color: #888;
 }
 
 .error {
   text-align: center;
-  color: #e53e3e;
-  font-weight: 500;
-}
-
-.shop-status {
-  font-weight: 600;
-  color: #2b6cb0;
-}
-
-.shop-status.inactive {
-  color: #e53e3e;
+  color: red;
 }
