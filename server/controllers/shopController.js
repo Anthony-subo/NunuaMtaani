@@ -1,4 +1,4 @@
-const Shop = require("../models/Shop");
+const Shop = require("../models/shop");
 
 // @desc Create a new shop linked to a user
 const createShop = async (req, res) => {

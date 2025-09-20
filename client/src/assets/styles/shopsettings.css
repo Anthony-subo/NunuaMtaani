@@ -1,76 +1,48 @@
 .shop-settings {
-  max-width: 750px;
-  margin: 0 auto;
-  padding: 25px;
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  font-family: "Inter", sans-serif;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .shop-settings h3 {
-  color: #1a202c;
-  margin-bottom: 20px;
-  font-size: 1.6rem;
-  font-weight: 600;
-  border-bottom: 2px solid #edf2f7;
-  padding-bottom: 8px;
-}
-
-.shop-info, 
-.subscription-box {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 20px;
-}
-
-.shop-info p,
-.subscription-box p {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #4a5568;
-}
-
-.shop-info strong,
-.subscription-box strong {
-  color: #2d3748;
-}
-
-.subscription-box {
-  margin-top: 25px;
-  padding: 18px;
-  background: #f9fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-}
-
-.subscription-box h4 {
-  font-size: 1.2rem;
-  font-weight: 600;
+  color: #333;
   margin-bottom: 15px;
-  color: #2b6cb0;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 6px;
+  font-size: 1.4rem;
+}
+
+.shop-info p, 
+.subscription-box p {
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
+
+.subscription-box {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f9fafc;
+  border: 1px solid #eee;
+  border-radius: 10px;
 }
 
 .loading {
   text-align: center;
-  color: #718096;
-  font-size: 1rem;
+  color: #888;
 }
 
 .error {
   text-align: center;
-  color: #e53e3e;
-  font-weight: 500;
+  color: red;
 }
 
+/* Status badges */
 .status-badge {
   display: inline-block;
-  padding: 3px 10px;
-  font-size: 0.8rem;
+  padding: 4px 12px;
+  font-size: 0.85rem;
   font-weight: 600;
   border-radius: 999px;
+  text-transform: capitalize;
 }
 
 .status-badge.active {
@@ -81,4 +53,9 @@
 .status-badge.inactive {
   background: #fed7d7;
   color: #c53030;
+}
+
+.status-badge.grace {
+  background: #fefcbf;
+  color: #b7791f;
 }
