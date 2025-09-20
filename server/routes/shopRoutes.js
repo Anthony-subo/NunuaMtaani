@@ -1,18 +1,18 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express");
 const {
   createShop,
   getShopByUserId,
   getAllShops,
   deleteShop,
   updateShopStatus
-} = require('../controllers/shopController');
+} = require("../controllers/shopController");
 
-// Routes
-router.post('/', createShop);
-router.get('/user/:userId', getShopByUserId);
-router.get('/', getAllShops);
-router.delete('/:id', deleteShop);
-router.put('/:shopId/status', updateShopStatus);
+const router = express.Router();
+
+router.post("/", createShop);
+router.get("/user/:userId", getShopByUserId);
+router.get("/", getAllShops);
+router.delete("/:id", deleteShop);
+router.patch("/:shopId/status", updateShopStatus);
 
 module.exports = router;

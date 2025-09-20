@@ -27,28 +27,23 @@ function ShopSettings() {
     fetchShop();
   }, []);
 
-  if (loading) {
-    return <p className="loading">Loading shop settings...</p>;
-  }
-
-  if (!shop) {
-    return <p className="error">No shop data found.</p>;
-  }
+  if (loading) return <p className="loading">Loading shop settings...</p>;
+  if (!shop) return <p className="error">No shop data found.</p>;
 
   const renderBadge = (type, value) => {
     let badgeClass = "status-badge";
 
     if (type === "subscription") {
       if (value === "active") badgeClass += " active";
-      else if (value === "inactive") badgeClass += " inactive";
-      else badgeClass += " ending"; // fallback
+      else if (value === "grace") badgeClass += " grace";
+      else badgeClass += " inactive";
     }
 
     if (type === "visibility") {
-      badgeClass += value ? " active" : " inactive";
+      badgeClass += value === "Visible" ? " active" : " inactive";
     }
 
-    return <span className={badgeClass}>{value?.toString()}</span>;
+    return <span className={badgeClass}>{value}</span>;
   };
 
   return (
@@ -70,8 +65,8 @@ function ShopSettings() {
         <h4>📦 Subscription</h4>
         <p><strong>Status:</strong> {renderBadge("subscription", shop.subscription?.status)}</p>
         <p><strong>Plan:</strong> {shop.subscription?.plan}</p>
-        <p><strong>Created At:</strong> {new Date(shop.subscription?.createdAt).toLocaleString()}</p>
-        <p><strong>Updated At:</strong> {new Date(shop.subscription?.updatedAt).toLocaleString()}</p>
+        <p><strong>Created At:</strong> {new Date(shop.createdAt).toLocaleString()}</p>
+        <p><strong>Updated At:</strong> {new Date(shop.updatedAt).toLocaleString()}</p>
       </div>
     </div>
   );
