@@ -28,7 +28,7 @@ function RiderMap({ riderId }) {   // ✅ pass riderId from props or context
 
           // ✅ Send to backend with API_URL
           try {
-            await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
+            await axios.patch(`${API_URL}/api/riders/${riderId}/location`, {
               lat: coords.latitude,
               lng: coords.longitude,
             });
