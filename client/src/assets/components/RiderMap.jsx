@@ -18,7 +18,8 @@ L.Icon.Default.mergeOptions({
 });
 
 function RiderMap({ riderId }) {
-  const [position, setPosition] = useState(null);
+  // ✅ Start with Nairobi CBD so map always renders
+  const [position, setPosition] = useState([-1.2921, 36.8219]);
 
   useEffect(() => {
     let watchId;
@@ -47,8 +48,12 @@ function RiderMap({ riderId }) {
         },
         (err) => {
           console.error("❌ Error getting location:", err);
-          // fallback: Nairobi CBD
-          setPosition([-1.2921, 36.8219]);
+
+          // ✅ Handle denied permission
+          if (err.code === 1) {
+            console.warn("⚠️ User denied location. Using Nairobi fallback.");
+            setPosition([-1.2921, 36.8219]);
+          }
         },
         { enableHighAccuracy: true }
       );
@@ -64,25 +69,21 @@ function RiderMap({ riderId }) {
       className="rounded-xl shadow-md"
       style={{ height: "500px", width: "100%", overflow: "hidden" }}
     >
-      {position ? (
-        <MapContainer
-          center={position}
-          zoom={15}
-          style={{ height: "100%", width: "100%" }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <Marker position={position}>
-            <Popup>
-              <b>You are here</b> 🚴 <br /> Current location for deliveries.
-            </Popup>
-          </Marker>
-        </MapContainer>
-      ) : (
-        <p className="text-center p-3">📍 Loading your location...</p>
-      )}
+      <MapContainer
+        center={position}
+        zoom={15}
+        style={{ height: "100%", width: "100%" }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={position}>
+          <Popup>
+            <b>You are here</b> 🚴 <br /> Current location for deliveries.
+          </Popup>
+        </Marker>
+      </MapContainer>
     </div>
   );
 }
