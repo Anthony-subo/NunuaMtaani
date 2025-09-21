@@ -20,6 +20,8 @@ methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
 
 
 app.use(express.json());
+// Load cron after DB is ready
+ // require("./cronJobs");
 
 // Static route to serve uploaded images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
