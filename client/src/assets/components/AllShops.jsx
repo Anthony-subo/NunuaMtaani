@@ -32,7 +32,7 @@ function AllShops() {
   // ✅ Save new status to backend
   const handleStatusUpdate = async (shopId, newStatus) => {
     try {
-      await axios.put(`${API_URL}/api/shops/${shopId}/status`, { status: newStatus });
+      await axios.patch(`${API_URL}/api/shops/${shopId}/status`, { status: newStatus });
       alert('✅ Status updated');
       fetchShops();
     } catch (err) {
