@@ -1,37 +1,25 @@
 const express = require("express");
 const router = express.Router();
-
-const {
-  createRider,
-  getRiders,
-  deleteRider,
-  getNearbyRiders,
-  startTrip,
-  completeTrip,
-  getRiderTrips,
-  getRiderEarnings,
-  updateLocation,
-  getRiderByUserId
-} = require("../controllers/riderController");
+const riderController = require("../controllers/riderController");
 
 // Rider CRUD
-router.post("/", createRider);
-router.get("/", getRiders);
-router.delete("/:id", deleteRider);
+router.post("/", riderController.createRider);
+router.get("/", riderController.getRiders);
+router.delete("/:id", riderController.deleteRider);
 
 // Get rider by user id
-router.get("/me/:userId", getRiderByUserId);
+router.get("/me/:userId", riderController.getRiderByUserId);
 
 // Rider services
-router.get("/nearby", getNearbyRiders);
+router.get("/nearby", riderController.getNearbyRiders);
 
-// Update live location
-router.put("/:id/location", updateLocation);
+// ✅ Update rider by rider_id (location + availability)
+router.put("/by-rider-id/:rider_id", riderController.updateRiderByRiderId);
 
 // Trips
-router.post("/trips/start", startTrip);
-router.post("/trips/complete/:tripId", completeTrip);
-router.get("/:riderId/trips", getRiderTrips);
-router.get("/:riderId/earnings", getRiderEarnings);
+router.post("/trips/start", riderController.startTrip);
+router.post("/trips/complete/:tripId", riderController.completeTrip);
+router.get("/:riderId/trips", riderController.getRiderTrips);
+router.get("/:riderId/earnings", riderController.getRiderEarnings);
 
 module.exports = router;

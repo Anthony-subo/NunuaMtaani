@@ -6,7 +6,7 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Fix Leaflet default marker icons
+// ✅ Fix Leaflet default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -30,13 +30,19 @@ function RiderMap({ riderId }) {
           setPosition(newPos);
 
           try {
-            await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
+            // ✅ send lat/lng & availability
+            await axios.put(`${API_URL}/api/riders/by-rider-id/${riderId}`, {
               lat: coords.latitude,
               lng: coords.longitude,
+              isAvailable: true,
             });
-            console.log("✅ Location saved:", newPos);
+
+            console.log("✅ Location updated:", newPos);
           } catch (err) {
-            console.error("❌ Error saving location:", err.response?.data || err.message);
+            console.error(
+              "❌ Error saving location:",
+              err.response?.data || err.message
+            );
           }
         },
         (err) => {
