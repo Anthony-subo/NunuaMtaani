@@ -46,6 +46,13 @@ function ShopSettings() {
     return <span className={badgeClass}>{value}</span>;
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    return new Date(dateStr).toLocaleString();
+  };
+
+  const today = new Date();
+
   return (
     <div className="shop-settings">
       <h3>⚙️ Shop Settings</h3>
@@ -65,8 +72,27 @@ function ShopSettings() {
         <h4>📦 Subscription</h4>
         <p><strong>Status:</strong> {renderBadge("subscription", shop.subscription?.status)}</p>
         <p><strong>Plan:</strong> {shop.subscription?.plan}</p>
-        <p><strong>Created At:</strong> {new Date(shop.createdAt).toLocaleString()}</p>
-        <p><strong>Updated At:</strong> {new Date(shop.updatedAt).toLocaleString()}</p>
+
+        <p>
+          <strong>Start Date:</strong>{" "}
+          {formatDate(shop.subscription?.currentPeriodStart)}
+        </p>
+        <p className={
+          shop.subscription?.currentPeriodEnd && new Date(shop.subscription.currentPeriodEnd) < today
+            ? "expired"
+            : ""
+        }>
+          <strong>End Date:</strong>{" "}
+          {formatDate(shop.subscription?.currentPeriodEnd)}
+        </p>
+        <p className={
+          shop.subscription?.graceUntil && new Date(shop.subscription.graceUntil) < today
+            ? "expired"
+            : "grace"
+        }>
+          <strong>Grace Until:</strong>{" "}
+          {formatDate(shop.subscription?.graceUntil)}
+        </p>
       </div>
     </div>
   );
