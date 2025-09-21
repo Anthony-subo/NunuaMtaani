@@ -110,6 +110,7 @@ const updateShopStatus = async (req, res) => {
         "subscription.status": "inactive"
       };
     }
+    
 
     const updatedShop = await Shop.findByIdAndUpdate(
       req.params.shopId,
