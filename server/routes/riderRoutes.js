@@ -13,8 +13,8 @@ router.get("/me/:userId", riderController.getRiderByUserId);
 // Rider services
 router.get("/nearby", riderController.getNearbyRiders);
 
-// ✅ Update rider by rider_id (location + availability)
-router.put("/by-rider-id/:rider_id", riderController.updateRiderByRiderId);
+// ✅ Update live location by Mongo _id
+router.put("/:id/location", riderController.updateLocation);
 
 // Trips
 router.post("/trips/start", riderController.startTrip);

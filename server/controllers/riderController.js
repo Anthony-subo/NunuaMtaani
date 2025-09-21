@@ -8,8 +8,8 @@ exports.createRider = async (req, res) => {
 
     const rider = new Rider({
       ...data,
-      rider_id: "RDR-" + uuidv4().slice(0, 8),
-      earnings: { totalTrips: 0, totalKm: 0, totalPay: 0, pendingPay: 0 }, // ✅ init earnings
+      rider_id: "RDR-" + uuidv4().slice(0, 8), // still keep friendly rider_id
+      earnings: { totalTrips: 0, totalKm: 0, totalPay: 0, pendingPay: 0 },
     });
 
     await rider.save();
@@ -23,7 +23,7 @@ exports.createRider = async (req, res) => {
 exports.getRiderEarnings = async (req, res) => {
   try {
     const { riderId } = req.params;
-    const rider = await Rider.findOne({ user_id: riderId });
+    const rider = await Rider.findById(riderId);
     if (!rider) return res.status(404).json({ error: "Rider not found" });
     res.json(rider.earnings);
   } catch (err) {
@@ -109,31 +109,29 @@ exports.getRiderTrips = (req, res) => {
   res.send("Rider trips");
 };
 
-// ✅ Update rider by rider_id (location + status)
-exports.updateRiderByRiderId = async (req, res) => {
+// ✅ Update rider location by Mongo _id
+exports.updateLocation = async (req, res) => {
   try {
-    const { rider_id } = req.params;
-    const updateData = { ...req.body };
+    const { lat, lng, isAvailable } = req.body;
 
-    if (req.body.lat && req.body.lng) {
-      updateData.location = {
-        type: "Point",
-        coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)], // GeoJSON format
-      };
-    }
-
-    const rider = await Rider.findOneAndUpdate(
-      { rider_id },
-      { $set: updateData },
+    const rider = await Rider.findByIdAndUpdate(
+      req.params.id,
+      {
+        location: {
+          type: "Point",
+          coordinates: [parseFloat(lng), parseFloat(lat)], // GeoJSON expects [lng, lat]
+        },
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        isAvailable: isAvailable ?? true,
+        updatedAt: new Date(),
+      },
       { new: true }
     );
 
-    if (!rider) {
-      return res.status(404).json({ message: "Rider not found" });
-    }
-
+    if (!rider) return res.status(404).json({ error: "Rider not found" });
     res.json(rider);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
