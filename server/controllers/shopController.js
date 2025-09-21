@@ -80,9 +80,40 @@ const updateShopStatus = async (req, res) => {
     const valid = ["active", "grace", "inactive"];
     if (!valid.includes(status)) return res.status(400).json({ message: "Invalid status" });
 
+    let updateData = { "subscription.status": status };
+
+    if (status === "active") {
+      const now = new Date();
+      const oneMonthLater = new Date();
+      oneMonthLater.setMonth(now.getMonth() + 1);
+
+      updateData = {
+        "subscription.status": "active",
+        "subscription.currentPeriodStart": now,
+        "subscription.currentPeriodEnd": oneMonthLater,
+        "subscription.graceUntil": null // reset grace
+      };
+    }
+
+    if (status === "grace") {
+      const graceUntil = new Date();
+      graceUntil.setDate(graceUntil.getDate() + 7); // 7-day grace
+
+      updateData = {
+        "subscription.status": "grace",
+        "subscription.graceUntil": graceUntil
+      };
+    }
+
+    if (status === "inactive") {
+      updateData = {
+        "subscription.status": "inactive"
+      };
+    }
+
     const updatedShop = await Shop.findByIdAndUpdate(
       req.params.shopId,
-      { "subscription.status": status },
+      { $set: updateData },
       { new: true }
     );
 
@@ -92,6 +123,7 @@ const updateShopStatus = async (req, res) => {
     res.status(500).json({ message: "Failed to update status", error: err.message });
   }
 };
+
 
 module.exports = {
   createShop,
