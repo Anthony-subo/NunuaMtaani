@@ -149,7 +149,7 @@ function NunuaMtaaniLanding() {
       <section className="bg-light py-5 border-top">
         <div className="container text-center">
           <h4 className="fw-bold">Before You Continue</h4>
-          <p className="text-muted">Please accept our policy to use NunuaMtaani.</p>
+          <p className="text-muted">Please accept and read our policy to use NunuaMtaani.</p>
           <div className="form-check d-inline-flex align-items-center">
             <input
               className="form-check-input me-2"
