@@ -109,20 +109,22 @@ exports.getRiderTrips = (req, res) => {
   res.send("Rider trips");
 };
 
-// ✅ Update rider location by Mongo _id
+// ✅ Update rider live GPS location
 exports.updateLocation = async (req, res) => {
   try {
-    const { lat, lng, isAvailable } = req.body;
+    const { location, isAvailable } = req.body;
+
+    if (!location?.latitude || !location?.longitude) {
+      return res.status(400).json({ error: "Missing latitude/longitude" });
+    }
 
     const rider = await Rider.findByIdAndUpdate(
       req.params.id,
       {
         location: {
           type: "Point",
-          coordinates: [parseFloat(lng), parseFloat(lat)], // GeoJSON expects [lng, lat]
+          coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)], // GeoJSON expects [lng, lat]
         },
-        lat: parseFloat(lat),
-        lng: parseFloat(lng),
         isAvailable: isAvailable ?? true,
         updatedAt: new Date(),
       },
@@ -130,8 +132,9 @@ exports.updateLocation = async (req, res) => {
     );
 
     if (!rider) return res.status(404).json({ error: "Rider not found" });
-    res.json(rider);
+    res.json({ success: true, data: rider });
   } catch (err) {
+    console.error("Error updating location:", err);
     res.status(500).json({ error: err.message });
   }
 };

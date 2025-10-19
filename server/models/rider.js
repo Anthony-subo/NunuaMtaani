@@ -14,14 +14,13 @@ const riderSchema = new mongoose.Schema(
 
     isAvailable: { type: Boolean, default: true },
 
+    // ✅ GeoJSON location (for map & $near queries)
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: { type: [Number], default: [0, 0] },
+      coordinates: { type: [Number], default: [36.8219, -1.2921] }, // [lng, lat] Nairobi default
     },
-    lat: { type: Number, default: 0 },
-    lng: { type: Number, default: 0 },
 
-    // 🟢 Earnings start at zero
+    // 🟢 Earnings summary
     earnings: {
       totalTrips: { type: Number, default: 0 },
       totalKm: { type: Number, default: 0 },
@@ -32,6 +31,7 @@ const riderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ✅ Index for geo queries
 riderSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("riders", riderSchema);
