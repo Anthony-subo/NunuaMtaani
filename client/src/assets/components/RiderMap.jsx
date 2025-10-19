@@ -33,10 +33,13 @@ function RiderMap({ riderId }) {
           try {
             // ✅ send to backend using Mongo _id
             await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
-              lat: coords.latitude,
-              lng: coords.longitude,
-              isAvailable: true,
-            });
+  location: {
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+  },
+  isAvailable: true,
+});
+
 
             console.log("✅ Location updated:", newPos);
           } catch (err) {
