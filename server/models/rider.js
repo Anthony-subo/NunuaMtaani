@@ -14,7 +14,7 @@ const riderSchema = new mongoose.Schema(
 
     isAvailable: { type: Boolean, default: true },
 
-    // ✅ GeoJSON location (for mapping & nearby queries)
+    // ✅ GeoJSON location (for map & $near queries)
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },
       coordinates: { type: [Number], default: [36.8219, -1.2921] }, // [lng, lat] Nairobi default
@@ -31,7 +31,7 @@ const riderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ✅ Geo index for location-based search
+// ✅ Index for geo queries
 riderSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("riders", riderSchema);

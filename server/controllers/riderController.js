@@ -1,14 +1,14 @@
 const Rider = require("../models/rider");
 const { v4: uuidv4 } = require("uuid");
 
-// ✅ Create a new rider
+// Create rider
 exports.createRider = async (req, res) => {
   try {
     const data = req.body;
 
     const rider = new Rider({
       ...data,
-      rider_id: "RDR-" + uuidv4().slice(0, 8),
+      rider_id: "RDR-" + uuidv4().slice(0, 8), // still keep friendly rider_id
       earnings: { totalTrips: 0, totalKm: 0, totalPay: 0, pendingPay: 0 },
     });
 
@@ -19,7 +19,35 @@ exports.createRider = async (req, res) => {
   }
 };
 
-// ✅ Get all riders
+// Get rider earnings
+exports.getRiderEarnings = async (req, res) => {
+  try {
+    const { riderId } = req.params;
+    const rider = await Rider.findById(riderId);
+    if (!rider) return res.status(404).json({ error: "Rider not found" });
+    res.json(rider.earnings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get rider by user_id
+exports.getRiderByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const rider = await Rider.findOne({ user_id: userId }).populate(
+      "user_id",
+      "name email role"
+    );
+
+    if (!rider) return res.status(404).json({ error: "Rider not found" });
+    res.json(rider);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get all riders
 exports.getRiders = async (req, res) => {
   try {
     if (req.query.userId) {
@@ -37,35 +65,7 @@ exports.getRiders = async (req, res) => {
   }
 };
 
-// ✅ Get single rider by user_id
-exports.getRiderByUserId = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const rider = await Rider.findOne({ user_id: userId }).populate(
-      "user_id",
-      "name email role"
-    );
-
-    if (!rider) return res.status(404).json({ error: "Rider not found" });
-    res.json(rider);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// ✅ Get rider earnings
-exports.getRiderEarnings = async (req, res) => {
-  try {
-    const { riderId } = req.params;
-    const rider = await Rider.findById(riderId);
-    if (!rider) return res.status(404).json({ error: "Rider not found" });
-    res.json(rider.earnings);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// ✅ Delete rider
+// Delete rider
 exports.deleteRider = async (req, res) => {
   try {
     await Rider.findByIdAndDelete(req.params.id);
@@ -75,7 +75,7 @@ exports.deleteRider = async (req, res) => {
   }
 };
 
-// ✅ Get nearby riders (within 5km)
+// Get nearby riders (within 5km)
 exports.getNearbyRiders = async (req, res) => {
   try {
     const { lng, lat } = req.query;
@@ -94,7 +94,22 @@ exports.getNearbyRiders = async (req, res) => {
   }
 };
 
-// ✅ Update live rider GPS location
+// Start trip
+exports.startTrip = (req, res) => {
+  res.send("Trip started");
+};
+
+// Complete trip
+exports.completeTrip = (req, res) => {
+  res.send("Trip completed");
+};
+
+// Rider trips
+exports.getRiderTrips = (req, res) => {
+  res.send("Rider trips");
+};
+
+// ✅ Update rider live GPS location
 exports.updateLocation = async (req, res) => {
   try {
     const { location, isAvailable } = req.body;
@@ -108,7 +123,7 @@ exports.updateLocation = async (req, res) => {
       {
         location: {
           type: "Point",
-          coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)], // [lng, lat]
+          coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)], // GeoJSON expects [lng, lat]
         },
         isAvailable: isAvailable ?? true,
         updatedAt: new Date(),
