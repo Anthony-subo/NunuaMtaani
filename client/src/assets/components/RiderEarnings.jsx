@@ -2,25 +2,36 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/earnings.css";
 
-const API_URL = import.meta.env.VITE_API_URL; // ✅ use environment variable
+const API_URL = import.meta.env.VITE_API_URL;
 
-function RiderEarnings() {
+function RiderEarnings({ riderId }) {
   const [earnings, setEarnings] = useState({
     totalTrips: 0,
     totalKm: 0,
     totalPay: 0,
     pendingPay: 0,
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user && user.role === "rider") {
-      axios
-        .get(`${API_URL}/api/riders/${user._id}/earnings`) // ✅ use API_URL here
-        .then((res) => setEarnings(res.data))
-        .catch((err) => console.error("Error fetching earnings:", err));
-    }
-  }, []);
+    if (!riderId) return; // wait for riderId to be set from dashboard
+
+    axios
+      .get(`${API_URL}/api/riders/${riderId}/earnings`)
+      .then((res) => {
+        setEarnings(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching earnings:", err);
+        setError("⚠️ Failed to load earnings data.");
+        setLoading(false);
+      });
+  }, [riderId]);
+
+  if (loading) return <p className="text-center mt-3">⏳ Loading earnings...</p>;
+  if (error) return <p className="text-danger text-center">{error}</p>;
 
   return (
     <div className="earnings-container">
