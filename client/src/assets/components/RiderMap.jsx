@@ -6,7 +6,7 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ✅ Fix for Leaflet marker icons (without broken imports)
+// ✅ Fix Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -22,27 +22,28 @@ function RiderMap({ riderId }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!riderId) return; // prevent API call with undefined ID
+    if (!riderId) return; // Wait until riderId is available
     let watchId;
 
     if (navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
         async ({ coords }) => {
-          const newPos = [coords.latitude, coords.longitude];
+          const { latitude, longitude } = coords;
+          const newPos = [latitude, longitude];
           setPosition(newPos);
           setLoaded(true);
 
           try {
-            // ✅ Update backend live location
+            // ✅ Send live GPS data to backend
             const res = await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
               location: {
-                latitude: coords.latitude,
-                longitude: coords.longitude,
+                latitude,
+                longitude,
               },
               isAvailable: true,
             });
 
-            console.log("✅ Rider location updated:", res.data);
+            console.log("✅ Location updated:", res.data);
           } catch (err) {
             console.error(
               "❌ Error saving location:",
@@ -53,16 +54,17 @@ function RiderMap({ riderId }) {
         (err) => {
           console.error("❌ Error getting location:", err);
           if (err.code === 1) {
-            console.warn("⚠️ User denied location access. Showing Nairobi fallback.");
+            console.warn("⚠️ User denied location access. Using Nairobi fallback.");
           }
           setLoaded(false);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, maximumAge: 10000 }
       );
     } else {
       console.warn("⚠️ Geolocation not supported in this browser");
     }
 
+    // Cleanup watcher when component unmounts
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
@@ -86,8 +88,7 @@ function RiderMap({ riderId }) {
           />
           <Marker position={position}>
             <Popup>
-              <b>You are here</b> 🚴 <br />
-              Current live location for deliveries.
+              <b>You are here</b> 🚴 <br /> Current live location for deliveries.
             </Popup>
           </Marker>
         </MapContainer>
