@@ -6,7 +6,7 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ✅ Fix Leaflet marker icons
+// ✅ Fix Leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -18,11 +18,11 @@ L.Icon.Default.mergeOptions({
 });
 
 function RiderMap({ riderId }) {
-  const [position, setPosition] = useState([-1.2921, 36.8219]); // Default Nairobi center
+  const [position, setPosition] = useState([-1.2921, 36.8219]); // Nairobi default
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!riderId) return; // Wait until riderId is available
+    if (!riderId) return;
     let watchId;
 
     if (navigator.geolocation) {
@@ -34,47 +34,30 @@ function RiderMap({ riderId }) {
           setLoaded(true);
 
           try {
-            // ✅ Send live GPS data to backend
-            const res = await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
-              location: {
-                latitude,
-                longitude,
-              },
+            await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
+              location: { latitude, longitude },
               isAvailable: true,
             });
-
-            console.log("✅ Location updated:", res.data);
+            console.log("✅ Location updated:", newPos);
           } catch (err) {
-            console.error(
-              "❌ Error saving location:",
-              err.response?.data || err.message
-            );
+            console.error("❌ Error saving location:", err.response?.data || err.message);
           }
         },
         (err) => {
           console.error("❌ Error getting location:", err);
-          if (err.code === 1) {
-            console.warn("⚠️ User denied location access. Using Nairobi fallback.");
-          }
           setLoaded(false);
         },
-        { enableHighAccuracy: true, maximumAge: 10000 }
+        { enableHighAccuracy: true }
       );
-    } else {
-      console.warn("⚠️ Geolocation not supported in this browser");
     }
 
-    // Cleanup watcher when component unmounts
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
   }, [riderId]);
 
   return (
-    <div
-      className="rounded-xl shadow-md"
-      style={{ height: "500px", width: "100%", overflow: "hidden" }}
-    >
+    <div className="rounded-xl shadow-md" style={{ height: "500px", width: "100%" }}>
       {loaded ? (
         <MapContainer
           key={position.join(",")}
