@@ -21,37 +21,38 @@ function RiderEarnings() {
       return;
     }
 
-    // 1️⃣ Get rider using the user ID stored in database
+    // 1️⃣ Fetch rider using correct backend route
     axios
-      .get(`${API_URL}/api/riders/user/${user._id}`)
+      .get(`${API_URL}/api/riders/me/${user._id}`)
       .then((res) => {
-        const riderData = res.data;
-
-        // If backend returns an array, take the first item
-        const rider = Array.isArray(riderData) ? riderData[0] : riderData;
+        const rider = res.data;
 
         if (!rider) {
-          console.error("No rider found for this user.");
+          console.error("❌ No rider profile found for this user.");
           setLoading(false);
           return;
         }
 
-        const riderId = rider._id; // THIS is the correct rider ID (68f4f040683953e880349f6e)
+        const riderId = rider._id; // correct MongoDB rider ID
 
-        // 2️⃣ Fetch earnings using REAL riderId
+        // 2️⃣ Fetch earnings using rider ID
         return axios.get(`${API_URL}/api/riders/${riderId}/earnings`);
       })
       .then((res) => {
-        if (res) setEarnings(res.data);
+        if (res) {
+          setEarnings(res.data);
+        }
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching earnings:", err);
+        console.error("❌ Error loading earnings:", err);
         setLoading(false);
       });
   }, []);
 
-  if (loading) return <p className="loading-text">Loading earnings...</p>;
+  if (loading) {
+    return <p className="loading-text">Loading earnings...</p>;
+  }
 
   return (
     <div className="earnings-container">
