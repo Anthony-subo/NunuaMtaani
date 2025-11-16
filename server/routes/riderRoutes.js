@@ -14,6 +14,8 @@ router.get("/me/:userId", riderController.getRiderByUserId);
 router.get("/nearby", riderController.getNearbyRiders);
 
 // ✅ Update live location by Mongo _id
+// riderRoutes.js
+
 router.put("/:id/location", riderController.updateLocation);
 
 // Trips

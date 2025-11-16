@@ -110,12 +110,13 @@ exports.getRiderTrips = (req, res) => {
 };
 
 // ✅ Update rider live GPS location
+// riderController.js
 exports.updateLocation = async (req, res) => {
   try {
-    const { location, isAvailable } = req.body;
+    const { latitude, longitude, isAvailable } = req.body;
 
-    if (!location?.latitude || !location?.longitude) {
-      return res.status(400).json({ error: "Missing latitude/longitude" });
+    if (latitude == null || longitude == null) {
+      return res.status(400).json({ error: "Missing latitude or longitude" });
     }
 
     const rider = await Rider.findByIdAndUpdate(
@@ -123,7 +124,7 @@ exports.updateLocation = async (req, res) => {
       {
         location: {
           type: "Point",
-          coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)], // GeoJSON expects [lng, lat]
+          coordinates: [parseFloat(longitude), parseFloat(latitude)],
         },
         isAvailable: isAvailable ?? true,
         updatedAt: new Date(),
@@ -132,6 +133,7 @@ exports.updateLocation = async (req, res) => {
     );
 
     if (!rider) return res.status(404).json({ error: "Rider not found" });
+
     res.json({ success: true, data: rider });
   } catch (err) {
     console.error("Error updating location:", err);

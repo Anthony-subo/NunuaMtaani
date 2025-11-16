@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import axios from "axios";
+import "leaflet/dist/leaflet.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ✅ Fix Leaflet icons
+// Fix Leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -18,65 +18,53 @@ L.Icon.Default.mergeOptions({
 });
 
 function RiderMap({ riderId }) {
-  const [position, setPosition] = useState([-1.2921, 36.8219]); // Nairobi default
+  const [position, setPosition] = useState([-1.2921, 36.8219]); // default Nairobi
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!riderId) return;
-    let watchId;
+    if (!riderId || !navigator.geolocation) return;
 
-    if (navigator.geolocation) {
-      watchId = navigator.geolocation.watchPosition(
-        async ({ coords }) => {
-          const { latitude, longitude } = coords;
-          const newPos = [latitude, longitude];
-          setPosition(newPos);
-          setLoaded(true);
+    const watchId = navigator.geolocation.watchPosition(
+      async ({ coords }) => {
+        const { latitude, longitude } = coords;
+        setPosition([latitude, longitude]);
+        setLoaded(true);
 
-          try {
-            await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
-              location: { latitude, longitude },
-              isAvailable: true,
-            });
-            console.log("✅ Location updated:", newPos);
-          } catch (err) {
-            console.error("❌ Error saving location:", err.response?.data || err.message);
-          }
-        },
-        (err) => {
-          console.error("❌ Error getting location:", err);
-          setLoaded(false);
-        },
-        { enableHighAccuracy: true }
-      );
-    }
+        try {
+          await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
+            latitude,
+            longitude,
+            isAvailable: true,
+          });
+          console.log("✅ Location updated:", latitude, longitude);
+        } catch (err) {
+          console.error("❌ Error updating location:", err.response?.data || err.message);
+        }
+      },
+      (err) => {
+        console.error("❌ Error getting location:", err);
+        setLoaded(false);
+      },
+      { enableHighAccuracy: true }
+    );
 
-    return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
-    };
+    return () => navigator.geolocation.clearWatch(watchId);
   }, [riderId]);
 
   return (
-    <div className="rounded-xl shadow-md" style={{ height: "500px", width: "100%" }}>
+    <div style={{ height: "500px", width: "100%" }}>
       {loaded ? (
-        <MapContainer
-          key={position.join(",")}
-          center={position}
-          zoom={15}
-          style={{ height: "100%", width: "100%" }}
-        >
+        <MapContainer key={position.join(",")} center={position} zoom={15} style={{ height: "100%", width: "100%" }}>
           <TileLayer
             attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <Marker position={position}>
-            <Popup>
-              <b>You are here</b> 🚴 <br /> Current live location for deliveries.
-            </Popup>
+            <Popup>📍 You are here (Rider)</Popup>
           </Marker>
         </MapContainer>
       ) : (
-        <p className="text-center p-3">📍 Waiting for your GPS location...</p>
+        <p>📍 Waiting for GPS location...</p>
       )}
     </div>
   );
