@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/earnings.css";
 
-const API_URL = import.meta.env.VITE_API_URL; // use env variable
+const API_URL = import.meta.env.VITE_API_URL;
 
 function RiderEarnings() {
   const [earnings, setEarnings] = useState({
@@ -16,24 +16,33 @@ function RiderEarnings() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-
     if (!user || user.role !== "rider") {
       setLoading(false);
       return;
     }
 
-    // STEP 1: Get rider using the user ID
+    // 1️⃣ Get rider using the user ID stored in database
     axios
       .get(`${API_URL}/api/riders/user/${user._id}`)
       .then((res) => {
-        const rider = res.data;
-        const riderId = rider._id;
+        const riderData = res.data;
 
-        // STEP 2: Fetch earnings using actual Rider ID
+        // If backend returns an array, take the first item
+        const rider = Array.isArray(riderData) ? riderData[0] : riderData;
+
+        if (!rider) {
+          console.error("No rider found for this user.");
+          setLoading(false);
+          return;
+        }
+
+        const riderId = rider._id; // THIS is the correct rider ID (68f4f040683953e880349f6e)
+
+        // 2️⃣ Fetch earnings using REAL riderId
         return axios.get(`${API_URL}/api/riders/${riderId}/earnings`);
       })
       .then((res) => {
-        setEarnings(res.data);
+        if (res) setEarnings(res.data);
         setLoading(false);
       })
       .catch((err) => {
