@@ -15,7 +15,7 @@ router.patch('/:id', updateUserRole);
 // ✅ Settings route
 router.put('/settings/:id', updateUserSettings);
 // routes/userRoutes.js
-router.get("/riders", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const riders = await User.find({ role: "rider" });
     res.json(riders);
