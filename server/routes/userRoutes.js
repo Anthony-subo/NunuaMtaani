@@ -14,5 +14,15 @@ router.patch('/:id', updateUserRole);
 
 // ✅ Settings route
 router.put('/settings/:id', updateUserSettings);
+// routes/userRoutes.js
+router.get("/riders", async (req, res) => {
+  try {
+    const riders = await User.find({ role: "rider" });
+    res.json(riders);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching riders" });
+  }
+});
+
 
 module.exports = router;
