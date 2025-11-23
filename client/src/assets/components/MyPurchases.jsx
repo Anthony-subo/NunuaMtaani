@@ -11,6 +11,9 @@ function MyPurchases() {
   const [userId, setUserId] = useState(null);
   const [cancelingId, setCancelingId] = useState(null);
 
+  // NEW STATE (Will be used later when we add modal)
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || !user._id) {
@@ -22,9 +25,8 @@ function MyPurchases() {
 
     const fetchOrders = async () => {
       try {
-        // 🚀 fetch only this user’s orders
         const res = await axios.get(`${API_URL}/api/orders/user/${user._id}`);
-        // Ensure we always set an array
+
         const data = res.data;
         const ordersArray = Array.isArray(data) ? data : data.orders || [];
         setOrders(ordersArray);
@@ -61,6 +63,12 @@ function MyPurchases() {
     } finally {
       setCancelingId(null);
     }
+  };
+
+  // NEW FUNCTION — we will fill it later
+  const openRiderSelector = (order) => {
+    setSelectedOrder(order);
+    alert("Rider selection modal will appear here (next step)");
   };
 
   if (loading) {
@@ -125,15 +133,23 @@ function MyPurchases() {
               </div>
 
               {order.status === 'pending' && (
-                <button
-                  className="btn btn-sm btn-outline-danger me-2"
-                  disabled={cancelingId === order._id}
-                  onClick={() => handleCancelOrder(order._id)}
-                >
-                  {cancelingId === order._id
-                    ? 'Cancelling...'
-                    : 'Cancel Order'}
-                </button>
+                <>
+                  <button
+                    className="btn btn-sm btn-outline-danger me-2"
+                    disabled={cancelingId === order._id}
+                    onClick={() => handleCancelOrder(order._id)}
+                  >
+                    {cancelingId === order._id ? 'Cancelling...' : 'Cancel Order'}
+                  </button>
+
+                  {/* ✅ NEW Button: Add Rider */}
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={() => openRiderSelector(order)}
+                  >
+                    Add Rider
+                  </button>
+                </>
               )}
             </li>
           ))}
