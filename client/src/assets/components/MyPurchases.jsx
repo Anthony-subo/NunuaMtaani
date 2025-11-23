@@ -9,8 +9,9 @@ function MyPurchases() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancelingId, setCancelingId] = useState(null);
-  const [selectedOrder, setSelectedOrder] = useState(null);
 
+  // Rider modal states
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [riders, setRiders] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedRider, setSelectedRider] = useState("");
@@ -26,6 +27,7 @@ function MyPurchases() {
     fetchRiders();
   }, []);
 
+  // Fetch buyer's orders
   const fetchOrders = async (userId) => {
     try {
       const res = await axios.get(`${API_URL}/api/orders/user/${userId}`);
@@ -38,6 +40,7 @@ function MyPurchases() {
     }
   };
 
+  // Fetch all riders
   const fetchRiders = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/users/riders`);
@@ -47,6 +50,7 @@ function MyPurchases() {
     }
   };
 
+  // Cancel order
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm("Cancel this order?")) return;
 
@@ -68,11 +72,13 @@ function MyPurchases() {
     }
   };
 
+  // Open modal to assign rider
   const openRiderSelector = (order) => {
     setSelectedOrder(order);
     setShowModal(true);
   };
 
+  // Assign rider and create trip
   const assignRider = async () => {
     if (!selectedRider) return alert("Please select a rider.");
 
@@ -93,7 +99,7 @@ function MyPurchases() {
         fare: 100,
       });
 
-      // Update order status
+      // Update order status locally
       setOrders((prev) =>
         prev.map((order) =>
           order._id === selectedOrder._id
@@ -103,6 +109,7 @@ function MyPurchases() {
       );
 
       setShowModal(false);
+      setSelectedRider("");
       alert("Rider assigned and trip created!");
     } catch (err) {
       console.error(err);
@@ -121,9 +128,7 @@ function MyPurchases() {
         <ul className="list-unstyled">
           {orders.map((order) => (
             <li key={order._id} className="order-card">
-              <div className="order-header">
-                Order #{order._id.slice(-6)}
-              </div>
+              <div className="order-header">Order #{order._id.slice(-6)}</div>
 
               <div className="order-meta">
                 📅 Placed on:{" "}
@@ -193,7 +198,7 @@ function MyPurchases() {
         <p>No purchases yet.</p>
       )}
 
-      {/* Rider Selection Modal */}
+      {/* Rider selection modal */}
       {showModal && (
         <div className="modal-backdrop">
           <div className="modal-box">
@@ -215,7 +220,6 @@ function MyPurchases() {
             <button className="btn btn-success me-2" onClick={assignRider}>
               Assign Rider
             </button>
-
             <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
               Close
             </button>
