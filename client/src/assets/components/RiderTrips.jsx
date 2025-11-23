@@ -9,21 +9,20 @@ function RiderTrips() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (user && user.role === "rider") {
-      axios
-        .get(`${API_URL}/api/trips/rider/${user._id}`)
-        .then((res) => {
-          setTrips(res.data);
-        })
-        .catch((err) => {
-          console.error("Error fetching trips:", err);
-        });
-    }
+    if (!user || user.role !== "rider") return;
+
+    axios
+      .get(`${API_URL}/api/trips/rider/${user._id}`)
+      .then((res) => setTrips(res.data || []))
+      .catch((err) => {
+        console.error("Error fetching trips:", err);
+      });
   }, []);
 
   return (
     <div className="trips-container">
       <h3 className="mb-3">📋 My Trips</h3>
+
       {trips.length > 0 ? (
         <table className="table table-striped">
           <thead>
@@ -38,17 +37,31 @@ function RiderTrips() {
           <tbody>
             {trips.map((trip, i) => (
               <tr key={i}>
-                <td>{new Date(trip.createdAt).toLocaleString()}</td>
                 <td>
-                  {trip.startLocation?.coordinates[1].toFixed(3)},{" "}
-                  {trip.startLocation?.coordinates[0].toFixed(3)}
+                  {trip.createdAt
+                    ? new Date(trip.createdAt).toLocaleString()
+                    : "N/A"}
                 </td>
+
                 <td>
-                  {trip.endLocation?.coordinates[1].toFixed(3)},{" "}
-                  {trip.endLocation?.coordinates[0].toFixed(3)}
+                  {trip.startLocation &&
+                  trip.startLocation.coordinates &&
+                  trip.startLocation.coordinates.length === 2
+                    ? `${trip.startLocation.coordinates[1].toFixed(3)}, ${trip.startLocation.coordinates[0].toFixed(3)}`
+                    : "N/A"}
                 </td>
-                <td>{trip.distanceKm.toFixed(2)}</td>
-                <td>{trip.fare.toFixed(2)}</td>
+
+                <td>
+                  {trip.endLocation &&
+                  trip.endLocation.coordinates &&
+                  trip.endLocation.coordinates.length === 2
+                    ? `${trip.endLocation.coordinates[1].toFixed(3)}, ${trip.endLocation.coordinates[0].toFixed(3)}`
+                    : "N/A"}
+                </td>
+
+                <td>{trip.distanceKm ? trip.distanceKm.toFixed(2) : "0.00"}</td>
+
+                <td>{trip.fare ? trip.fare.toFixed(2) : "0.00"}</td>
               </tr>
             ))}
           </tbody>
