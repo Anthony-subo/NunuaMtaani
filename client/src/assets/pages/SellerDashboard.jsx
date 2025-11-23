@@ -5,9 +5,12 @@ import MyProducts from "../components/MyProducts";
 import Orders from "../components/Orders";
 import AddProduct from "../components/AddProduct";
 import Cart from "../components/Cart";
+import MyPurchases from "../components/MyPurchases"; // ✅ ADDED
 import Header from "../components/Header";
-import Settings from "../components/Settings"; // ✅ user settings
-import ShopSettings from "../components/ShopSettings"; // ✅ new shop settings
+import Settings from "../components/Settings";
+import ShopSettings from "../components/ShopSettings";
+
+// ICONS
 import {
   FaStore,
   FaBox,
@@ -15,7 +18,9 @@ import {
   FaPlusCircle,
   FaShoppingCart,
   FaCog,
+  FaShoppingBag, // ✅ ADDED
 } from "react-icons/fa";
+
 import "../styles/dashboard.css";
 
 function SellerDashboard() {
@@ -59,8 +64,10 @@ function SellerDashboard() {
         return <AddProduct />;
       case "cart":
         return <Cart />;
+      case "purchases": // ✅ ADDED
+        return <MyPurchases />;
       case "settings":
-        return <Settings />; // ✅ keep old user settings
+        return <Settings />;
       default:
         return <AllProducts />;
     }
@@ -80,7 +87,7 @@ function SellerDashboard() {
           )}
         </h2>
 
-        {/* Shop Settings icon (next to shop name) */}
+        {/* Shop Settings icon */}
         {!loading && (
           <button
             className="shop-settings-btn"
@@ -93,10 +100,10 @@ function SellerDashboard() {
       </div>
 
       <p className="dashboard-subtext text-center mb-4">
-        Manage your products, view orders, adjust settings, and grow your store!
+        Manage your products, view orders, track purchases, and adjust settings.
       </p>
 
-      {/* Tabs (desktop top, mobile bottom) */}
+      {/* Tabs */}
       {!showShopSettings && (
         <div className="dashboard-tabs">
           <button
@@ -107,6 +114,7 @@ function SellerDashboard() {
             <FaStore size={20} />
             <span className="tab-label">All</span>
           </button>
+
           <button
             className={activeTab === "my" ? "active" : ""}
             onClick={() => setActiveTab("my")}
@@ -115,6 +123,7 @@ function SellerDashboard() {
             <FaBox size={20} />
             <span className="tab-label">My Products</span>
           </button>
+
           <button
             className={activeTab === "orders" ? "active" : ""}
             onClick={() => setActiveTab("orders")}
@@ -123,6 +132,7 @@ function SellerDashboard() {
             <FaClipboardList size={20} />
             <span className="tab-label">Orders</span>
           </button>
+
           <button
             className={activeTab === "add" ? "active" : ""}
             onClick={() => setActiveTab("add")}
@@ -131,6 +141,7 @@ function SellerDashboard() {
             <FaPlusCircle size={20} />
             <span className="tab-label">Add</span>
           </button>
+
           <button
             className={activeTab === "cart" ? "active" : ""}
             onClick={() => setActiveTab("cart")}
@@ -139,6 +150,17 @@ function SellerDashboard() {
             <FaShoppingCart size={20} />
             <span className="tab-label">Cart</span>
           </button>
+
+          {/* ✅ NEW My Purchases Tab */}
+          <button
+            className={activeTab === "purchases" ? "active" : ""}
+            onClick={() => setActiveTab("purchases")}
+            title="My Purchases"
+          >
+            <FaShoppingBag size={20} />
+            <span className="tab-label">Purchases</span>
+          </button>
+
           <button
             className={activeTab === "settings" ? "active" : ""}
             onClick={() => setActiveTab("settings")}
