@@ -8,41 +8,128 @@ function Cart() {
   const [userId, setUserId] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
   const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false); // 🔥 CHANGE
+  const [loading, setLoading] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
+
     if (storedUser && storedUser._id) {
       setUserId(storedUser._id);
+
       const userCart =
         JSON.parse(localStorage.getItem(`cart_${storedUser._id}`)) || [];
+
       setCart(userCart);
     }
   }, []);
 
+  // REMOVE ITEM
   const handleRemoveItem = (index) => {
     const updatedCart = [...cart];
+
     updatedCart.splice(index, 1);
+
     setCart(updatedCart);
+
     localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
   };
 
-  const getTotal = () =>
-    cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
+  // UPDATE QUANTITY
+  const updateQuantity = (index, type) => {
+    const updatedCart = [...cart];
 
+    if (type === "increase") {
+      updatedCart[index].quantity =
+        (updatedCart[index].quantity || 1) + 1;
+    }
+
+    if (type === "decrease") {
+      if ((updatedCart[index].quantity || 1) > 1) {
+        updatedCart[index].quantity -= 1;
+      }
+    }
+
+    setCart(updatedCart);
+
+    localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
+  };
+
+  // TOTAL
+  const getTotal = () => {
+    return cart.reduce(
+      (sum, item) => sum + item.price * (item.quantity || 1),
+      0
+    );
+  };
+
+  // GROUP PRODUCTS BY SHOP
   const groupByShop = (items) => {
     const grouped = {};
+
     items.forEach((item) => {
-      if (!grouped[item.shop_id]) grouped[item.shop_id] = [];
+      if (!grouped[item.shop_id]) {
+        grouped[item.shop_id] = [];
+      }
+
       grouped[item.shop_id].push(item);
     });
+
     return grouped;
   };
 
-  // 🔥 MAIN FIXED FUNCTION
+  // CHECK PAYMENT STATUS
+  const startPaymentCheck = (orderIds) => {
+    setCheckingPayment(true);
+
+    const interval = setInterval(async () => {
+      try {
+        const responses = await Promise.all(
+          orderIds.map((id) =>
+            axios.get(`${API_URL}/api/orders/${id}`)
+          )
+        );
+
+        const allPaid = responses.every(
+          (res) => res.data.payment?.status === "paid"
+        );
+
+        if (allPaid) {
+          clearInterval(interval);
+
+          localStorage.removeItem(`cart_${userId}`);
+
+          setCart([]);
+
+          setOrderStatus("✅ Payment successful! Order placed.");
+
+          setCheckingPayment(false);
+        }
+      } catch (err) {
+        console.error("Payment check error:", err);
+      }
+    }, 5000);
+
+    // STOP AFTER 5 MINUTES
+    setTimeout(() => {
+      clearInterval(interval);
+      setCheckingPayment(false);
+    }, 300000);
+  };
+
+  // PLACE ORDER
   const handlePlaceOrder = async () => {
-    if (!userId) return alert("Please log in.");
-    if (!phone) return alert("Enter M-Pesa number.");
+    if (!userId) {
+      return alert("Please login first.");
+    }
+
+    if (cart.length === 0) {
+      return alert("Cart is empty.");
+    }
+
+    if (!phone) {
+      return alert("Enter M-Pesa phone number.");
+    }
 
     setLoading(true);
     setOrderStatus("");
@@ -50,44 +137,66 @@ function Cart() {
     try {
       const groupedItems = groupByShop(cart);
 
-      // 1️⃣ Create orders
+      // CREATE ORDERS
       const orderResponses = await Promise.all(
         Object.entries(groupedItems).map(([shopId, items]) =>
           axios.post(`${API_URL}/api/orders`, {
             user_id: userId,
             shop_id: shopId,
+
             items: items.map((item) => ({
-              product_id: item._id,
+              product_id: item._id || item.id,
               quantity: item.quantity || 1,
               price: item.price,
               name: item.name,
+              image: item.images?.[0] || "",
             })),
+
             total: items.reduce(
-              (sum, item) => sum + item.price * (item.quantity || 1),
+              (sum, item) =>
+                sum + item.price * (item.quantity || 1),
               0
             ),
-            payment: { method: "mpesa" },
+
+            status: "pending_payment",
+
+            payment: {
+              method: "mpesa",
+              status: "pending",
+              phone,
+            },
           })
         )
       );
 
-      // 2️⃣ Trigger STK for EACH order
+      // SAVE ORDER IDS
+      const createdOrderIds = orderResponses.map(
+        (res) => res.data._id
+      );
+
+      // INITIATE STK PUSH
       await Promise.all(
-        orderResponses.map((res) =>
+        createdOrderIds.map((orderId) =>
           axios.post(`${API_URL}/api/payments/stk/initiate`, {
-            orderId: res.data._id,
+            orderId,
             buyerPhone: phone,
           })
         )
       );
 
-      // 3️⃣ Tell user to pay
-      setOrderStatus("📲 Check your phone to complete M-Pesa payment");
+      setOrderStatus(
+        "📲 STK Push sent. Complete payment on your phone..."
+      );
 
-      // ❌ DO NOT clear cart yet (wait for payment confirmation)
+      // START PAYMENT CHECK
+      startPaymentCheck(createdOrderIds);
+
     } catch (err) {
       console.error(err);
-      setOrderStatus("❌ Failed to place order or initiate payment.");
+
+      setOrderStatus(
+        "❌ Failed to place order or initiate payment."
+      );
     } finally {
       setLoading(false);
     }
@@ -102,41 +211,104 @@ function Cart() {
       ) : (
         <>
           {cart.map((item, idx) => (
-            <div key={idx} className="cart-card shadow-sm">
-              <h5>{item.name}</h5>
-              <p>Price: {item.price} KES</p>
-              <p>Qty: {item.quantity || 1}</p>
-              <button
-                className="btn btn-danger btn-sm"
-                onClick={() => handleRemoveItem(idx)}
-              >
-                Remove
-              </button>
+            <div
+              key={idx}
+              className="cart-card shadow-sm p-3 mb-3"
+            >
+              <div className="d-flex gap-3 align-items-center">
+
+                <img
+                  src={
+                    item.images?.[0] ||
+                    "https://via.placeholder.com/100"
+                  }
+                  alt={item.name}
+                  width="100"
+                  height="100"
+                  style={{
+                    objectFit: "cover",
+                    borderRadius: "10px",
+                  }}
+                />
+
+                <div className="flex-grow-1">
+                  <h5>{item.name}</h5>
+
+                  <p className="mb-1">
+                    Price: <strong>{item.price} KES</strong>
+                  </p>
+
+                  <p className="mb-2">
+                    Subtotal:
+                    <strong>
+                      {" "}
+                      {item.price * (item.quantity || 1)} KES
+                    </strong>
+                  </p>
+
+                  <div className="d-flex align-items-center gap-2">
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() =>
+                        updateQuantity(idx, "decrease")
+                      }
+                    >
+                      -
+                    </button>
+
+                    <span>{item.quantity || 1}</span>
+
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() =>
+                        updateQuantity(idx, "increase")
+                      }
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => handleRemoveItem(idx)}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
 
-          <h5 className="mt-3">Total: {getTotal()} KES</h5>
+          <div className="mt-4">
+            <h5>Total: {getTotal()} KES</h5>
 
-          <input
-            type="text"
-            className="form-control mt-2"
-            placeholder="07XXXXXXXX"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
+            <input
+              type="text"
+              className="form-control mt-3"
+              placeholder="07XXXXXXXX"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
 
-          <button
-            className="btn btn-success mt-3"
-            onClick={handlePlaceOrder}
-            disabled={loading}
-          >
-            {loading ? "Processing..." : "Place Order & Pay"}
-          </button>
+            <button
+              className="btn btn-success mt-3 w-100"
+              onClick={handlePlaceOrder}
+              disabled={loading || checkingPayment}
+            >
+              {loading
+                ? "Processing..."
+                : checkingPayment
+                ? "Waiting for payment..."
+                : "Place Order & Pay"}
+            </button>
+          </div>
         </>
       )}
 
       {orderStatus && (
-        <div className="alert alert-info mt-3">{orderStatus}</div>
+        <div className="alert alert-info mt-3">
+          {orderStatus}
+        </div>
       )}
     </div>
   );
