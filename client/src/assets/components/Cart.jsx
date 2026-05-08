@@ -9,6 +9,7 @@ function Cart() {
   const [orderStatus, setOrderStatus] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -77,6 +78,45 @@ function Cart() {
     return grouped;
   };
 
+  // CHECK PAYMENT STATUS
+  const startPaymentCheck = (orderIds) => {
+    setCheckingPayment(true);
+
+    const interval = setInterval(async () => {
+      try {
+        const responses = await Promise.all(
+          orderIds.map((id) =>
+            axios.get(`${API_URL}/api/orders/${id}`)
+          )
+        );
+
+        const allPaid = responses.every(
+          (res) => res.data.payment?.status === "paid"
+        );
+
+        if (allPaid) {
+          clearInterval(interval);
+
+          localStorage.removeItem(`cart_${userId}`);
+
+          setCart([]);
+
+          setOrderStatus("✅ Payment successful! Order placed.");
+
+          setCheckingPayment(false);
+        }
+      } catch (err) {
+        console.error("Payment check error:", err);
+      }
+    }, 5000);
+
+    // STOP AFTER 5 MINUTES
+    setTimeout(() => {
+      clearInterval(interval);
+      setCheckingPayment(false);
+    }, 300000);
+  };
+
   // PLACE ORDER
   const handlePlaceOrder = async () => {
     if (!userId) {
@@ -88,7 +128,7 @@ function Cart() {
     }
 
     if (!phone) {
-      return alert("Enter phone number.");
+      return alert("Enter M-Pesa phone number.");
     }
 
     setLoading(true);
@@ -97,25 +137,19 @@ function Cart() {
     try {
       const groupedItems = groupByShop(cart);
 
-      await Promise.all(
+      // CREATE ORDERS
+      const orderResponses = await Promise.all(
         Object.entries(groupedItems).map(([shopId, items]) =>
           axios.post(`${API_URL}/api/orders`, {
             user_id: userId,
-
             shop_id: shopId,
 
             items: items.map((item) => ({
               product_id: item._id || item.id,
-
               quantity: item.quantity || 1,
-
               price: item.price,
-
               name: item.name,
-
               image: item.images?.[0] || "",
-
-              location: item.location || "",
             })),
 
             total: items.reduce(
@@ -124,28 +158,45 @@ function Cart() {
               0
             ),
 
-            status: "pending",
+            status: "pending_payment",
 
             payment: {
               method: "mpesa",
-
-              payerPhone: phone,
+              status: "pending",
+              phone,
             },
           })
         )
       );
 
-      // CLEAR CART
-      localStorage.removeItem(`cart_${userId}`);
+      // SAVE ORDER IDS
+      const createdOrderIds = orderResponses.map(
+        (res) => res.data._id
+      );
 
-      setCart([]);
+      // INITIATE STK PUSH
+      await Promise.all(
+        createdOrderIds.map((orderId) =>
+          axios.post(`${API_URL}/api/payments/stk/initiate`, {
+            orderId,
+            buyerPhone: phone,
+          })
+        )
+      );
 
-      setOrderStatus("✅ Order placed successfully.");
+      setOrderStatus(
+        "📲 STK Push sent. Complete payment on your phone..."
+      );
+
+      // START PAYMENT CHECK
+      startPaymentCheck(createdOrderIds);
 
     } catch (err) {
-      console.error("ORDER ERROR:", err);
+      console.error(err);
 
-      setOrderStatus("❌ Failed to place order.");
+      setOrderStatus(
+        "❌ Failed to place order or initiate payment."
+      );
     } finally {
       setLoading(false);
     }
@@ -242,9 +293,13 @@ function Cart() {
             <button
               className="btn btn-success mt-3 w-100"
               onClick={handlePlaceOrder}
-              disabled={loading}
+              disabled={loading || checkingPayment}
             >
-              {loading ? "Processing..." : "Place Order"}
+              {loading
+                ? "Processing..."
+                : checkingPayment
+                ? "Waiting for payment..."
+                : "Place Order & Pay"}
             </button>
           </div>
         </>
