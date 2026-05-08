@@ -2,6 +2,7 @@ import React from 'react';
 import "bootstrap/dist/css/bootstrap.min.css";
 import './assets/styles/index.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 import Signup from './assets/pages/signup';
 import Login from './assets/pages/Login';
@@ -69,6 +70,7 @@ function App() {
 />
 
       </Routes>
+      <SpeedInsights />
     </BrowserRouter>
   );
 }
