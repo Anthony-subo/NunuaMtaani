@@ -7,55 +7,31 @@ function Cart() {
   const [cart, setCart] = useState([]);
   const [userId, setUserId] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [checkingPayment, setCheckingPayment] = useState(false);
+  const [phone, setPhone] = useState(""); // ✅ payment phone
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
-
     if (storedUser && storedUser._id) {
       setUserId(storedUser._id);
-
       const userCart =
         JSON.parse(localStorage.getItem(`cart_${storedUser._id}`)) || [];
-
       setCart(userCart);
     }
   }, []);
 
-  // REMOVE ITEM
+  const saveCartToStorage = (updatedCart) => {
+    if (userId) {
+      localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
+    }
+  };
+
   const handleRemoveItem = (index) => {
     const updatedCart = [...cart];
-
     updatedCart.splice(index, 1);
-
     setCart(updatedCart);
-
-    localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
+    saveCartToStorage(updatedCart);
   };
 
-  // UPDATE QUANTITY
-  const updateQuantity = (index, type) => {
-    const updatedCart = [...cart];
-
-    if (type === "increase") {
-      updatedCart[index].quantity =
-        (updatedCart[index].quantity || 1) + 1;
-    }
-
-    if (type === "decrease") {
-      if ((updatedCart[index].quantity || 1) > 1) {
-        updatedCart[index].quantity -= 1;
-      }
-    }
-
-    setCart(updatedCart);
-
-    localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
-  };
-
-  // TOTAL
   const getTotal = () => {
     return cart.reduce(
       (sum, item) => sum + item.price * (item.quantity || 1),
@@ -63,253 +39,133 @@ function Cart() {
     );
   };
 
-  // GROUP PRODUCTS BY SHOP
   const groupByShop = (items) => {
     const grouped = {};
-
     items.forEach((item) => {
-      if (!grouped[item.shop_id]) {
-        grouped[item.shop_id] = [];
-      }
-
-      grouped[item.shop_id].push(item);
+      const shopId = item.shop_id;
+      if (!grouped[shopId]) grouped[shopId] = [];
+      grouped[shopId].push(item);
     });
-
     return grouped;
   };
 
-  // CHECK PAYMENT STATUS
-  const startPaymentCheck = (orderIds) => {
-    setCheckingPayment(true);
-
-    const interval = setInterval(async () => {
-      try {
-        const responses = await Promise.all(
-          orderIds.map((id) =>
-            axios.get(`${API_URL}/api/orders/${id}`)
-          )
-        );
-
-        const allPaid = responses.every(
-          (res) => res.data.payment?.status === "paid"
-        );
-
-        if (allPaid) {
-          clearInterval(interval);
-
-          localStorage.removeItem(`cart_${userId}`);
-
-          setCart([]);
-
-          setOrderStatus("✅ Payment successful! Order placed.");
-
-          setCheckingPayment(false);
-        }
-      } catch (err) {
-        console.error("Payment check error:", err);
-      }
-    }, 5000);
-
-    // STOP AFTER 5 MINUTES
-    setTimeout(() => {
-      clearInterval(interval);
-      setCheckingPayment(false);
-    }, 300000);
-  };
-
-  // PLACE ORDER
   const handlePlaceOrder = async () => {
     if (!userId) {
-      return alert("Please login first.");
+      alert("Please log in to place an order.");
+      return;
     }
-
-    if (cart.length === 0) {
-      return alert("Cart is empty.");
-    }
-
     if (!phone) {
-      return alert("Enter M-Pesa phone number.");
+      alert("Please enter your M-Pesa phone number.");
+      return;
     }
 
-    setLoading(true);
-    setOrderStatus("");
-
-    try {
       const groupedItems = groupByShop(cart);
 
-      // CREATE ORDERS
-      const orderResponses = await Promise.all(
-        Object.entries(groupedItems).map(([shopId, items]) =>
-          axios.post(`${API_URL}/api/orders`, {
+    const orderRequests = Object.entries(groupedItems).map(
+      async ([shopId, items]) => {
+        const orderData = {
             user_id: userId,
             shop_id: shopId,
-
             items: items.map((item) => ({
-              product_id: item._id || item.id,
+            product_id: item._id,
               quantity: item.quantity || 1,
               price: item.price,
-              name: item.name,
-              image: item.images?.[0] || "",
+            name: item.name, // ✅ only keep small text fields
             })),
-
             total: items.reduce(
-              (sum, item) =>
-                sum + item.price * (item.quantity || 1),
+            (sum, item) => sum + item.price * (item.quantity || 1),
               0
             ),
-
-            status: "pending_payment",
-
             payment: {
               method: "mpesa",
-              status: "pending",
-              phone,
+            payerPhone: phone,
             },
-          })
-        )
-      );
+        };
 
-      // SAVE ORDER IDS
-      const createdOrderIds = orderResponses.map(
-        (res) => res.data._id
-      );
+        return axios.post(`${API_URL}/api/orders`, orderData, {
+          headers: { "Content-Type": "application/json" },
+          maxBodyLength: 5 * 1024 * 1024, // 5MB safety
+        });
+      }
+    );
 
-      // INITIATE STK PUSH
-      await Promise.all(
-        createdOrderIds.map((orderId) =>
-          axios.post(`${API_URL}/api/payments/stk/initiate`, {
-            orderId,
-            buyerPhone: phone,
-          })
-        )
-      );
-
+    try {
+      await Promise.all(orderRequests);
       setOrderStatus(
-        "📲 STK Push sent. Complete payment on your phone..."
+        "✅ Orders placed. Please check your phone to complete payment via M-Pesa."
       );
-
-      // START PAYMENT CHECK
-      startPaymentCheck(createdOrderIds);
-
+      localStorage.removeItem(`cart_${userId}`);
+      setCart([]);
     } catch (err) {
-      console.error(err);
-
-      setOrderStatus(
-        "❌ Failed to place order or initiate payment."
-      );
-    } finally {
-      setLoading(false);
+      console.error("Order placement failed:", err.response?.data || err.message);
+      setOrderStatus("❌ Failed to place the order. Try again.");
     }
   };
 
   return (
     <div className="admin-table-container">
-      <h4>🛒 Your Cart</h4>
-
+      <div className="dashboard-header">
+        <h4 className="mb-3">🛒 Your Cart</h4>
+      </div>
+      <div>
       {cart.length === 0 ? (
         <p>Your cart is empty.</p>
       ) : (
         <>
+            <div className="cart-cards-container">
           {cart.map((item, idx) => (
-            <div
-              key={idx}
-              className="cart-card shadow-sm p-3 mb-3"
-            >
-              <div className="d-flex gap-3 align-items-center">
-
-                <img
-                  src={
-                    item.images?.[0] ||
-                    "https://via.placeholder.com/100"
-                  }
-                  alt={item.name}
-                  width="100"
-                  height="100"
-                  style={{
-                    objectFit: "cover",
-                    borderRadius: "10px",
-                  }}
-                />
-
-                <div className="flex-grow-1">
-                  <h5>{item.name}</h5>
-
-                  <p className="mb-1">
-                    Price: <strong>{item.price} KES</strong>
-                  </p>
-
-                  <p className="mb-2">
-                    Subtotal:
-                    <strong>
-                      {" "}
-                      {item.price * (item.quantity || 1)} KES
-                    </strong>
-                  </p>
-
-                  <div className="d-flex align-items-center gap-2">
+                <div key={idx} className="cart-card shadow-sm">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h5 className="mb-0">{item.name}</h5>
                     <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() =>
-                        updateQuantity(idx, "decrease")
-                      }
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleRemoveItem(idx)}
                     >
-                      -
-                    </button>
-
-                    <span>{item.quantity || 1}</span>
-
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() =>
-                        updateQuantity(idx, "increase")
-                      }
-                    >
-                      +
+                      🗑 Remove
                     </button>
                   </div>
+                  <p className="mb-1">
+                    <strong>Price:</strong> {item.price} KES
+                  </p>
+                  <p className="mb-1">
+                    <strong>Quantity:</strong> {item.quantity || 1}
+                  </p>
+                  <p className="mb-1">
+                    <strong>Subtotal:</strong>{" "}
+                    {item.price * (item.quantity || 1)} KES
+                  </p>
+                  {item.location && (
+                    <p className="mb-1">
+                      <strong>Location:</strong> {item.location}
+                    </p>
+                  )}
                 </div>
-
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => handleRemoveItem(idx)}
-                >
-                  Remove
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
 
-          <div className="mt-4">
-            <h5>Total: {getTotal()} KES</h5>
+            <h5 className="mt-4">Total: {getTotal()} KES</h5>
 
+            {/* ✅ Payment phone input */}
+            <div className="mt-3">
+              <label>Enter M-Pesa Number:</label>
             <input
               type="text"
-              className="form-control mt-3"
+                className="form-control"
               placeholder="07XXXXXXXX"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+            </div>
 
-            <button
-              className="btn btn-success mt-3 w-100"
-              onClick={handlePlaceOrder}
-              disabled={loading || checkingPayment}
-            >
-              {loading
-                ? "Processing..."
-                : checkingPayment
-                ? "Waiting for payment..."
-                : "Place Order & Pay"}
+            <button className="btn btn-success mt-3" onClick={handlePlaceOrder}>
+              ✅ Place Order & Pay
             </button>
-          </div>
         </>
       )}
-
       {orderStatus && (
-        <div className="alert alert-info mt-3">
-          {orderStatus}
-        </div>
+          <div className="alert alert-info mt-3">{orderStatus}</div>
       )}
+    </div>
     </div>
   );
 }
