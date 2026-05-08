@@ -7,165 +7,163 @@ function Cart() {
   const [cart, setCart] = useState([]);
   const [userId, setUserId] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
-  const [phone, setPhone] = useState(""); // ✅ payment phone
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
+
     if (storedUser && storedUser._id) {
       setUserId(storedUser._id);
+
       const userCart =
         JSON.parse(localStorage.getItem(`cart_${storedUser._id}`)) || [];
+
       setCart(userCart);
     }
   }, []);
 
-  const saveCartToStorage = (updatedCart) => {
-    if (userId) {
-      localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
-    }
+  // SAVE CART
+  const saveCart = (updated) => {
+    localStorage.setItem(`cart_${userId}`, JSON.stringify(updated));
   };
 
+  // REMOVE ITEM
   const handleRemoveItem = (index) => {
-    const updatedCart = [...cart];
-    updatedCart.splice(index, 1);
-    setCart(updatedCart);
-    saveCartToStorage(updatedCart);
+    const updated = [...cart];
+    updated.splice(index, 1);
+    setCart(updated);
+    saveCart(updated);
   };
 
-  const getTotal = () => {
-    return cart.reduce(
+  // TOTAL
+  const getTotal = () =>
+    cart.reduce(
       (sum, item) => sum + item.price * (item.quantity || 1),
       0
     );
-  };
 
+  // GROUP BY SHOP
   const groupByShop = (items) => {
     const grouped = {};
+
     items.forEach((item) => {
       const shopId = item.shop_id;
-      if (!grouped[shopId]) grouped[shopId] = [];
+
+      if (!grouped[shopId]) {
+        grouped[shopId] = [];
+      }
+
       grouped[shopId].push(item);
     });
+
     return grouped;
   };
 
+  // PLACE ORDER
   const handlePlaceOrder = async () => {
-    if (!userId) {
-      alert("Please log in to place an order.");
-      return;
-    }
-    if (!phone) {
-      alert("Please enter your M-Pesa phone number.");
-      return;
-    }
-
-      const groupedItems = groupByShop(cart);
-
-    const orderRequests = Object.entries(groupedItems).map(
-      async ([shopId, items]) => {
-        const orderData = {
-            user_id: userId,
-            shop_id: shopId,
-            items: items.map((item) => ({
-            product_id: item._id,
-              quantity: item.quantity || 1,
-              price: item.price,
-            name: item.name, // ✅ only keep small text fields
-            })),
-            total: items.reduce(
-            (sum, item) => sum + item.price * (item.quantity || 1),
-              0
-            ),
-            payment: {
-              method: "mpesa",
-            payerPhone: phone,
-            },
-        };
-
-        return axios.post(`${API_URL}/api/orders`, orderData, {
-          headers: { "Content-Type": "application/json" },
-          maxBodyLength: 5 * 1024 * 1024, // 5MB safety
-        });
-      }
-    );
+    if (!userId) return setOrderStatus("❌ Please login first");
+    if (!phone) return setOrderStatus("❌ Enter M-Pesa number");
+    if (cart.length === 0) return setOrderStatus("❌ Cart is empty");
 
     try {
-      await Promise.all(orderRequests);
-      setOrderStatus(
-        "✅ Orders placed. Please check your phone to complete payment via M-Pesa."
+      const grouped = groupByShop(cart);
+
+      await Promise.all(
+        Object.entries(grouped).map(([shopId, items]) => {
+          const total = items.reduce(
+            (sum, item) =>
+              sum + item.price * (item.quantity || 1),
+            0
+          );
+
+          return axios.post(`${API_URL}/api/orders`, {
+            user_id: userId,
+            shop_id: shopId,
+
+            items: items.map((item) => ({
+              product_id: item._id || item.id,
+              quantity: item.quantity || 1,
+              price: item.price,
+              name: item.name,
+              image: item.images?.[0] || "",
+            })),
+
+            total,
+
+            status: "pending",
+
+            payment: {
+              method: "mpesa",
+              payerPhone: phone.startsWith("0")
+                ? "254" + phone.substring(1)
+                : phone,
+              amount: total,
+            },
+          });
+        })
       );
+
+      // CLEAR CART AFTER SUCCESS
       localStorage.removeItem(`cart_${userId}`);
       setCart([]);
+
+      setOrderStatus("✅ Order placed successfully!");
+
     } catch (err) {
-      console.error("Order placement failed:", err.response?.data || err.message);
-      setOrderStatus("❌ Failed to place the order. Try again.");
+      console.error(err);
+      setOrderStatus("❌ Failed to place order");
     }
   };
 
   return (
     <div className="admin-table-container">
-      <div className="dashboard-header">
-        <h4 className="mb-3">🛒 Your Cart</h4>
-      </div>
-      <div>
+      <h4>🛒 Your Cart</h4>
+
       {cart.length === 0 ? (
-        <p>Your cart is empty.</p>
+        <p>No items in cart</p>
       ) : (
         <>
-            <div className="cart-cards-container">
           {cart.map((item, idx) => (
-                <div key={idx} className="cart-card shadow-sm">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <h5 className="mb-0">{item.name}</h5>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleRemoveItem(idx)}
-                    >
-                      🗑 Remove
-                    </button>
-                  </div>
-                  <p className="mb-1">
-                    <strong>Price:</strong> {item.price} KES
-                  </p>
-                  <p className="mb-1">
-                    <strong>Quantity:</strong> {item.quantity || 1}
-                  </p>
-                  <p className="mb-1">
-                    <strong>Subtotal:</strong>{" "}
-                    {item.price * (item.quantity || 1)} KES
-                  </p>
-                  {item.location && (
-                    <p className="mb-1">
-                      <strong>Location:</strong> {item.location}
-                    </p>
-                  )}
-                </div>
-              ))}
+            <div key={idx} className="cart-card shadow-sm p-3 mb-3">
+              <h5>{item.name}</h5>
+              <p>Price: {item.price} KES</p>
+              <p>Qty: {item.quantity || 1}</p>
+              <p>
+                Subtotal: {item.price * (item.quantity || 1)} KES
+              </p>
+
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={() => handleRemoveItem(idx)}
+              >
+                Remove
+              </button>
             </div>
+          ))}
 
-            <h5 className="mt-4">Total: {getTotal()} KES</h5>
+          <h5>Total: {getTotal()} KES</h5>
 
-            {/* ✅ Payment phone input */}
-            <div className="mt-3">
-              <label>Enter M-Pesa Number:</label>
-            <input
-              type="text"
-                className="form-control"
-              placeholder="07XXXXXXXX"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-            </div>
+          <input
+            className="form-control mt-3"
+            placeholder="Enter M-Pesa number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
 
-            <button className="btn btn-success mt-3" onClick={handlePlaceOrder}>
-              ✅ Place Order & Pay
-            </button>
+          <button
+            className="btn btn-success mt-3 w-100"
+            onClick={handlePlaceOrder}
+          >
+            Place Order
+          </button>
         </>
       )}
+
       {orderStatus && (
-          <div className="alert alert-info mt-3">{orderStatus}</div>
+        <div className="alert alert-info mt-3">
+          {orderStatus}
+        </div>
       )}
-    </div>
     </div>
   );
 }
