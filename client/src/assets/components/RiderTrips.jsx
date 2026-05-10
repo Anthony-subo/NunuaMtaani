@@ -19,9 +19,42 @@ function RiderTrips() {
       });
   }, []);
 
+  // ✅ Total Trips Completed
+  const totalTrips = trips.length;
+
+  // ✅ Total Distance
+  const totalDistance = trips.reduce(
+    (sum, trip) => sum + (trip.distanceKm || 0),
+    0
+  );
+
+  // ✅ Total Earnings
+  const totalEarnings = trips.reduce(
+    (sum, trip) => sum + (trip.fare || 0),
+    0
+  );
+
   return (
     <div className="trips-container">
       <h3 className="mb-3">📋 My Trips</h3>
+
+      {/* ✅ Summary Cards */}
+      <div className="trip-summary">
+        <div className="summary-card">
+          <h4>{totalTrips}</h4>
+          <p>Trips Completed</p>
+        </div>
+
+        <div className="summary-card">
+          <h4>{totalDistance.toFixed(2)} km</h4>
+          <p>Total Distance</p>
+        </div>
+
+        <div className="summary-card">
+          <h4>KES {totalEarnings.toFixed(2)}</h4>
+          <p>Total Earnings</p>
+        </div>
+      </div>
 
       {trips.length > 0 ? (
         <table className="table table-striped">
@@ -34,6 +67,7 @@ function RiderTrips() {
               <th>Earnings (KES)</th>
             </tr>
           </thead>
+
           <tbody>
             {trips.map((trip, i) => (
               <tr key={i}>
@@ -47,7 +81,9 @@ function RiderTrips() {
                   {trip.startLocation &&
                   trip.startLocation.coordinates &&
                   trip.startLocation.coordinates.length === 2
-                    ? `${trip.startLocation.coordinates[1].toFixed(3)}, ${trip.startLocation.coordinates[0].toFixed(3)}`
+                    ? `${trip.startLocation.coordinates[1].toFixed(
+                        3
+                      )}, ${trip.startLocation.coordinates[0].toFixed(3)}`
                     : "N/A"}
                 </td>
 
@@ -55,13 +91,23 @@ function RiderTrips() {
                   {trip.endLocation &&
                   trip.endLocation.coordinates &&
                   trip.endLocation.coordinates.length === 2
-                    ? `${trip.endLocation.coordinates[1].toFixed(3)}, ${trip.endLocation.coordinates[0].toFixed(3)}`
+                    ? `${trip.endLocation.coordinates[1].toFixed(
+                        3
+                      )}, ${trip.endLocation.coordinates[0].toFixed(3)}`
                     : "N/A"}
                 </td>
 
-                <td>{trip.distanceKm ? trip.distanceKm.toFixed(2) : "0.00"}</td>
+                <td>
+                  {trip.distanceKm
+                    ? trip.distanceKm.toFixed(2)
+                    : "0.00"}
+                </td>
 
-                <td>{trip.fare ? trip.fare.toFixed(2) : "0.00"}</td>
+                <td>
+                  {trip.fare
+                    ? trip.fare.toFixed(2)
+                    : "0.00"}
+                </td>
               </tr>
             ))}
           </tbody>
