@@ -1,67 +1,136 @@
+Your CSS is good already. You can improve the dashboard appearance by adding hover effects, responsive layout, spacing, and colored cards like this:
+
+```css
 .trips-container {
   background: #fff;
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
+/* Titles */
 .trips-container h3 {
   font-weight: bold;
   color: #0d6efd;
+  margin-bottom: 20px;
 }
+
+/* =========================
+   Earnings Cards
+========================= */
+
+.earnings-container {
+  margin-bottom: 35px;
+}
+
+.earnings-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+/* Card Design */
+.earnings-stats .card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 25px 20px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  border-left: 6px solid #0d6efd;
+}
+
+/* Hover Effect */
+.earnings-stats .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+}
+
+/* Numbers */
+.earnings-stats .card h4 {
+  font-size: 30px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #28a745;
+}
+
+/* Text */
+.earnings-stats .card p {
+  margin: 0;
+  color: #666;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Different Card Colors */
+.earnings-stats .card:nth-child(1) {
+  border-left-color: #0d6efd;
+}
+
+.earnings-stats .card:nth-child(2) {
+  border-left-color: #20c997;
+}
+
+.earnings-stats .card:nth-child(3) {
+  border-left-color: #28a745;
+}
+
+.earnings-stats .pending {
+  border-left-color: orange;
+}
+
+.earnings-stats .pending h4 {
+  color: orange;
+}
+
+/* =========================
+   Trips Table
+========================= */
 
 .table {
   width: 100%;
   border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 10px;
 }
 
 .table th {
-  background: #f8f9fa;
-  padding: 0.75rem;
+  background: #0d6efd;
+  color: white;
+  padding: 1rem;
   text-align: left;
   font-size: 0.9rem;
 }
 
 .table td {
-  padding: 0.75rem;
+  padding: 0.9rem;
   font-size: 0.9rem;
+  border-bottom: 1px solid #eee;
 }
 
+/* Zebra Striping */
 .table-striped tbody tr:nth-child(odd) {
-  background: #f2f2f2;
-}
-.earnings-container {
-  margin-bottom: 30px;
+  background: #f8f9fa;
 }
 
-.earnings-stats {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+/* Hover */
+.table tbody tr:hover {
+  background: #eef5ff;
+  transition: 0.2s;
 }
 
-.earnings-stats .card {
-  flex: 1;
-  min-width: 220px;
-  background: #fff;
-  border-radius: 15px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-}
+/* Responsive */
+@media (max-width: 768px) {
+  .earnings-stats {
+    grid-template-columns: 1fr;
+  }
 
-.earnings-stats .card h4 {
-  font-size: 28px;
-  margin-bottom: 10px;
-  color: #28a745;
-}
+  .table {
+    font-size: 0.8rem;
+  }
 
-.earnings-stats .card p {
-  margin: 0;
-  color: #666;
-  font-weight: 500;
-}
-
-.earnings-stats .pending h4 {
-  color: orange;
+  .table th,
+  .table td {
+    padding: 0.6rem;
+  }
 }
