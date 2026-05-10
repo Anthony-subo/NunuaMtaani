@@ -1,254 +1,73 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  Circle,
-} from "react-leaflet";
-
-import "leaflet/dist/leaflet.css";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
+import axios from "axios";
+import "leaflet/dist/leaflet.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-/* =========================
-   Custom Icons
-========================= */
-
-const buyerIcon = new L.Icon({
+// Fix Leaflet icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
   iconUrl:
-    "https://cdn-icons-png.flaticon.com/512/3177/3177361.png",
-
-  iconSize: [40, 40],
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-const riderIcon = new L.Icon({
-  iconUrl:
-    "https://cdn-icons-png.flaticon.com/512/684/684908.png",
-
-  iconSize: [35, 35],
-});
-
-/* =========================
-   Component
-========================= */
-
-function DeliveryMap() {
-  const [buyerLocation, setBuyerLocation] = useState(null);
-  const [riders, setRiders] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  /* =========================
-     Get Buyer Location
-  ========================= */
+function RiderMap({ riderId }) {
+  const [position, setPosition] = useState([-1.2921, 36.8219]); // default Nairobi
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
+    if (!riderId || !navigator.geolocation) return;
 
-    if (user?.location?.lat && user?.location?.lng) {
-      setBuyerLocation([user.location.lat, user.location.lng]);
-    } else if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setBuyerLocation([
-            pos.coords.latitude,
-            pos.coords.longitude,
-          ]);
-        },
+    const watchId = navigator.geolocation.watchPosition(
+      async ({ coords }) => {
+        const { latitude, longitude } = coords;
+        setPosition([latitude, longitude]);
+        setLoaded(true);
 
-        (err) => {
-          console.error("GPS Error:", err);
-
-          // Nairobi fallback
-          setBuyerLocation([-1.2921, 36.8219]);
-        },
-
-        {
-          enableHighAccuracy: true,
-        }
-      );
-    }
-  }, []);
-
-  /* =========================
-     Fetch Nearby Riders
-  ========================= */
-
-  const fetchRiders = async (lat, lng) => {
-    try {
-      const res = await axios.get(
-        `${API_URL}/api/riders/nearby?lat=${lat}&lng=${lng}`
-      );
-
-      setRiders(res.data || []);
+        try {
+          await axios.put(`${API_URL}/api/riders/${riderId}/location`, {
+            latitude,
+            longitude,
+            isAvailable: true,
+          });
+          console.log("✅ Location updated:", latitude, longitude);
     } catch (err) {
-      console.error("Error fetching riders:", err);
-    }
-  };
-
-  /* =========================
-     Auto Refresh Riders
-  ========================= */
-
-  useEffect(() => {
-    if (!buyerLocation) return;
-
-    fetchRiders(buyerLocation[0], buyerLocation[1]);
-
-    const interval = setInterval(() => {
-      fetchRiders(buyerLocation[0], buyerLocation[1]);
-    }, 5000); // refresh every 5 sec
-
-    return () => clearInterval(interval);
-  }, [buyerLocation]);
-
-  /* =========================
-     Assign Rider
-  ========================= */
-
-  const assignRider = async (riderId) => {
-    try {
-      setLoading(true);
-
-      const user = JSON.parse(localStorage.getItem("user"));
-
-      const orderId =
-        localStorage.getItem("currentOrderId");
-
-      const shopId =
-        localStorage.getItem("currentShopId");
-
-      if (!orderId || !shopId) {
-        alert("No active order found.");
-        return;
-      }
-
-      const startLocation = {
-        type: "Point",
-        coordinates: [
-          buyerLocation[1],
-          buyerLocation[0],
-        ],
-      };
-
-      const endLocation = {
-        type: "Point",
-        coordinates: [37.0, -1.0],
-      };
-
-      await axios.post(
-        `${API_URL}/api/trips/start`,
-        {
-          orderId,
-          riderId,
-          userId: user._id,
-          shopId,
-          startLocation,
-          endLocation,
-          distanceKm: 5,
-          fare: 200,
+          console.error("❌ Error updating location:", err.response?.data || err.message);
         }
+      },
+      (err) => {
+        console.error("❌ Error getting location:", err);
+        setLoaded(false);
+      },
+      { enableHighAccuracy: true }
       );
 
-      alert("✅ Rider assigned successfully");
-    } catch (err) {
-      console.error(err);
-
-      alert("❌ Failed to assign rider");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* =========================
-     Loading
-  ========================= */
-
-  if (!buyerLocation) {
-    return (
-      <div className="map-loading">
-        📍 Getting your location...
-      </div>
-    );
-  }
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [riderId]);
 
   return (
-    <div className="delivery-map-container">
-      <MapContainer
-        center={buyerLocation}
-        zoom={14}
-        scrollWheelZoom={true}
-        className="delivery-map"
-      >
-        {/* Map */}
+    <div style={{ height: "500px", width: "100%" }}>
+      {loaded ? (
+        <MapContainer key={position.join(",")} center={position} zoom={15} style={{ height: "100%", width: "100%" }}>
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
+            attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-
-        {/* Buyer */}
-        <Marker
-          position={buyerLocation}
-          icon={buyerIcon}
-        >
-          <Popup>
-            <b>🛍️ Your Location</b>
-          </Popup>
-        </Marker>
-
-        {/* Buyer Radius */}
-        <Circle
-          center={buyerLocation}
-          radius={500}
-        />
-
-        {/* Riders */}
-        {Array.isArray(riders) &&
-          riders.map((rider) => (
-            <Marker
-              key={rider._id}
-              icon={riderIcon}
-              position={[
-                rider.location.coordinates[1],
-                rider.location.coordinates[0],
-              ]}
-            >
-              <Popup>
-                <div className="popup-card">
-                  <h4>🚴 {rider.rider_name}</h4>
-
-                  <p>
-                    Vehicle:
-                    {" "}
-                    {rider.vehicle_type}
-                  </p>
-
-                  <p>
-                    Phone:
-                    {" "}
-                    {rider.phone}
-                  </p>
-
-                  <button
-                    className="request-btn"
-                    disabled={loading}
-                    onClick={() =>
-                      assignRider(rider._id)
-                    }
-                  >
-                    {loading
-                      ? "Assigning..."
-                      : "Request Delivery"}
-                  </button>
-                </div>
-              </Popup>
+          <Marker position={position}>
+            <Popup>📍 You are here (Rider)</Popup>
             </Marker>
-          ))}
       </MapContainer>
+      ) : (
+        <p>📍 Waiting for GPS location...</p>
+      )}
     </div>
   );
 }
 
-export default DeliveryMap;
+export default RiderMap;
