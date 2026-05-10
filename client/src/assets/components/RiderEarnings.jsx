@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "../styles/trips.css";
+import "../styles/earnings.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-function RiderTrips() {
-  const [trips, setTrips] = useState([]);
-
-  // ✅ Earnings state
+function RiderEarnings() {
   const [earnings, setEarnings] = useState({
     totalTrips: 0,
     totalKm: 0,
@@ -15,50 +12,49 @@ function RiderTrips() {
     pendingPay: 0,
   });
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || user.role !== "rider") return;
+    if (!user || user.role !== "rider") {
+      setLoading(false);
+      return;
+    }
 
+    // 1️⃣ Fetch rider using correct backend route
     axios
-      .get(`${API_URL}/api/trips/rider/${user._id}`)
+      .get(`${API_URL}/api/riders/me/${user._id}`)
       .then((res) => {
-        const tripData = res.data || [];
-        setTrips(tripData);
+        const rider = res.data;
 
-        // ✅ Calculate stats
-        const totalTrips = tripData.length;
+        if (!rider) {
+          console.error("❌ No rider profile found for this user.");
+          setLoading(false);
+          return;
+        }
 
-        const totalKm = tripData.reduce(
-          (sum, trip) => sum + (trip.distanceKm || 0),
-          0
-        );
+        const riderId = rider._id; // correct MongoDB rider ID
 
-        const totalPay = tripData.reduce(
-          (sum, trip) => sum + (trip.fare || 0),
-          0
-        );
-
-        // ✅ Example pending payout
-        // change logic if you have payment status
-        const pendingPay = tripData
-          .filter((trip) => trip.paymentStatus !== "paid")
-          .reduce((sum, trip) => sum + (trip.fare || 0), 0);
-
-        setEarnings({
-          totalTrips,
-          totalKm,
-          totalPay,
-          pendingPay,
-        });
+        // 2️⃣ Fetch earnings using rider ID
+        return axios.get(`${API_URL}/api/riders/${riderId}/earnings`);
+      })
+      .then((res) => {
+        if (res) {
+          setEarnings(res.data);
+        }
+        setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching trips:", err);
+        console.error("❌ Error loading earnings:", err);
+        setLoading(false);
       });
   }, []);
 
+  if (loading) {
+    return <p className="loading-text">Loading earnings...</p>;
+  }
+
   return (
-    <div className="trips-container">
-      {/* ✅ Earnings Section */}
       <div className="earnings-container">
         <h3 className="mb-3">💰 My Earnings</h3>
 
@@ -84,71 +80,7 @@ function RiderTrips() {
           </div>
         </div>
       </div>
-
-      {/* ✅ Trips Table */}
-      <h3 className="mb-3">📋 My Trips</h3>
-
-      {trips.length > 0 ? (
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Pickup</th>
-              <th>Drop-off</th>
-              <th>Distance (km)</th>
-              <th>Earnings (KES)</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {trips.map((trip, i) => (
-              <tr key={i}>
-                <td>
-                  {trip.createdAt
-                    ? new Date(trip.createdAt).toLocaleString()
-                    : "N/A"}
-                </td>
-
-                <td>
-                  {trip.startLocation &&
-                  trip.startLocation.coordinates &&
-                  trip.startLocation.coordinates.length === 2
-                    ? `${trip.startLocation.coordinates[1].toFixed(
-                        3
-                      )}, ${trip.startLocation.coordinates[0].toFixed(3)}`
-                    : "N/A"}
-                </td>
-
-                <td>
-                  {trip.endLocation &&
-                  trip.endLocation.coordinates &&
-                  trip.endLocation.coordinates.length === 2
-                    ? `${trip.endLocation.coordinates[1].toFixed(
-                        3
-                      )}, ${trip.endLocation.coordinates[0].toFixed(3)}`
-                    : "N/A"}
-                </td>
-
-                <td>
-                  {trip.distanceKm
-                    ? trip.distanceKm.toFixed(2)
-                    : "0.00"}
-                </td>
-
-                <td>
-                  {trip.fare
-                    ? trip.fare.toFixed(2)
-                    : "0.00"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p className="text-muted">No trips completed yet.</p>
-      )}
-    </div>
   );
 }
 
-export default RiderTrips;
+export default RiderEarnings;
