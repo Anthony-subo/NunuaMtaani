@@ -113,7 +113,7 @@ function RiderTrips() {
           </tbody>
         </table>
       ) : (
-        <p className="text-muted">No trips completed yet.</p>
+        <p className="text-muted">No trips completed yet....</p>
       )}
     </div>
   );
