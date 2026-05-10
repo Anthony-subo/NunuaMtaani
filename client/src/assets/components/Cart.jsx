@@ -300,7 +300,7 @@ function Cart() {
 
               <input
                 type="text"
-                placeholder="Enter M-Pesa Number"
+                placeholder="Enter you M-Pesa Number"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="phone-input"
