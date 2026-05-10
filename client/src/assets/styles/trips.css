@@ -1,136 +1,346 @@
-Your CSS is good already. You can improve the dashboard appearance by adding hover effects, responsive layout, spacing, and colored cards like this:
+```jsx id="tr8c12"
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  FaMotorcycle,
+  FaRoad,
+  FaMoneyBillWave,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
+import "../styles/trips.css";
 
-```css
+const API_URL = import.meta.env.VITE_API_URL;
+
+function RiderTrips() {
+  const [trips, setTrips] = useState([]);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.role !== "rider") return;
+
+    axios
+      .get(`${API_URL}/api/trips/rider/${user._id}`)
+      .then((res) => setTrips(res.data || []))
+      .catch((err) => {
+        console.error("Error fetching trips:", err);
+      });
+  }, []);
+
+  // Summary Calculations
+  const totalTrips = trips.length;
+
+  const totalDistance = trips.reduce(
+    (sum, trip) => sum + (trip.distanceKm || 0),
+    0
+  );
+
+  const totalEarnings = trips.reduce(
+    (sum, trip) => sum + (trip.fare || 0),
+    0
+  );
+
+  return (
+    <div className="trips-container">
+      {/* Header */}
+      <div className="trips-header">
+        <h2>🚴 Rider Trips Dashboard</h2>
+        <p>Track your completed trips, earnings, and distance covered.</p>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="trip-summary">
+        <div className="summary-card">
+          <div className="summary-icon trips-icon">
+            <FaMotorcycle />
+          </div>
+
+          <div>
+            <h4>{totalTrips}</h4>
+            <p>Trips Completed</p>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-icon distance-icon">
+            <FaRoad />
+          </div>
+
+          <div>
+            <h4>{totalDistance.toFixed(2)} km</h4>
+            <p>Total Distance</p>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-icon earnings-icon">
+            <FaMoneyBillWave />
+          </div>
+
+          <div>
+            <h4>KES {totalEarnings.toFixed(2)}</h4>
+            <p>Total Earnings</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Trips Table */}
+      <div className="table-wrapper">
+        <h3 className="table-title">📋 Recent Trips</h3>
+
+        {trips.length > 0 ? (
+          <table className="table table-striped">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Pickup</th>
+                <th>Drop-off</th>
+                <th>Distance</th>
+                <th>Earnings</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {trips.map((trip, i) => (
+                <tr key={i}>
+                  <td>
+                    {trip.createdAt
+                      ? new Date(trip.createdAt).toLocaleString()
+                      : "N/A"}
+                  </td>
+
+                  <td>
+                    <div className="location-cell">
+                      <FaMapMarkerAlt className="location-icon" />
+
+                      {trip.startLocation?.coordinates?.length === 2
+                        ? `${trip.startLocation.coordinates[1].toFixed(
+                            3
+                          )}, ${trip.startLocation.coordinates[0].toFixed(3)}`
+                        : "N/A"}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="location-cell">
+                      <FaMapMarkerAlt className="location-icon dropoff" />
+
+                      {trip.endLocation?.coordinates?.length === 2
+                        ? `${trip.endLocation.coordinates[1].toFixed(
+                            3
+                          )}, ${trip.endLocation.coordinates[0].toFixed(3)}`
+                        : "N/A"}
+                    </div>
+                  </td>
+
+                  <td className="distance-text">
+                    {trip.distanceKm
+                      ? `${trip.distanceKm.toFixed(2)} km`
+                      : "0.00 km"}
+                  </td>
+
+                  <td className="earnings-text">
+                    KES{" "}
+                    {trip.fare
+                      ? trip.fare.toFixed(2)
+                      : "0.00"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="empty-state">
+            <h4>No trips completed yet</h4>
+            <p>Your completed rides will appear here.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default RiderTrips;
+```
+
+```css id="h22x1m"
 .trips-container {
-  background: #fff;
-  padding: 1.5rem;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  padding: 25px;
+  background: #f5f7fb;
+  min-height: 100vh;
 }
 
-/* Titles */
-.trips-container h3 {
-  font-weight: bold;
-  color: #0d6efd;
-  margin-bottom: 20px;
+/* Header */
+.trips-header {
+  margin-bottom: 25px;
 }
 
-/* =========================
-   Earnings Cards
-========================= */
-
-.earnings-container {
-  margin-bottom: 35px;
+.trips-header h2 {
+  font-size: 28px;
+  color: #1e293b;
+  margin-bottom: 8px;
 }
 
-.earnings-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-}
-
-/* Card Design */
-.earnings-stats .card {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 25px 20px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
-  border-left: 6px solid #0d6efd;
-}
-
-/* Hover Effect */
-.earnings-stats .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-}
-
-/* Numbers */
-.earnings-stats .card h4 {
-  font-size: 30px;
-  margin-bottom: 10px;
-  font-weight: bold;
-  color: #28a745;
-}
-
-/* Text */
-.earnings-stats .card p {
-  margin: 0;
-  color: #666;
+.trips-header p {
+  color: #64748b;
   font-size: 15px;
-  font-weight: 500;
 }
 
-/* Different Card Colors */
-.earnings-stats .card:nth-child(1) {
-  border-left-color: #0d6efd;
+/* Summary Cards */
+.trip-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
-.earnings-stats .card:nth-child(2) {
-  border-left-color: #20c997;
+.summary-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transition: 0.3s ease;
 }
 
-.earnings-stats .card:nth-child(3) {
-  border-left-color: #28a745;
+.summary-card:hover {
+  transform: translateY(-4px);
 }
 
-.earnings-stats .pending {
-  border-left-color: orange;
+.summary-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 26px;
+  color: white;
 }
 
-.earnings-stats .pending h4 {
-  color: orange;
+.trips-icon {
+  background: #2563eb;
 }
 
-/* =========================
-   Trips Table
-========================= */
+.distance-icon {
+  background: #10b981;
+}
 
+.earnings-icon {
+  background: #f59e0b;
+}
+
+.summary-card h4 {
+  margin: 0;
+  font-size: 26px;
+  color: #0f172a;
+}
+
+.summary-card p {
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Table Section */
+.table-wrapper {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.table-title {
+  margin-bottom: 20px;
+  color: #1e293b;
+}
+
+/* Table */
 .table {
   width: 100%;
   border-collapse: collapse;
-  overflow: hidden;
-  border-radius: 10px;
+}
+
+.table thead {
+  background: #2563eb;
+  color: white;
 }
 
 .table th {
-  background: #0d6efd;
-  color: white;
-  padding: 1rem;
+  padding: 15px;
   text-align: left;
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
 .table td {
-  padding: 0.9rem;
-  font-size: 0.9rem;
-  border-bottom: 1px solid #eee;
+  padding: 15px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  color: #334155;
 }
 
-/* Zebra Striping */
-.table-striped tbody tr:nth-child(odd) {
-  background: #f8f9fa;
-}
-
-/* Hover */
 .table tbody tr:hover {
-  background: #eef5ff;
-  transition: 0.2s;
+  background: #f8fafc;
+}
+
+/* Location */
+.location-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.location-icon {
+  color: #10b981;
+}
+
+.dropoff {
+  color: #ef4444;
+}
+
+/* Text Styles */
+.distance-text {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.earnings-text {
+  font-weight: bold;
+  color: #16a34a;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.empty-state h4 {
+  color: #475569;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
+  color: #94a3b8;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .earnings-stats {
-    grid-template-columns: 1fr;
+  .trips-container {
+    padding: 15px;
+  }
+
+  .summary-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
   }
 
   .table {
-    font-size: 0.8rem;
-  }
-
-  .table th,
-  .table td {
-    padding: 0.6rem;
+    min-width: 700px;
   }
 }
