@@ -1,218 +1,254 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
   Circle,
-  useMap,
 } from "react-leaflet";
 
-import L from "leaflet";
-import axios from "axios";
 import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 /* =========================
-   Custom Rider Icon
+   Custom Icons
 ========================= */
+
+const buyerIcon = new L.Icon({
+  iconUrl:
+    "https://cdn-icons-png.flaticon.com/512/3177/3177361.png",
+
+  iconSize: [40, 40],
+});
 
 const riderIcon = new L.Icon({
   iconUrl:
     "https://cdn-icons-png.flaticon.com/512/684/684908.png",
 
-  iconSize: [45, 45],
+  iconSize: [35, 35],
 });
 
 /* =========================
-   Recenter Map
+   Component
 ========================= */
 
-function RecenterMap({ position }) {
-  const map = useMap();
+function DeliveryMap() {
+  const [buyerLocation, setBuyerLocation] = useState(null);
+  const [riders, setRiders] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  /* =========================
+     Get Buyer Location
+  ========================= */
 
   useEffect(() => {
-    map.flyTo(position, 15, {
-      duration: 1.5,
-    });
-  }, [position, map]);
+    const user = JSON.parse(localStorage.getItem("user"));
 
-  return null;
-}
-
-/* =========================
-   Rider Map
-========================= */
-
-function RiderMap({ riderId }) {
-  const [position, setPosition] = useState([
-    -1.2921,
-    36.8219,
-  ]);
-
-  const [loaded, setLoaded] = useState(false);
-
-  const [speed, setSpeed] = useState(0);
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      alert("Geolocation not supported");
-      return;
-    }
-
-    const watchId =
-      navigator.geolocation.watchPosition(
-        async ({ coords }) => {
-          const {
-            latitude,
-            longitude,
-            speed,
-          } = coords;
-
-          const newPosition = [
-            latitude,
-            longitude,
-          ];
-
-          setPosition(newPosition);
-
-          setLoaded(true);
-
-          // Speed km/h
-          if (speed) {
-            setSpeed((speed * 3.6).toFixed(1));
-          }
-
-          try {
-            if (riderId) {
-              await axios.put(
-                `${API_URL}/api/riders/${riderId}/location`,
-                {
-                  latitude,
-                  longitude,
-                  isAvailable: true,
-                }
-              );
-
-              console.log(
-                "✅ Rider location updated"
-              );
-            }
-          } catch (err) {
-            console.error(
-              "❌ Update Error:",
-              err.response?.data ||
-                err.message
-            );
-          }
+    if (user?.location?.lat && user?.location?.lng) {
+      setBuyerLocation([user.location.lat, user.location.lng]);
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setBuyerLocation([
+            pos.coords.latitude,
+            pos.coords.longitude,
+          ]);
         },
 
         (err) => {
-          console.error(
-            "❌ GPS Error:",
-            err
-          );
+          console.error("GPS Error:", err);
+
+          // Nairobi fallback
+          setBuyerLocation([-1.2921, 36.8219]);
         },
 
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+        }
+      );
+    }
+  }, []);
+
+  /* =========================
+     Fetch Nearby Riders
+  ========================= */
+
+  const fetchRiders = async (lat, lng) => {
+    try {
+      const res = await axios.get(
+        `${API_URL}/api/riders/nearby?lat=${lat}&lng=${lng}`
+      );
+
+      setRiders(res.data || []);
+    } catch (err) {
+      console.error("Error fetching riders:", err);
+    }
+  };
+
+  /* =========================
+     Auto Refresh Riders
+  ========================= */
+
+  useEffect(() => {
+    if (!buyerLocation) return;
+
+    fetchRiders(buyerLocation[0], buyerLocation[1]);
+
+    const interval = setInterval(() => {
+      fetchRiders(buyerLocation[0], buyerLocation[1]);
+    }, 5000); // refresh every 5 sec
+
+    return () => clearInterval(interval);
+  }, [buyerLocation]);
+
+  /* =========================
+     Assign Rider
+  ========================= */
+
+  const assignRider = async (riderId) => {
+    try {
+      setLoading(true);
+
+      const user = JSON.parse(localStorage.getItem("user"));
+
+      const orderId =
+        localStorage.getItem("currentOrderId");
+
+      const shopId =
+        localStorage.getItem("currentShopId");
+
+      if (!orderId || !shopId) {
+        alert("No active order found.");
+        return;
+      }
+
+      const startLocation = {
+        type: "Point",
+        coordinates: [
+          buyerLocation[1],
+          buyerLocation[0],
+        ],
+      };
+
+      const endLocation = {
+        type: "Point",
+        coordinates: [37.0, -1.0],
+      };
+
+      await axios.post(
+        `${API_URL}/api/trips/start`,
+        {
+          orderId,
+          riderId,
+          userId: user._id,
+          shopId,
+          startLocation,
+          endLocation,
+          distanceKm: 5,
+          fare: 200,
         }
       );
 
-    return () =>
-      navigator.geolocation.clearWatch(
-        watchId
-      );
-  }, [riderId]);
+      alert("✅ Rider assigned successfully");
+    } catch (err) {
+      console.error(err);
+
+      alert("❌ Failed to assign rider");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* =========================
+     Loading
+  ========================= */
+
+  if (!buyerLocation) {
+    return (
+      <div className="map-loading">
+        📍 Getting your location...
+      </div>
+    );
+  }
 
   return (
-    <div className="rider-map-wrapper">
-      {/* Status Bar */}
-      <div className="rider-status-card">
-        <div>
-          <h3>🚴 Rider Live Tracking</h3>
-
-          <p>
-            GPS Status:
-            <span className="online">
-              {" "}
-              Online
-            </span>
-          </p>
-        </div>
-
-        <div className="speed-box">
-          <h2>{speed || 0}</h2>
-          <span>km/h</span>
-        </div>
-      </div>
-
-      {/* Loading */}
-      {!loaded && (
-        <div className="map-loading">
-          📍 Getting your live location...
-        </div>
-      )}
-
-      {/* Map */}
+    <div className="delivery-map-container">
       <MapContainer
-        center={position}
-        zoom={15}
+        center={buyerLocation}
+        zoom={14}
         scrollWheelZoom={true}
-        className="rider-map"
+        className="delivery-map"
       >
-        <RecenterMap position={position} />
-
-        {/* Map Style */}
+        {/* Map */}
         <TileLayer
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Rider Radius */}
-        <Circle
-          center={position}
-          radius={120}
-        />
-
-        {/* Rider Marker */}
+        {/* Buyer */}
         <Marker
-          position={position}
-          icon={riderIcon}
+          position={buyerLocation}
+          icon={buyerIcon}
         >
           <Popup>
-            <div className="popup-card">
-              <h4>
-                🚴 Rider Current Location
-              </h4>
-
-              <p>
-                Latitude:
-                {" "}
-                {position[0].toFixed(5)}
-              </p>
-
-              <p>
-                Longitude:
-                {" "}
-                {position[1].toFixed(5)}
-              </p>
-
-              <p>
-                Speed:
-                {" "}
-                {speed || 0}
-                {" "}km/h
-              </p>
-            </div>
+            <b>🛍️ Your Location</b>
           </Popup>
         </Marker>
+
+        {/* Buyer Radius */}
+        <Circle
+          center={buyerLocation}
+          radius={500}
+        />
+
+        {/* Riders */}
+        {Array.isArray(riders) &&
+          riders.map((rider) => (
+            <Marker
+              key={rider._id}
+              icon={riderIcon}
+              position={[
+                rider.location.coordinates[1],
+                rider.location.coordinates[0],
+              ]}
+            >
+              <Popup>
+                <div className="popup-card">
+                  <h4>🚴 {rider.rider_name}</h4>
+
+                  <p>
+                    Vehicle:
+                    {" "}
+                    {rider.vehicle_type}
+                  </p>
+
+                  <p>
+                    Phone:
+                    {" "}
+                    {rider.phone}
+                  </p>
+
+                  <button
+                    className="request-btn"
+                    disabled={loading}
+                    onClick={() =>
+                      assignRider(rider._id)
+                    }
+                  >
+                    {loading
+                      ? "Assigning..."
+                      : "Request Delivery"}
+                  </button>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
       </MapContainer>
     </div>
   );
 }
 
-export default RiderMap;
+export default DeliveryMap;
