@@ -5,10 +5,12 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 function Cart() {
   const [cart, setCart] = useState([]);
+  const [products, setProducts] = useState([]);
   const [userId, setUserId] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
   const [phone, setPhone] = useState("");
 
+  // ✅ Load user + cart + products
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
 
@@ -20,7 +22,22 @@ function Cart() {
 
       setCart(userCart);
     }
+
+    // ✅ fetch products (for images)
+    fetch(`${API_URL}/api/products`)
+      .then((res) => res.json())
+      .then((data) => setProducts(data))
+      .catch((err) => console.log("Products error:", err));
   }, []);
+
+  // ✅ get image from products (NO localStorage image)
+  const getProductImage = (item) => {
+    const product = products.find((p) => p._id === item._id);
+
+    return product?.images?.[0]
+      ? `${API_URL}/uploads/${product.images[0]}`
+      : "https://via.placeholder.com/400x300?text=No+Image";
+  };
 
   const saveCartToStorage = (updatedCart) => {
     if (userId) {
@@ -106,7 +123,6 @@ function Cart() {
       setCart([]);
     } catch (err) {
       console.error(err);
-
       setOrderStatus("❌ Failed to place order.");
     }
   };
@@ -183,7 +199,6 @@ function Cart() {
             font-weight: bold;
             cursor: pointer;
             margin-top: 15px;
-            transition: 0.3s;
           }
 
           .remove-btn:hover {
@@ -198,18 +213,12 @@ function Cart() {
             box-shadow: 0 4px 18px rgba(0,0,0,0.08);
           }
 
-          .summary-box h3 {
-            margin-bottom: 20px;
-            color: #111827;
-          }
-
           .phone-input {
             width: 100%;
             padding: 14px;
             border-radius: 10px;
-            border: 1px solid #d1d5db;
+            border: 1px solid #ccc;
             margin-bottom: 20px;
-            font-size: 16px;
           }
 
           .checkout-btn {
@@ -219,10 +228,8 @@ function Cart() {
             border-radius: 10px;
             background: #198754;
             color: white;
-            font-size: 17px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
           }
 
           .checkout-btn:hover {
@@ -235,7 +242,6 @@ function Cart() {
             border-radius: 10px;
             background: #eef6ff;
             color: #0d6efd;
-            font-weight: 500;
           }
 
           .empty-cart {
@@ -243,8 +249,6 @@ function Cart() {
             padding: 40px;
             border-radius: 18px;
             text-align: center;
-            font-size: 20px;
-            color: #555;
           }
         `}
       </style>
@@ -253,20 +257,14 @@ function Cart() {
         <h2 className="cart-title">🛒 My Cart</h2>
 
         {cart.length === 0 ? (
-          <div className="empty-cart">
-            Your cart is empty
-          </div>
+          <div className="empty-cart">Your cart is empty</div>
         ) : (
           <>
             <div className="cart-grid">
               {cart.map((item, idx) => (
                 <div className="cart-card" key={idx}>
                   <img
-                    src={
-                      item.image
-                        ? `${API_URL}/uploads/${item.image}`
-                        : "https://via.placeholder.com/400x300?text=No+Image"
-                    }
+                    src={getProductImage(item)}
                     alt={item.name}
                     className="cart-image"
                   />
@@ -283,15 +281,8 @@ function Cart() {
                     </p>
 
                     <p className="subtotal">
-                      Subtotal:{" "}
-                      {item.price * (item.quantity || 1)} KES
+                      Subtotal: {item.price * (item.quantity || 1)} KES
                     </p>
-
-                    {item.location && (
-                      <p>
-                        <strong>Location:</strong> {item.location}
-                      </p>
-                    )}
 
                     <button
                       className="remove-btn"
@@ -323,9 +314,7 @@ function Cart() {
               </button>
 
               {orderStatus && (
-                <div className="order-status">
-                  {orderStatus}
-                </div>
+                <div className="order-status">{orderStatus}</div>
               )}
             </div>
           </>
