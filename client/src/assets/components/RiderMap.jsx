@@ -4,6 +4,7 @@ import {
   TileLayer,
   Marker,
   Popup,
+  Circle,
   useMap,
 } from "react-leaflet";
 
@@ -13,108 +14,201 @@ import "leaflet/dist/leaflet.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ✅ Fix default marker icon
-delete L.Icon.Default.prototype._getIconUrl;
+/* =========================
+   Custom Rider Icon
+========================= */
 
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-
+const riderIcon = new L.Icon({
   iconUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    "https://cdn-icons-png.flaticon.com/512/684/684908.png",
 
-  shadowUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [45, 45],
 });
 
-// ✅ Auto recenter map
+/* =========================
+   Recenter Map
+========================= */
+
 function RecenterMap({ position }) {
   const map = useMap();
 
   useEffect(() => {
-    map.setView(position, 15);
+    map.flyTo(position, 15, {
+      duration: 1.5,
+    });
   }, [position, map]);
 
   return null;
 }
 
+/* =========================
+   Rider Map
+========================= */
+
 function RiderMap({ riderId }) {
-  const [position, setPosition] = useState([-1.2921, 36.8219]);
+  const [position, setPosition] = useState([
+    -1.2921,
+    36.8219,
+  ]);
+
   const [loaded, setLoaded] = useState(false);
+
+  const [speed, setSpeed] = useState(0);
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported");
+      alert("Geolocation not supported");
       return;
     }
 
-    const watchId = navigator.geolocation.watchPosition(
-      async ({ coords }) => {
-        const { latitude, longitude } = coords;
+    const watchId =
+      navigator.geolocation.watchPosition(
+        async ({ coords }) => {
+          const {
+            latitude,
+            longitude,
+            speed,
+          } = coords;
 
-        const newPosition = [latitude, longitude];
+          const newPosition = [
+            latitude,
+            longitude,
+          ];
 
-        setPosition(newPosition);
-        setLoaded(true);
+          setPosition(newPosition);
 
-        try {
-          if (riderId) {
-            await axios.put(
-              `${API_URL}/api/riders/${riderId}/location`,
-              {
-                latitude,
-                longitude,
-                isAvailable: true,
-              }
-            );
+          setLoaded(true);
 
-            console.log("✅ Location updated");
+          // Speed km/h
+          if (speed) {
+            setSpeed((speed * 3.6).toFixed(1));
           }
-        } catch (err) {
+
+          try {
+            if (riderId) {
+              await axios.put(
+                `${API_URL}/api/riders/${riderId}/location`,
+                {
+                  latitude,
+                  longitude,
+                  isAvailable: true,
+                }
+              );
+
+              console.log(
+                "✅ Rider location updated"
+              );
+            }
+          } catch (err) {
+            console.error(
+              "❌ Update Error:",
+              err.response?.data ||
+                err.message
+            );
+          }
+        },
+
+        (err) => {
           console.error(
-            "❌ Location update error:",
-            err.response?.data || err.message
+            "❌ GPS Error:",
+            err
           );
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
         }
-      },
+      );
 
-      (err) => {
-        console.error("❌ GPS Error:", err);
-      },
-
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
+    return () =>
+      navigator.geolocation.clearWatch(
+        watchId
+      );
   }, [riderId]);
 
   return (
-    <div className="rider-map-container">
+    <div className="rider-map-wrapper">
+      {/* Status Bar */}
+      <div className="rider-status-card">
+        <div>
+          <h3>🚴 Rider Live Tracking</h3>
+
+          <p>
+            GPS Status:
+            <span className="online">
+              {" "}
+              Online
+            </span>
+          </p>
+        </div>
+
+        <div className="speed-box">
+          <h2>{speed || 0}</h2>
+          <span>km/h</span>
+        </div>
+      </div>
+
+      {/* Loading */}
       {!loaded && (
         <div className="map-loading">
-          📍 Waiting for GPS location...
+          📍 Getting your live location...
         </div>
       )}
 
+      {/* Map */}
       <MapContainer
         center={position}
         zoom={15}
         scrollWheelZoom={true}
-        className="leaflet-map"
+        className="rider-map"
       >
         <RecenterMap position={position} />
 
+        {/* Map Style */}
         <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
+          attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <Marker position={position}>
-          <Popup>🚴 Rider Current Location</Popup>
+        {/* Rider Radius */}
+        <Circle
+          center={position}
+          radius={120}
+        />
+
+        {/* Rider Marker */}
+        <Marker
+          position={position}
+          icon={riderIcon}
+        >
+          <Popup>
+            <div className="popup-card">
+              <h4>
+                🚴 Rider Current Location
+              </h4>
+
+              <p>
+                Latitude:
+                {" "}
+                {position[0].toFixed(5)}
+              </p>
+
+              <p>
+                Longitude:
+                {" "}
+                {position[1].toFixed(5)}
+              </p>
+
+              <p>
+                Speed:
+                {" "}
+                {speed || 0}
+                {" "}km/h
+              </p>
+            </div>
+          </Popup>
         </Marker>
       </MapContainer>
     </div>
