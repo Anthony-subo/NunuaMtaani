@@ -314,7 +314,7 @@ function Cart() {
               </button>
 
               {orderStatus && (
-                <div className="order-status">{orderStatus}</div>
+                <div className="order-status.">{orderStatus}</div>
               )}
             </div>
           </>
