@@ -5,6 +5,10 @@ const path = require("path");
 require("dotenv").config();
 
 const app = express();
+
+// Trust Render proxy (required for express-rate-limit)
+app.set("trust proxy", 1);
+
 const port = process.env.PORT || 3001
 
 // Middleware
