@@ -28,7 +28,8 @@ function App() {
         <Route path="/" element={<NunuaMtaaniLanding />} />
         <Route path="/register" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/verify-email" element={<Verificat />} />
+        <Route path="/verify-email/:token" element={<Verificat />}
+/>
 
 
         {/* Routes WITH header via Layout */}
