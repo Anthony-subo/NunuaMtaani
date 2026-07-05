@@ -6,6 +6,7 @@ const router = express.Router();
 const {
   register,
   login,
+  verifyEmail,
 } = require("../controllers/authController");
 
 // ==========================
@@ -31,5 +32,7 @@ router.post("/register", register);
 
 // Login (Protected by Rate Limiter)
 router.post("/login", loginLimiter, login);
+
+router.get("/verify-email/:token", verifyEmail);
 
 module.exports = router;
