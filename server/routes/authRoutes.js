@@ -7,7 +7,6 @@ const {
   register,
   login,
   verifyEmail,
-  resendVerification,
 } = require("../controllers/authController");
 
 // ==========================
@@ -35,7 +34,5 @@ router.post("/register", register);
 router.post("/login", loginLimiter, login);
 
 router.get("/verify-email/:token", verifyEmail);
-
-router.post("/resend-verification", resendVerification);
 
 module.exports = router;
