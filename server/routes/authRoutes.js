@@ -7,6 +7,7 @@ const {
   register,
   login,
   verifyEmail,
+  resendVerification,
 } = require("../controllers/authController");
 
 // ==========================
