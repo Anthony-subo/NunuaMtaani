@@ -388,3 +388,169 @@ exports.resendVerification = async (req, res) => {
     });
   }
 };
+
+// =====================
+// FORGOT PASSWORD
+// =====================
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email is required.",
+      });
+    }
+
+    const user = await UserModel.findOne({
+      email: email.toLowerCase(),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "No account found with this email.",
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = new Date(
+      Date.now() + 60 * 60 * 1000 // 1 hour
+    );
+
+    await user.save();
+
+    const resetLink =
+      `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Reset your NunuaMtaani Password",
+      html: `
+      <div style="font-family:Arial,sans-serif;padding:30px">
+
+        <h2>Password Reset</h2>
+
+        <p>Hello <strong>${user.name}</strong>,</p>
+
+        <p>
+          We received a request to reset your password.
+        </p>
+
+        <a
+          href="${resetLink}"
+          style="
+            display:inline-block;
+            padding:12px 24px;
+            background:#0d6efd;
+            color:#fff;
+            text-decoration:none;
+            border-radius:5px;
+          "
+        >
+          Reset Password
+        </a>
+
+        <p style="margin-top:20px">
+          This link expires in 1 hour.
+        </p>
+
+        <hr>
+
+        <small>
+          If you didn't request this, simply ignore this email.
+        </small>
+
+      </div>
+      `,
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Password reset link has been sent to your email.",
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Unable to process request.",
+    });
+  }
+};
+
+// =====================
+// RESET PASSWORD
+// =====================
+
+exports.resetPassword = async (req, res) => {
+  try {
+
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Password is required.",
+      });
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character.",
+      });
+    }
+
+    const user = await UserModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: {
+        $gt: new Date(),
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Password reset link is invalid or has expired.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user.password = hashedPassword;
+
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+
+    await user.save();
+
+    return res.status(200).json({
+      status: "success",
+      message:
+        "Password has been reset successfully. You can now log in.",
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Unable to reset password.",
+    });
+
+  }
+};
