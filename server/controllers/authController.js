@@ -296,3 +296,95 @@ exports.verifyEmail = async (req, res) => {
     });
   }
 };
+
+// =====================
+// RESEND VERIFICATION EMAIL
+// =====================
+
+exports.resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email is required.",
+      });
+    }
+
+    const user = await UserModel.findOne({
+      email: email.toLowerCase(),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "No account found with this email.",
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        status: "error",
+        message: "This account is already verified.",
+      });
+    }
+
+    const verificationToken = generateVerificationToken();
+
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpires = new Date(
+      Date.now() + 24 * 60 * 60 * 1000
+    );
+
+    await user.save();
+
+    const verificationLink =
+      `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your NunuaMtaani Account",
+      html: `
+      <div style="font-family:Arial;padding:25px">
+        <h2>Hello ${user.name}</h2>
+
+        <p>
+          Here is your new verification link.
+        </p>
+
+        <a
+          href="${verificationLink}"
+          style="
+            background:#0d6efd;
+            color:white;
+            padding:12px 20px;
+            text-decoration:none;
+            border-radius:5px;
+            display:inline-block;
+          "
+        >
+          Verify Email
+        </a>
+
+        <p style="margin-top:20px">
+          This link expires in 24 hours.
+        </p>
+      </div>
+      `,
+    });
+
+    res.json({
+      status: "success",
+      message: "Verification email sent successfully.",
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      status: "error",
+      message: "Unable to send verification email.",
+    });
+  }
+};
