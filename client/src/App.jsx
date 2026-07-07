@@ -10,6 +10,8 @@ import NunuaMtaaniLanding from './assets/pages/NunuaMtaaniLanding';
 import Verificat from './assets/pages/Verificat';
 import ResendVerification from './assets/pages/ResendVerification';
 import RiderDashboard from './assets/pages/RiderDashboard';
+import ForgotPassword from './assets/pages/ForgotPassword';
+import ResetPassword from './assets/pages/ResetPassword';
 
 
 
