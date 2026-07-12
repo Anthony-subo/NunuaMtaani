@@ -27,13 +27,21 @@ const generateToken = (user) => {
 // REGISTER
 // =====================
 
+// =====================
+// REGISTER
+// =====================
+
 exports.register = async (req, res) => {
   try {
+    console.log("========== REGISTER ==========");
+    console.log("Request Body:", req.body);
+
     const { name, phone, email, location, password, role } = req.body;
 
     // Validate required fields
     if (!name || !email || !password) {
       return res.status(400).json({
+        status: "error",
         message: "Please fill all required fields.",
       });
     }
@@ -41,36 +49,42 @@ exports.register = async (req, res) => {
     // Validate email
     if (!validator.isEmail(email)) {
       return res.status(400).json({
+        status: "error",
         message: "Invalid email address.",
       });
     }
 
-    // Validate password strength
+    // Validate password
     if (!PASSWORD_REGEX.test(password)) {
       return res.status(400).json({
+        status: "error",
         message:
           "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character.",
       });
     }
 
-    // Check if email already exists
+    // Check existing account
     const existingUser = await UserModel.findOne({
       email: email.toLowerCase(),
     });
 
     if (existingUser) {
       return res.status(400).json({
+        status: "error",
         message: "Email already exists.",
       });
     }
 
-    // Hash password
+    console.log("Hashing password...");
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate verification token
+    console.log("Generating verification token...");
+
     const verificationToken = generateVerificationToken();
 
-    // Create user
+    console.log("Creating user...");
+
     const newUser = await UserModel.create({
       name,
       phone,
@@ -81,18 +95,23 @@ exports.register = async (req, res) => {
 
       isVerified: false,
       verificationToken,
-      verificationTokenExpires:
-        new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 Hours
+      verificationTokenExpires: new Date(
+        Date.now() + 24 * 60 * 60 * 1000
+      ),
     });
 
-    // JWT Token
+    console.log("User created:", newUser.email);
+
     const token = generateToken(newUser);
 
-    // Verification Link
     const verificationLink =
       `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
-    // Send Email
+    console.log("Verification link:");
+    console.log(verificationLink);
+
+    console.log("Sending verification email...");
+
     await sendEmail({
       to: newUser.email,
       subject: "Verify your NunuaMtaani Account",
@@ -103,8 +122,8 @@ exports.register = async (req, res) => {
         <p>Hello <strong>${newUser.name}</strong>,</p>
 
         <p>
-        Thank you for registering.
-        Please verify your email by clicking the button below.
+          Thank you for registering.
+          Please verify your email by clicking the button below.
         </p>
 
         <a
@@ -113,7 +132,7 @@ exports.register = async (req, res) => {
             display:inline-block;
             padding:12px 24px;
             background:#0d6efd;
-            color:white;
+            color:#fff;
             text-decoration:none;
             border-radius:6px;
           "
@@ -129,17 +148,18 @@ exports.register = async (req, res) => {
 
         <small>
           If you didn't create this account,
-          please ignore this email.
+          simply ignore this email.
         </small>
       </div>
       `,
     });
 
-    // Remove password before returning user
+    console.log("✅ Verification email sent.");
+
     const user = newUser.toObject();
     delete user.password;
 
-    res.status(201).json({
+    return res.status(201).json({
       status: "success",
       token,
       user,
@@ -148,10 +168,14 @@ exports.register = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
 
-    res.status(500).json({
-      message: "Registration failed.",
+    console.error("========== REGISTER ERROR ==========");
+    console.error(err);
+    console.error(err.stack);
+
+    return res.status(500).json({
+      status: "error",
+      message: err.message,
     });
   }
 };
