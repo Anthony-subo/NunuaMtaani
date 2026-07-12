@@ -1,17 +1,21 @@
-const transporter = require("../config/mail");
+const transporter = require("../config/email");
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"NunuaMtaani" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
     });
 
-    console.log(`✅ Email sent to ${to}`);
+    console.log("✅ Email sent:", info.messageId);
+
+    return info;
   } catch (error) {
-    console.error("❌ Email Error:", error.message);
+    console.error("❌ Failed to send email:");
+    console.error(error);
+
     throw error;
   }
 };

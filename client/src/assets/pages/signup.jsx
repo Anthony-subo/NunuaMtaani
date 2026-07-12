@@ -6,6 +6,9 @@ import { AiFillHome } from "react-icons/ai";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../styles/auth.css";
 
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{8,}$/;
+
 function Signup() {
   const navigate = useNavigate();
 
@@ -17,20 +20,34 @@ function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [errMsg, setErrMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Password checks
+  const checks = {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    special: /[@$!%*?&.#]/.test(password),
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setErrMsg("");
-    setSuccessMsg("");
 
     if (password !== confirmPassword) {
       setErrMsg("Passwords do not match.");
+      return;
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      setErrMsg(
+        "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character."
+      );
       return;
     }
 
@@ -40,27 +57,22 @@ function Signup() {
       const result = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/auth/register`,
         {
-          name,
-          phone,
-          email,
-          location,
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          location: location.trim(),
           password,
         }
       );
 
       if (result.data.status === "success") {
-        setSuccessMsg(result.data.message);
-
-        setName("");
-        setPhone("");
-        setEmail("");
-        setLocation("");
-        setPassword("");
-        setConfirmPassword("");
-
-        setTimeout(() => {
-          navigate("/login");
-        }, 4000);
+        navigate("/login", {
+          state: {
+            message:
+              result.data.message ||
+              "Registration successful! Please check your email to verify your account.",
+          },
+        });
       }
     } catch (err) {
       console.error(err);
@@ -76,42 +88,31 @@ function Signup() {
 
   return (
     <div className="auth-container">
-
       {/* Logo */}
 
       <div className="d-flex align-items-center logo mb-3">
-
         <BsCartFill className="shopping-icon" size={28} />
 
         <div className="d-flex flex-column">
-
           <div className="d-flex align-items-center mb-1">
-
             <h3 className="brand mb-0 me-2">
               <span className="nunua">Nunua</span>
               <span className="m">M</span>
               <span className="taani">taani</span>
             </h3>
 
-            <Link
-              to="/"
-              className="home-icon-link ms-2"
-              title="Home"
-            >
+            <Link to="/" className="home-icon-link ms-2" title="Home">
               <AiFillHome size={22} className="text-dark" />
             </Link>
-
           </div>
 
           <small className="slogan">
             Your trusted online market
           </small>
-
         </div>
-
       </div>
 
-      <h3 className="text-center mb-3">
+      <h3 className="text-center mb-4">
         Create Account
       </h3>
 
@@ -121,27 +122,17 @@ function Signup() {
         </div>
       )}
 
-      {successMsg && (
-        <div className="alert alert-success">
-          {successMsg}
-          <br />
-          <strong>
-            Please check your email and verify your account.
-          </strong>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit}>
-
         {/* Name */}
 
-        <label>Name</label>
+        <label>Full Name</label>
 
         <input
           type="text"
           className="form-control"
-          placeholder="Full Name"
+          placeholder="John Doe"
           value={name}
+          disabled={loading}
           onChange={(e) => setName(e.target.value)}
           required
         />
@@ -150,13 +141,15 @@ function Signup() {
 
         {/* Email */}
 
-        <label>Email</label>
+        <label>Email Address</label>
 
         <input
           type="email"
           className="form-control"
-          placeholder="Email Address"
+          placeholder="example@gmail.com"
+          autoComplete="email"
           value={email}
+          disabled={loading}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
@@ -165,13 +158,17 @@ function Signup() {
 
         {/* Phone */}
 
-        <label>Phone</label>
+        <label>Phone Number</label>
 
         <input
           type="tel"
           className="form-control"
           placeholder="07XXXXXXXX"
+          autoComplete="tel"
+          pattern="^(07|01)[0-9]{8}$"
+          title="Enter a valid Kenyan phone number"
           value={phone}
+          disabled={loading}
           onChange={(e) => setPhone(e.target.value)}
           required
         />
@@ -185,8 +182,9 @@ function Signup() {
         <input
           type="text"
           className="form-control"
-          placeholder="Your Location"
+          placeholder="Nairobi, Kenya"
           value={location}
+          disabled={loading}
           onChange={(e) => setLocation(e.target.value)}
         />
 
@@ -197,12 +195,13 @@ function Signup() {
         <label>Password</label>
 
         <div className="input-group">
-
           <input
             type={showPassword ? "text" : "password"}
             className="form-control"
             placeholder="Password"
+            autoComplete="new-password"
             value={password}
+            disabled={loading}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
@@ -210,38 +209,43 @@ function Signup() {
           <button
             type="button"
             className="btn btn-outline-secondary"
-            onClick={() =>
-              setShowPassword(!showPassword)
-            }
+            onClick={() => setShowPassword(!showPassword)}
           >
-            {showPassword ? (
-              <FaEyeSlash />
-            ) : (
-              <FaEye />
-            )}
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
           </button>
-
         </div>
 
-        <small className="text-muted">
+        {/* Password Strength */}
 
-          Password must contain:
+        <div className="mt-3">
+          <small className={checks.length ? "text-success" : "text-danger"}>
+            {checks.length ? "✔" : "✖"} Minimum 8 characters
+          </small>
 
-          <ul className="mt-2">
+          <br />
 
-            <li>Minimum 8 characters</li>
+          <small className={checks.upper ? "text-success" : "text-danger"}>
+            {checks.upper ? "✔" : "✖"} One uppercase letter
+          </small>
 
-            <li>One uppercase letter</li>
+          <br />
 
-            <li>One lowercase letter</li>
+          <small className={checks.lower ? "text-success" : "text-danger"}>
+            {checks.lower ? "✔" : "✖"} One lowercase letter
+          </small>
 
-            <li>One number</li>
+          <br />
 
-            <li>One special character (@$!%*?&.#)</li>
+          <small className={checks.number ? "text-success" : "text-danger"}>
+            {checks.number ? "✔" : "✖"} One number
+          </small>
 
-          </ul>
+          <br />
 
-        </small>
+          <small className={checks.special ? "text-success" : "text-danger"}>
+            {checks.special ? "✔" : "✖"} One special character (@$!%*?&.#)
+          </small>
+        </div>
 
         <br />
 
@@ -250,19 +254,14 @@ function Signup() {
         <label>Confirm Password</label>
 
         <div className="input-group">
-
           <input
-            type={
-              showConfirmPassword
-                ? "text"
-                : "password"
-            }
+            type={showConfirmPassword ? "text" : "password"}
             className="form-control"
             placeholder="Confirm Password"
+            autoComplete="new-password"
             value={confirmPassword}
-            onChange={(e) =>
-              setConfirmPassword(e.target.value)
-            }
+            disabled={loading}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             required
           />
 
@@ -270,18 +269,11 @@ function Signup() {
             type="button"
             className="btn btn-outline-secondary"
             onClick={() =>
-              setShowConfirmPassword(
-                !showConfirmPassword
-              )
+              setShowConfirmPassword(!showConfirmPassword)
             }
           >
-            {showConfirmPassword ? (
-              <FaEyeSlash />
-            ) : (
-              <FaEye />
-            )}
+            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
           </button>
-
         </div>
 
         <br />
@@ -291,21 +283,26 @@ function Signup() {
           className="btn btn-primary w-100"
           disabled={loading}
         >
-          {loading
-            ? "Creating Account..."
-            : "Register"}
+          {loading ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+
+              Creating Account...
+            </>
+          ) : (
+            "Register"
+          )}
         </button>
 
         <p className="mt-4 text-center">
-
           Already have an account?
-
           <Link to="/login"> Login</Link>
-
         </p>
-
       </form>
-
     </div>
   );
 }
