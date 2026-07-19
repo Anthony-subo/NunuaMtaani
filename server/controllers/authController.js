@@ -112,47 +112,19 @@ exports.register = async (req, res) => {
 
     console.log("Sending verification email...");
 
-    await sendEmail({
-      to: newUser.email,
-      subject: "Verify your NunuaMtaani Account",
-      html: `
-      <div style="font-family:Arial,sans-serif;padding:30px">
-        <h2>Welcome to NunuaMtaani 🎉</h2>
+   await sendEmail({
+  to: newUser.email,
+  subject: "Welcome to NunuaMtaani",
+  html: `
+    <h2>Welcome to NunuaMtaani</h2>
 
-        <p>Hello <strong>${newUser.name}</strong>,</p>
+    <p>Hello ${newUser.name},</p>
 
-        <p>
-          Thank you for registering.
-          Please verify your email by clicking the button below.
-        </p>
+    <p>Your account has been created successfully.</p>
 
-        <a
-          href="${verificationLink}"
-          style="
-            display:inline-block;
-            padding:12px 24px;
-            background:#0d6efd;
-            color:#fff;
-            text-decoration:none;
-            border-radius:6px;
-          "
-        >
-          Verify Email
-        </a>
-
-        <p style="margin-top:20px">
-          This link expires in <strong>24 hours</strong>.
-        </p>
-
-        <hr>
-
-        <small>
-          If you didn't create this account,
-          simply ignore this email.
-        </small>
-      </div>
-      `,
-    });
+    <p>This is a test email.</p>
+  `,
+});
 
     console.log("✅ Verification email sent.");
 
