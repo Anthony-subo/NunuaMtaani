@@ -4,49 +4,47 @@ const connectDB = require("./config/db");
 const path = require("path");
 require("dotenv").config();
 
+// DEBUG
+console.log("=================================");
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log(
+  "EMAIL_PASS:",
+  process.env.EMAIL_PASS ? "Loaded" : "Missing"
+);
+console.log("CLIENT_URL:", process.env.CLIENT_URL);
+console.log("=================================");
+
 const app = express();
 
-// Trust Render proxy (required for express-rate-limit)
 app.set("trust proxy", 1);
 
-const port = process.env.PORT || 3001
+const port = process.env.PORT || 3001;
 
-// Middleware
-// Middleware
 app.use(cors({
   origin: [
     "http://localhost:5173",
     "https://nunua-mtaani.vercel.app"
   ],
-methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   credentials: true
 }));
 
-
 app.use(express.json());
-// Load cron after DB is ready
- // require("./cronJobs");
 
-// Static route to serve uploaded images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Connect DB
 connectDB();
 
-
-// Routes
-app.use("/api/payments", require("./routes/payments"));// ✅ Add this
+app.use("/api/payments", require("./routes/payments"));
 app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/products", require("./routes/productRoutes")); // <-- Add this line
-app.use('/api/users', require('./routes/userRoutes')); // ✅ Add this
-app.use('/api/shops', require('./routes/shopRoutes')); // ✅ Add this
-app.use('/api/orders', require('./routes/orderRoutes')); // ✅ Add this
-app.use('/api/riders', require('./routes/riderRoutes')); 
-app.use("/api/trips", require('./routes/tripRoutes')); // <-- Add this line
-app.use("/api/settings", require('./routes/settingsRoutes'));
+app.use("/api/products", require("./routes/productRoutes"));
+app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/shops", require("./routes/shopRoutes"));
+app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/riders", require("./routes/riderRoutes"));
+app.use("/api/trips", require("./routes/tripRoutes"));
+app.use("/api/settings", require("./routes/settingsRoutes"));
 
-
-// Server
 app.listen(port, () => {
   console.log(`🚀 Server running at http://localhost:${port}`);
 });
