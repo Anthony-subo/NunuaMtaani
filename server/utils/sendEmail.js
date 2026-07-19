@@ -11,13 +11,18 @@ const sendEmail = async ({ to, subject, html }) => {
       html,
     });
 
-    console.log("✅ Email sent!");
-    console.log(info.response);
+    console.log("✅ Email sent successfully");
+    console.log(info);
 
     return info;
+
   } catch (err) {
-    console.error("❌ Email Error:");
-    console.error(err);
+    console.log("❌ EMAIL ERROR");
+    console.log("Code:", err.code);
+    console.log("Message:", err.message);
+    console.log("Response:", err.response);
+    console.log("Response Code:", err.responseCode);
+    console.log(err);
 
     throw err;
   }
