@@ -341,33 +341,6 @@ exports.resendVerification = async (req, res) => {
     await sendEmail({
       to: user.email,
       subject: "Verify your NunuaMtaani Account",
-      html: `
-      <div style="font-family:Arial;padding:25px">
-        <h2>Hello ${user.name}</h2>
-
-        <p>
-          Here is your new verification link.
-        </p>
-
-        <a
-          href="${verificationLink}"
-          style="
-            background:#0d6efd;
-            color:white;
-            padding:12px 20px;
-            text-decoration:none;
-            border-radius:5px;
-            display:inline-block;
-          "
-        >
-          Verify Email
-        </a>
-
-        <p style="margin-top:20px">
-          This link expires in 24 hours.
-        </p>
-      </div>
-      `,
     });
 
     res.json({
