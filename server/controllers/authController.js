@@ -1,3 +1,4 @@
+```js
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
@@ -8,7 +9,10 @@ const generateVerificationToken = require("../utils/generateToken");
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{8,}$/;
 
-// Generate JWT
+// =====================
+// GENERATE JWT
+// =====================
+
 const generateToken = (user) => {
   return jwt.sign(
     {
@@ -22,10 +26,6 @@ const generateToken = (user) => {
     }
   );
 };
-
-// =====================
-// REGISTER
-// =====================
 
 // =====================
 // REGISTER
@@ -102,32 +102,123 @@ exports.register = async (req, res) => {
 
     console.log("User created:", newUser.email);
 
+    // Generate JWT
     const token = generateToken(newUser);
 
+    // Verification link
     const verificationLink =
       `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
     console.log("Verification link:");
     console.log(verificationLink);
 
+    // =====================
+    // SEND VERIFICATION EMAIL
+    // =====================
+
     console.log("Sending verification email...");
 
-   await sendEmail({
-  to: newUser.email,
-  subject: "Welcome to NunuaMtaani",
-  html: `
-    <h2>Welcome to NunuaMtaani</h2>
+    await sendEmail({
+      to: newUser.email,
 
-    <p>Hello ${newUser.name},</p>
+      subject: "Verify Your NunuaMtaani Account",
 
-    <p>Your account has been created successfully.</p>
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 30px;
+          background-color: #f8fafc;
+          color: #1f2937;
+        ">
 
-    <p>This is a test email.</p>
-  `,
-});
+          <div style="
+            background-color: #2563eb;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+          ">
+            <h1 style="
+              color: #ffffff;
+              margin: 0;
+            ">
+              NunuaMtaani
+            </h1>
+          </div>
+
+          <div style="
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+          ">
+
+            <h2>Welcome, ${newUser.name}!</h2>
+
+            <p>
+              Thank you for creating a NunuaMtaani account.
+            </p>
+
+            <p>
+              Please verify your email address to activate your account
+              and start using NunuaMtaani.
+            </p>
+
+            <div style="text-align: center; margin: 30px 0;">
+
+              <a
+                href="${verificationLink}"
+                style="
+                  display: inline-block;
+                  padding: 14px 24px;
+                  background-color: #2563eb;
+                  color: #ffffff;
+                  text-decoration: none;
+                  border-radius: 6px;
+                  font-weight: bold;
+                "
+              >
+                Verify My Email
+              </a>
+
+            </div>
+
+            <p>
+              This verification link will expire in
+              <strong>24 hours</strong>.
+            </p>
+
+            <p>
+              If the button above does not work, copy and paste the
+              following link into your browser:
+            </p>
+
+            <p style="
+              word-break: break-all;
+              color: #2563eb;
+            ">
+              ${verificationLink}
+            </p>
+
+            <p>
+              If you did not create a NunuaMtaani account,
+              you can safely ignore this email.
+            </p>
+
+            <p>
+              Regards,<br />
+              <strong>NunuaMtaani Team</strong>
+            </p>
+
+          </div>
+
+        </div>
+      `,
+    });
 
     console.log("✅ Verification email sent.");
 
+    // Remove password before returning user
     const user = newUser.toObject();
     delete user.password;
 
@@ -138,9 +229,7 @@ exports.register = async (req, res) => {
       message:
         "Registration successful. Please check your email to verify your account.",
     });
-
   } catch (err) {
-
     console.error("========== REGISTER ERROR ==========");
     console.error(err);
     console.error(err.stack);
@@ -160,12 +249,14 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Validate fields
     if (!email || !password) {
       return res.status(400).json({
         message: "Email and password are required.",
       });
     }
 
+    // Find user
     const user = await UserModel.findOne({
       email: email.toLowerCase(),
     });
@@ -212,7 +303,7 @@ exports.login = async (req, res) => {
       user.loginAttempts += 1;
 
       if (user.loginAttempts >= 5) {
-        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
       }
 
       await user.save();
@@ -236,17 +327,19 @@ exports.login = async (req, res) => {
     const userData = user.toObject();
     delete userData.password;
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       token,
       user: userData,
       message: "Login successful.",
     });
-
   } catch (err) {
+    console.error("========== LOGIN ERROR ==========");
     console.error(err);
+    console.error(err.stack);
 
-    res.status(500).json({
+    return res.status(500).json({
+      status: "error",
       message: "Login failed.",
     });
   }
@@ -262,7 +355,9 @@ exports.verifyEmail = async (req, res) => {
 
     const user = await UserModel.findOne({
       verificationToken: token,
-      verificationTokenExpires: { $gt: new Date() },
+      verificationTokenExpires: {
+        $gt: new Date(),
+      },
     });
 
     if (!user) {
@@ -272,7 +367,10 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
+    // Verify account
     user.isVerified = true;
+
+    // Clear verification token
     user.verificationToken = null;
     user.verificationTokenExpires = null;
 
@@ -282,9 +380,10 @@ exports.verifyEmail = async (req, res) => {
       status: "success",
       message: "Email verified successfully. You can now log in.",
     });
-
   } catch (error) {
+    console.error("========== VERIFY EMAIL ERROR ==========");
     console.error(error);
+    console.error(error.stack);
 
     return res.status(500).json({
       status: "error",
@@ -301,6 +400,7 @@ exports.resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
 
+    // Validate email
     if (!email) {
       return res.status(400).json({
         status: "error",
@@ -308,6 +408,7 @@ exports.resendVerification = async (req, res) => {
       });
     }
 
+    // Find user
     const user = await UserModel.findOne({
       email: email.toLowerCase(),
     });
@@ -319,6 +420,7 @@ exports.resendVerification = async (req, res) => {
       });
     }
 
+    // Check if already verified
     if (user.isVerified) {
       return res.status(400).json({
         status: "error",
@@ -326,37 +428,144 @@ exports.resendVerification = async (req, res) => {
       });
     }
 
+    // Generate new verification token
     const verificationToken = generateVerificationToken();
 
     user.verificationToken = verificationToken;
+
     user.verificationTokenExpires = new Date(
       Date.now() + 24 * 60 * 60 * 1000
     );
 
     await user.save();
 
+    // Generate verification link
     const verificationLink =
       `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
+    console.log("New verification link:");
+    console.log(verificationLink);
+
+    // =====================
+    // SEND VERIFICATION EMAIL
+    // =====================
+
     await sendEmail({
       to: user.email,
-      subject: "Verify your NunuaMtaani Account",
+
+      subject: "Verify Your NunuaMtaani Account",
+
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 30px;
+          background-color: #f8fafc;
+          color: #1f2937;
+        ">
+
+          <div style="
+            background-color: #2563eb;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+          ">
+            <h1 style="
+              color: #ffffff;
+              margin: 0;
+            ">
+              NunuaMtaani
+            </h1>
+          </div>
+
+          <div style="
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+          ">
+
+            <h2>Hello ${user.name},</h2>
+
+            <p>
+              We received a request to resend your NunuaMtaani
+              account verification email.
+            </p>
+
+            <p>
+              Click the button below to verify your email address:
+            </p>
+
+            <div style="text-align: center; margin: 30px 0;">
+
+              <a
+                href="${verificationLink}"
+                style="
+                  display: inline-block;
+                  padding: 14px 24px;
+                  background-color: #2563eb;
+                  color: #ffffff;
+                  text-decoration: none;
+                  border-radius: 6px;
+                  font-weight: bold;
+                "
+              >
+                Verify My Email
+              </a>
+
+            </div>
+
+            <p>
+              This verification link will expire in
+              <strong>24 hours</strong>.
+            </p>
+
+            <p>
+              If the button does not work, copy and paste this link
+              into your browser:
+            </p>
+
+            <p style="
+              word-break: break-all;
+              color: #2563eb;
+            ">
+              ${verificationLink}
+            </p>
+
+            <p>
+              If you did not request this email, you can safely
+              ignore it.
+            </p>
+
+            <p>
+              Regards,<br />
+              <strong>NunuaMtaani Team</strong>
+            </p>
+
+          </div>
+
+        </div>
+      `,
     });
 
-    res.json({
+    console.log("✅ Verification email resent successfully.");
+
+    return res.status(200).json({
       status: "success",
       message: "Verification email sent successfully.",
     });
-
   } catch (err) {
+    console.error("========== RESEND VERIFICATION ERROR ==========");
     console.error(err);
+    console.error(err.stack);
 
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: "Unable to send verification email.",
     });
   }
 };
+```
 
 // =====================
 // FORGOT PASSWORD
@@ -407,27 +616,27 @@ exports.forgotPassword = async (req, res) => {
 
         <p>Hello <strong>${user.name}</strong>,</p>
 
-        <p>
+          <p>
           We received a request to reset your password.
-        </p>
+          </p>
 
-        <a
-          href="${resetLink}"
-          style="
+            <a
+              href="${resetLink}"
+              style="
             display:inline-block;
             padding:12px 24px;
             background:#0d6efd;
             color:#fff;
             text-decoration:none;
             border-radius:5px;
-          "
-        >
-          Reset Password
-        </a>
+              "
+            >
+              Reset Password
+            </a>
 
         <p style="margin-top:20px">
-          This link expires in 1 hour.
-        </p>
+            This link expires in 1 hour.
+          </p>
 
         <hr>
 
@@ -435,7 +644,7 @@ exports.forgotPassword = async (req, res) => {
           If you didn't request this, simply ignore this email.
         </small>
 
-      </div>
+        </div>
       `,
     });
 
