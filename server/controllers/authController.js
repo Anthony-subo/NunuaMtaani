@@ -168,6 +168,46 @@ exports.register = async (req, res) => {
 };
 
 // =====================
+// VERIFY EMAIL
+// =====================
+
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const user = await UserModel.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        status: "error",
+        message: "Verification link is invalid or has expired.",
+      });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpires = null;
+
+    await user.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Email verified successfully. You can now log in.",
+    });
+  } catch (error) {
+    console.error("VERIFY EMAIL ERROR:", error.message);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Email verification failed.",
+    });
+  }
+};
+
+// =====================
 // LOGIN
 // =====================
 
@@ -265,45 +305,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// =====================
-// VERIFY EMAIL
-// =====================
 
-exports.verifyEmail = async (req, res) => {
-  try {
-    const { token } = req.params;
-
-    const user = await UserModel.findOne({
-      verificationToken: token,
-      verificationTokenExpires: { $gt: new Date() },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        status: "error",
-        message: "Verification link is invalid or has expired.",
-      });
-    }
-
-    user.isVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpires = null;
-
-    await user.save();
-
-    return res.status(200).json({
-      status: "success",
-      message: "Email verified successfully. You can now log in.",
-    });
-  } catch (error) {
-    console.error("VERIFY EMAIL ERROR:", error.message);
-
-    return res.status(500).json({
-      status: "error",
-      message: "Email verification failed.",
-    });
-  }
-};
 
 // =====================
 // RESEND VERIFICATION EMAIL
