@@ -18,44 +18,29 @@ const hashToken = (token) => crypto.createHash("sha256").update(token).digest("h
 
 const generateToken = (user) => {
   return jwt.sign(
-    {
-      id: user._id,
-      role: user.role,
-      email: user.email,
-    },
+    { id: user._id, role: user.role, email: user.email },
     process.env.JWT_SECRET,
-    {
-      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-    }
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
 };
 
-// =====================
-// REGISTER
-// =====================
+// 1. REGISTER
 exports.register = async (req, res) => {
   try {
     const { name, phone, email, location, password, role } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({
-        status: "error",
-        message: "Please fill all required fields.",
-      });
+      return res.status(400).json({ status: "error", message: "Please fill all required fields." });
     }
 
     if (!validator.isEmail(email)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid email address.",
-      });
+      return res.status(400).json({ status: "error", message: "Invalid email address." });
     }
 
     if (!PASSWORD_REGEX.test(password)) {
       return res.status(400).json({
         status: "error",
-        message:
-          "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character.",
+        message: "Password must contain at least 8 characters, one uppercase, one lowercase, one number, and one special character.",
       });
     }
 
@@ -63,10 +48,7 @@ exports.register = async (req, res) => {
     const existingUser = await UserModel.findOne({ email: normalizedEmail });
 
     if (existingUser) {
-      return res.status(400).json({
-        status: "error",
-        message: "Email already exists.",
-      });
+      return res.status(400).json({ status: "error", message: "Email already exists." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -93,14 +75,7 @@ exports.register = async (req, res) => {
       await sendEmail({
         to: newUser.email,
         subject: "Welcome to NunuaMtaani - Verify Your Email",
-        html: `
-          <div style="font-family:Arial,sans-serif;padding:25px;color:#333">
-            <h2>Welcome to NunuaMtaani, ${newUser.name}!</h2>
-            <p>Your account has been created successfully. Please verify your email to get started.</p>
-            <a href="${verificationLink}" style="background:#0d6efd;color:white;padding:12px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:15px 0;font-weight:bold;">Verify Email Address</a>
-            <p style="color:#666;font-size:12px">This link will expire in 24 hours.</p>
-          </div>
-        `,
+        html: `<p>Hello ${newUser.name}, please <a href="${verificationLink}">click here</a> to verify your account.</p>`,
       });
 
       const userObj = newUser.toObject();
@@ -115,7 +90,6 @@ exports.register = async (req, res) => {
       });
     } catch (emailError) {
       console.error("❌ Email Delivery Failed:", emailError.message);
-
       const userObj = newUser.toObject();
       delete userObj.password;
       delete userObj.verificationToken;
@@ -124,111 +98,42 @@ exports.register = async (req, res) => {
         status: "warning",
         token,
         user: userObj,
-        message:
-          "Account created! However, we couldn't send the verification email. Please click 'Resend Verification' on the login screen.",
+        message: "Account created, but verification email failed to send.",
       });
     }
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({
-        status: "error",
-        message: "Email already exists.",
-      });
-    }
-
     console.error("REGISTER ERROR:", err.message);
-
-    return res.status(500).json({
-      status: "error",
-      message: "An internal server error occurred.",
-    });
+    return res.status(500).json({ status: "error", message: "An internal server error occurred." });
   }
 };
 
-// =====================
-// LOGIN
-// =====================
+// 2. LOGIN
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({
-        status: "error",
-        message: "Email and password are required.",
-      });
+      return res.status(400).json({ status: "error", message: "Email and password are required." });
     }
 
-    const user = await UserModel.findOne({
-      email: email.toLowerCase().trim(),
-    });
-
+    const user = await UserModel.findOne({ email: email.toLowerCase().trim() });
     const targetPasswordHash = user ? user.password : DUMMY_HASH;
     const match = await bcrypt.compare(password, targetPasswordHash);
 
-    if (!user) {
-      return res.status(401).json({
-        status: "error",
-        message: "Invalid email or password.",
-      });
-    }
-
-    if (user.status === "suspended") {
-      return res.status(403).json({
-        status: "error",
-        message: "This account has been suspended.",
-      });
-    }
-
-    if (user.status === "deleted") {
-      return res.status(403).json({
-        status: "error",
-        message: "This account no longer exists.",
-      });
-    }
-
-    if (user.lockUntil && user.lockUntil > Date.now()) {
-      return res.status(423).json({
-        status: "error",
-        message:
-          "Account temporarily locked due to too many failed login attempts. Please try again later.",
-      });
-    }
-
-    if (!match) {
-      user.loginAttempts = (user.loginAttempts || 0) + 1;
-
-      if (user.loginAttempts >= 5) {
-        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
-      }
-
-      await user.save();
-
-      return res.status(401).json({
-        status: "error",
-        message: "Invalid email or password.",
-      });
+    if (!user || !match) {
+      return res.status(401).json({ status: "error", message: "Invalid email or password." });
     }
 
     if (!user.isVerified) {
       return res.status(403).json({
         status: "error",
-        message:
-          "Please verify your email before logging in. Check your inbox or request a new verification email.",
+        message: "Please verify your email before logging in.",
       });
     }
-
-    user.loginAttempts = 0;
-    user.lockUntil = null;
-    user.lastLogin = new Date();
-
-    await user.save();
 
     const token = generateToken(user);
     const userData = user.toObject();
     delete userData.password;
-    delete userData.verificationToken;
-    delete userData.resetPasswordToken;
 
     return res.status(200).json({
       status: "success",
@@ -238,71 +143,41 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     console.error("LOGIN ERROR:", err.message);
-
-    return res.status(500).json({
-      status: "error",
-      message: "Login failed.",
-    });
+    return res.status(500).json({ status: "error", message: "Login failed." });
   }
 };
 
-// =====================
-// RESET PASSWORD
-// =====================
+// 3. RESET PASSWORD
 exports.resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
 
     if (!password) {
-      return res.status(400).json({
-        status: "error",
-        message: "Password is required.",
-      });
-    }
-
-    if (!PASSWORD_REGEX.test(password)) {
-      return res.status(400).json({
-        status: "error",
-        message:
-          "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character.",
-      });
+      return res.status(400).json({ status: "error", message: "Password is required." });
     }
 
     const hashedResetToken = hashToken(token);
-
     const user = await UserModel.findOne({
       resetPasswordToken: hashedResetToken,
       resetPasswordExpires: { $gt: new Date() },
     });
 
     if (!user) {
-      return res.status(400).json({
-        status: "error",
-        message: "Password reset link is invalid or has expired.",
-      });
+      return res.status(400).json({ status: "error", message: "Invalid or expired reset token." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    user.password = hashedPassword;
+    user.password = await bcrypt.hash(password, 10);
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
-    user.loginAttempts = 0;
-    user.lockUntil = null;
-
     await user.save();
 
     return res.status(200).json({
       status: "success",
-      message: "Password has been reset successfully. You can now log in.",
+      message: "Password reset successful. You can now log in.",
     });
   } catch (error) {
     console.error("RESET PASSWORD ERROR:", error.message);
-
-    return res.status(500).json({
-      status: "error",
-      message: "Unable to reset password.",
-    });
+    return res.status(500).json({ status: "error", message: "Unable to reset password." });
   }
 };

@@ -4,10 +4,6 @@ const router = express.Router();
 
 const authController = require("../controllers/authController");
 
-// ==========================================
-// Rate Limiters Configuration
-// ==========================================
-
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -32,9 +28,13 @@ const registerLimiter = rateLimit({
   },
 });
 
-// ==========================================
-// Auth Routes
-// ==========================================
+// Guard checks: Validate handlers before passing to router
+if (typeof authController.register !== "function") {
+  throw new Error("authController.register is not exported as a function!");
+}
+if (typeof authController.login !== "function") {
+  throw new Error("authController.login is not exported as a function!");
+}
 
 router.post("/register", registerLimiter, authController.register);
 router.post("/login", loginLimiter, authController.login);
