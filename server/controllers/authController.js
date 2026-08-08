@@ -76,6 +76,7 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = generateVerificationToken();
 
+    // 1. Create User in MongoDB
     const newUser = await UserModel.create({
       name,
       phone,
@@ -85,53 +86,70 @@ exports.register = async (req, res) => {
       role,
       isVerified: false,
       verificationToken,
-      verificationTokenExpires: new Date(
-        Date.now() + 24 * 60 * 60 * 1000
-      ),
+      verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
     const token = generateToken(newUser);
-    const verificationLink = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+    const clientUrl = process.env.CLIENT_URL || "https://nunua-mtaani.vercel.app";
+    const verificationLink = `${clientUrl}/verify-email/${verificationToken}`;
 
-    // Send functional email with verification link
-    await sendEmail({
-      to: newUser.email,
-      subject: "Welcome to NunuaMtaani - Verify Your Email",
-      html: `
-        <div style="font-family:Arial,sans-serif;padding:25px">
-          <h2>Welcome to NunuaMtaani, ${newUser.name}!</h2>
-          <p>Your account has been created successfully. Please verify your email to get started.</p>
-          <a
-            href="${verificationLink}"
-            style="
-              background:#0d6efd;
-              color:white;
-              padding:12px 20px;
-              text-decoration:none;
-              border-radius:5px;
-              display:inline-block;
-              margin:15px 0;
-            "
-          >
-            Verify Email
-          </a>
-          <p style="color:#666;font-size:12px">This link will expire in 24 hours.</p>
-        </div>
-      `,
-    });
+    // 2. Dispatch Email with Graceful Failure Handling
+    try {
+      await sendEmail({
+        to: newUser.email,
+        subject: "Welcome to NunuaMtaani - Verify Your Email",
+        html: `
+          <div style="font-family:Arial,sans-serif;padding:25px">
+            <h2>Welcome to NunuaMtaani, ${newUser.name}!</h2>
+            <p>Your account has been created successfully. Please verify your email to get started.</p>
+            <a
+              href="${verificationLink}"
+              style="
+                background:#0d6efd;
+                color:white;
+                padding:12px 20px;
+                text-decoration:none;
+                border-radius:5px;
+                display:inline-block;
+                margin:15px 0;
+              "
+            >
+              Verify Email
+            </a>
+            <p style="color:#666;font-size:12px">This link will expire in 24 hours.</p>
+          </div>
+        `,
+      });
 
-    const user = newUser.toObject();
-    delete user.password;
+      console.log("✅ Verification email sent to:", newUser.email);
 
-    return res.status(201).json({
-      status: "success",
-      token,
-      user,
-      message:
-        "Registration successful. Please check your email to verify your account.",
-    });
+      const user = newUser.toObject();
+      delete user.password;
+
+      return res.status(201).json({
+        status: "success",
+        token,
+        user,
+        message: "Registration successful. Please check your email to verify your account.",
+      });
+
+    } catch (emailError) {
+      console.error("❌ Email Delivery Failed:", emailError.message);
+
+      const user = newUser.toObject();
+      delete user.password;
+
+      // Account was created successfully in DB, so return 201 with warning
+      return res.status(201).json({
+        status: "warning",
+        token,
+        user,
+        message:
+          "Account created! However, we couldn't send the verification email. Please click 'Resend Verification' on the login screen.",
+      });
+    }
+
   } catch (err) {
-    // Handle duplicate key error race condition from MongoDB
     if (err.code === 11000) {
       return res.status(400).json({
         status: "error",
