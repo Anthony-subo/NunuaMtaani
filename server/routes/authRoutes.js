@@ -1,4 +1,3 @@
-// routes/emailRoutes.js
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const router = express.Router();
@@ -18,11 +17,11 @@ const emailActionLimiter = rateLimit({
   },
 });
 
-// Email verification
+// Verification routes
 router.get("/verify-email/:token", emailController.verifyEmail);
 router.post("/resend-verification", emailActionLimiter, emailController.resendVerification);
 
-// Password recovery
+// Password management routes
 router.post("/forgot-password", emailActionLimiter, emailController.forgotPassword);
 router.post("/reset-password/:token", emailActionLimiter, authController.resetPassword);
 
