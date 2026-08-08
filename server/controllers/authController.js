@@ -1,7 +1,8 @@
-const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
+const crypto = require("crypto");
+
 const UserModel = require("../models/users");
 const sendEmail = require("../utils/sendEmail");
 const generateVerificationToken = require("../utils/generateToken");
