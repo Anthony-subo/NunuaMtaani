@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import { BsCartFill } from "react-icons/bs";
@@ -7,12 +7,27 @@ import "../styles/auth.css";
 
 function ResendVerification() {
   const location = useLocation();
-  
-  // Pre-fill email if passed from Login state
+
   const [email, setEmail] = useState(location.state?.email || "");
   const [msg, setMsg] = useState("");
   const [errMsg, setErrMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Cooldown countdown effect
+  useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setInterval(() => setCooldown((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const handleInputChange = (e) => {
+    setEmail(e.target.value);
+    if (errMsg) setErrMsg("");
+    if (msg) setMsg("");
+  };
 
   const handleResend = async (e) => {
     e.preventDefault();
@@ -32,13 +47,17 @@ function ResendVerification() {
         { email }
       );
 
-      if (response.data.status === "success") {
+      if (response.data.status === "success" || response.status === 200) {
         setMsg(response.data.message || "Verification email sent! Check your inbox.");
+        setCooldown(60); // 60-second cooldown
       }
     } catch (err) {
       console.error(err);
+      const rawError = err.response?.data?.message;
       const errorResponse =
-        err.response?.data?.message || "Failed to send verification email. Please try again.";
+        typeof rawError === "string"
+          ? rawError
+          : "Failed to send verification email. Please try again.";
       setErrMsg(errorResponse);
     } finally {
       setLoading(false);
@@ -47,10 +66,10 @@ function ResendVerification() {
 
   return (
     <div className="auth-container">
-      {/* Brand */}
+      {/* Brand Header */}
       <div className="d-flex align-items-center logo mb-3">
         <BsCartFill className="shopping-icon" size={28} />
-        <div className="d-flex flex-column">
+        <div className="d-flex flex-column ms-2">
           <div className="d-flex align-items-center mb-1">
             <h3 className="brand mb-0 me-2">
               <span className="nunua">Nunua</span>
@@ -67,27 +86,44 @@ function ResendVerification() {
 
       <h3 className="text-center mb-3">Resend Verification Email</h3>
 
-      {msg && <div className="alert alert-success">{msg}</div>}
-      {errMsg && <div className="alert alert-danger">{errMsg}</div>}
+      {msg && <div className="alert alert-success" role="alert">{msg}</div>}
+      {errMsg && <div className="alert alert-danger" role="alert">{errMsg}</div>}
 
       <form onSubmit={handleResend}>
         <div className="mb-3">
-          <label>Email Address</label>
+          <label htmlFor="emailInput" className="form-label">
+            Email Address
+          </label>
           <input
+            id="emailInput"
             type="email"
-            className="form-control mt-1"
+            className="form-control"
             placeholder="Enter your email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleInputChange}
+            disabled={loading || cooldown > 0}
             required
           />
         </div>
 
-        <button className="btn btn-primary w-100" disabled={loading}>
-          {loading ? "Sending..." : "Send Verification Link"}
+        <button
+          type="submit"
+          className="btn btn-primary w-100 py-2"
+          disabled={loading || cooldown > 0}
+        >
+          {loading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Sending...
+            </>
+          ) : cooldown > 0 ? (
+            `Resend available in ${cooldown}s`
+          ) : (
+            "Send Verification Link"
+          )}
         </button>
 
-        <p className="mt-3 text-center">
+        <p className="mt-4 text-center">
           Remembered your password? <Link to="/login">Login</Link>
         </p>
       </form>
