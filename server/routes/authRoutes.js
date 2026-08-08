@@ -2,27 +2,41 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const router = express.Router();
 
-const emailController = require("../controllers/emailController");
 const authController = require("../controllers/authController");
 
-const emailActionLimiter = rateLimit({
+// ==========================================
+// Rate Limiters Configuration
+// ==========================================
+
+const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 3,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
   message: {
     status: "error",
-    message: "Too many requests. Please wait 15 minutes before trying again.",
+    message: "Too many login attempts. Please try again after 15 minutes.",
   },
 });
 
-// Verification routes
-router.get("/verify-email/:token", emailController.verifyEmail);
-router.post("/resend-verification", emailActionLimiter, emailController.resendVerification);
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { trustProxy: false },
+  message: {
+    status: "error",
+    message: "Too many accounts created from this IP. Please try again in an hour.",
+  },
+});
 
-// Password management routes
-router.post("/forgot-password", emailActionLimiter, emailController.forgotPassword);
-router.post("/reset-password/:token", emailActionLimiter, authController.resetPassword);
+// ==========================================
+// Auth Routes
+// ==========================================
+
+router.post("/register", registerLimiter, authController.register);
+router.post("/login", loginLimiter, authController.login);
 
 module.exports = router;
