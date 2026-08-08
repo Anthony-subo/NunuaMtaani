@@ -1,129 +1,98 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { BsCartFill } from "react-icons/bs";
+import { AiFillHome } from "react-icons/ai";
+import "../styles/auth.css";
 
 function ResendVerification() {
+  const location = useLocation();
+  
+  // Pre-fill email if passed from Login state
+  const [email, setEmail] = useState(location.state?.email || "");
+  const [msg, setMsg] = useState("");
+  const [errMsg, setErrMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const [email,setEmail]=useState("");
-    const [message,setMessage]=useState("");
-    const [error,setError]=useState("");
-    const [loading,setLoading]=useState(false);
+  const handleResend = async (e) => {
+    e.preventDefault();
+    setMsg("");
+    setErrMsg("");
 
-    const handleSubmit=async(e)=>{
+    if (!email) {
+      setErrMsg("Please enter your email address.");
+      return;
+    }
 
-        e.preventDefault();
+    setLoading(true);
 
-        setLoading(true);
-        setError("");
-        setMessage("");
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/auth/resend-verification`,
+        { email }
+      );
 
-        try{
+      if (response.data.status === "success") {
+        setMsg(response.data.message || "Verification email sent! Check your inbox.");
+      }
+    } catch (err) {
+      console.error(err);
+      const errorResponse =
+        err.response?.data?.message || "Failed to send verification email. Please try again.";
+      setErrMsg(errorResponse);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            const res=await axios.post(
+  return (
+    <div className="auth-container">
+      {/* Brand */}
+      <div className="d-flex align-items-center logo mb-3">
+        <BsCartFill className="shopping-icon" size={28} />
+        <div className="d-flex flex-column">
+          <div className="d-flex align-items-center mb-1">
+            <h3 className="brand mb-0 me-2">
+              <span className="nunua">Nunua</span>
+              <span className="m">M</span>
+              <span className="taani">taani</span>
+            </h3>
+            <Link to="/" className="home-icon-link ms-2" title="Home">
+              <AiFillHome size={22} className="text-dark" />
+            </Link>
+          </div>
+          <small className="slogan">Your trusted online market</small>
+        </div>
+      </div>
 
-                `${import.meta.env.VITE_API_URL}/api/auth/resend-verification`,
+      <h3 className="text-center mb-3">Resend Verification Email</h3>
 
-                {email}
+      {msg && <div className="alert alert-success">{msg}</div>}
+      {errMsg && <div className="alert alert-danger">{errMsg}</div>}
 
-            );
+      <form onSubmit={handleResend}>
+        <div className="mb-3">
+          <label>Email Address</label>
+          <input
+            type="email"
+            className="form-control mt-1"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
 
-            setMessage(res.data.message);
+        <button className="btn btn-primary w-100" disabled={loading}>
+          {loading ? "Sending..." : "Send Verification Link"}
+        </button>
 
-        }
-
-        catch(err){
-
-            setError(
-                err.response?.data?.message ||
-                "Something went wrong."
-            );
-
-        }
-
-        finally{
-
-            setLoading(false);
-
-        }
-
-    };
-
-    return(
-
-<div className="auth-container">
-
-<h2 className="mb-4">
-Resend Verification Email
-</h2>
-
-{message &&
-
-<div className="alert alert-success">
-
-{message}
-
-</div>
-
-}
-
-{error &&
-
-<div className="alert alert-danger">
-
-{error}
-
-</div>
-
-}
-
-<form onSubmit={handleSubmit}>
-
-<input
-
-type="email"
-
-placeholder="Enter your email"
-
-className="form-control"
-
-value={email}
-
-onChange={(e)=>setEmail(e.target.value)}
-
-required
-
-/>
-
-<br/>
-
-<button
-
-className="btn btn-primary w-100"
-
-disabled={loading}
-
->
-
-{loading ? "Sending..." : "Send Verification Email"}
-
-</button>
-
-</form>
-
-<div className="text-center mt-3">
-
-<Link to="/login">
-
-Back to Login
-
-</Link>
-
-</div>
-
-</div>
-
-    );
-
+        <p className="mt-3 text-center">
+          Remembered your password? <Link to="/login">Login</Link>
+        </p>
+      </form>
+    </div>
+  );
 }
 
 export default ResendVerification;
