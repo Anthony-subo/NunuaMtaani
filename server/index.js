@@ -33,7 +33,9 @@ app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// Connect DB & Verify SMTP Transporter on startup
 connectDB();
+require("./config/mail"); // <--- ADD THIS LINE HERE
 
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/auth", require("./routes/authRoutes"));
