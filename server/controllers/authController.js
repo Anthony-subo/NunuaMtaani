@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
@@ -7,6 +8,10 @@ const generateVerificationToken = require("../utils/generateToken");
 
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{8,}$/;
+
+// Dummy hash used to prevent timing attacks on login non-existent users
+const DUMMY_HASH =
+  "$2b$10$e7V9/Gk5dD3yqP1pT6mZuu.f3Z4l/D3V9k2g6.2y0/2M0g6.2y0/2";
 
 // Generate JWT
 const generateToken = (user) => {
@@ -27,15 +32,8 @@ const generateToken = (user) => {
 // REGISTER
 // =====================
 
-// =====================
-// REGISTER
-// =====================
-
 exports.register = async (req, res) => {
   try {
-    console.log("========== REGISTER ==========");
-    console.log("Request Body:", req.body);
-
     const { name, phone, email, location, password, role } = req.body;
 
     // Validate required fields
@@ -46,7 +44,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Validate email
+    // Validate email format
     if (!validator.isEmail(email)) {
       return res.status(400).json({
         status: "error",
@@ -54,7 +52,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Validate password
+    // Validate password strength
     if (!PASSWORD_REGEX.test(password)) {
       return res.status(400).json({
         status: "error",
@@ -75,15 +73,8 @@ exports.register = async (req, res) => {
       });
     }
 
-    console.log("Hashing password...");
-
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    console.log("Generating verification token...");
-
     const verificationToken = generateVerificationToken();
-
-    console.log("Creating user...");
 
     const newUser = await UserModel.create({
       name,
@@ -92,7 +83,6 @@ exports.register = async (req, res) => {
       location,
       password: hashedPassword,
       role,
-
       isVerified: false,
       verificationToken,
       verificationTokenExpires: new Date(
@@ -100,33 +90,35 @@ exports.register = async (req, res) => {
       ),
     });
 
-    console.log("User created:", newUser.email);
-
     const token = generateToken(newUser);
+    const verificationLink = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
-    const verificationLink =
-      `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
-
-    console.log("Verification link:");
-    console.log(verificationLink);
-
-    console.log("Sending verification email...");
-
+    // Send functional email with verification link
     await sendEmail({
       to: newUser.email,
-  subject: "Welcome to NunuaMtaani",
+      subject: "Welcome to NunuaMtaani - Verify Your Email",
       html: `
-    <h2>Welcome to NunuaMtaani</h2>
-
-    <p>Hello ${newUser.name},</p>
-
-    <p>Your account has been created successfully.</p>
-
-    <p>This is a test email.</p>
+        <div style="font-family:Arial,sans-serif;padding:25px">
+          <h2>Welcome to NunuaMtaani, ${newUser.name}!</h2>
+          <p>Your account has been created successfully. Please verify your email to get started.</p>
+          <a
+            href="${verificationLink}"
+            style="
+              background:#0d6efd;
+              color:white;
+              padding:12px 20px;
+              text-decoration:none;
+              border-radius:5px;
+              display:inline-block;
+              margin:15px 0;
+            "
+          >
+            Verify Email
+          </a>
+          <p style="color:#666;font-size:12px">This link will expire in 24 hours.</p>
+        </div>
       `,
     });
-
-    console.log("✅ Verification email sent.");
 
     const user = newUser.toObject();
     delete user.password;
@@ -138,16 +130,20 @@ exports.register = async (req, res) => {
       message:
         "Registration successful. Please check your email to verify your account.",
     });
-
   } catch (err) {
+    // Handle duplicate key error race condition from MongoDB
+    if (err.code === 11000) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email already exists.",
+      });
+    }
 
-    console.error("========== REGISTER ERROR ==========");
-    console.error(err);
-    console.error(err.stack);
+    console.error("REGISTER ERROR:", err.message);
 
     return res.status(500).json({
       status: "error",
-      message: err.message,
+      message: "An internal server error occurred.",
     });
   }
 };
@@ -170,9 +166,13 @@ exports.login = async (req, res) => {
       email: email.toLowerCase(),
     });
 
+    // Constant-time execution check to prevent user enumeration
+    const targetPasswordHash = user ? user.password : DUMMY_HASH;
+    const match = await bcrypt.compare(password, targetPasswordHash);
+
     if (!user) {
-      return res.status(404).json({
-        message: "No account found.",
+      return res.status(401).json({
+        message: "Invalid email or password.",
       });
     }
 
@@ -205,11 +205,9 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Verify password
-    const match = await bcrypt.compare(password, user.password);
-
+    // Handle invalid password
     if (!match) {
-      user.loginAttempts += 1;
+      user.loginAttempts = (user.loginAttempts || 0) + 1;
 
       if (user.loginAttempts >= 5) {
         user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
@@ -218,35 +216,31 @@ exports.login = async (req, res) => {
       await user.save();
 
       return res.status(401).json({
-        message: "Incorrect password.",
+        message: "Invalid email or password.",
       });
     }
 
-    // Reset login attempts
+    // Reset login attempts on successful authentication
     user.loginAttempts = 0;
     user.lockUntil = null;
     user.lastLogin = new Date();
 
     await user.save();
 
-    // Generate JWT
     const token = generateToken(user);
-
-    // Remove password
     const userData = user.toObject();
     delete userData.password;
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       token,
       user: userData,
       message: "Login successful.",
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("LOGIN ERROR:", err.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Login failed.",
     });
   }
@@ -282,9 +276,8 @@ exports.verifyEmail = async (req, res) => {
       status: "success",
       message: "Email verified successfully. You can now log in.",
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("VERIFY EMAIL ERROR:", error.message);
 
     return res.status(500).json({
       status: "error",
@@ -335,50 +328,43 @@ exports.resendVerification = async (req, res) => {
 
     await user.save();
 
-    const verificationLink =
-      `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+    const verificationLink = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
     await sendEmail({
       to: user.email,
       subject: "Verify your NunuaMtaani Account",
       html: `
-      <div style="font-family:Arial;padding:25px">
-        <h2>Hello ${user.name}</h2>
-
-            <p>
-          Here is your new verification link.
-            </p>
-
-              <a
-                href="${verificationLink}"
-                style="
-            background:#0d6efd;
-            color:white;
-            padding:12px 20px;
-            text-decoration:none;
-            border-radius:5px;
-            display:inline-block;
-                "
-              >
-          Verify Email
-              </a>
-
-        <p style="margin-top:20px">
-          This link expires in 24 hours.
-            </p>
+        <div style="font-family:Arial;padding:25px">
+          <h2>Hello ${user.name}</h2>
+          <p>Here is your new verification link.</p>
+          <a
+            href="${verificationLink}"
+            style="
+              background:#0d6efd;
+              color:white;
+              padding:12px 20px;
+              text-decoration:none;
+              border-radius:5px;
+              display:inline-block;
+            "
+          >
+            Verify Email
+          </a>
+          <p style="margin-top:20px">
+            This link expires in 24 hours.
+          </p>
         </div>
       `,
     });
 
-    res.json({
+    return res.json({
       status: "success",
       message: "Verification email sent successfully.",
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("RESEND VERIFICATION ERROR:", err.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: "Unable to send verification email.",
     });
@@ -405,13 +391,13 @@ exports.forgotPassword = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        status: "error",
-        message: "No account found with this email.",
+      // Return 200 generic message to avoid email enumeration
+      return res.status(200).json({
+        status: "success",
+        message: "If an account exists with this email, a reset link has been sent.",
       });
     }
 
-    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
 
     user.resetPasswordToken = resetToken;
@@ -421,58 +407,46 @@ exports.forgotPassword = async (req, res) => {
 
     await user.save();
 
-    const resetLink =
-      `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     await sendEmail({
       to: user.email,
       subject: "Reset your NunuaMtaani Password",
       html: `
-      <div style="font-family:Arial,sans-serif;padding:30px">
-
-        <h2>Password Reset</h2>
-
-        <p>Hello <strong>${user.name}</strong>,</p>
-
-          <p>
-          We received a request to reset your password.
-          </p>
-
-            <a
-              href="${resetLink}"
-              style="
-            display:inline-block;
-            padding:12px 24px;
-            background:#0d6efd;
-            color:#fff;
-            text-decoration:none;
-            border-radius:5px;
-              "
-            >
-              Reset Password
-            </a>
-
-        <p style="margin-top:20px">
+        <div style="font-family:Arial,sans-serif;padding:30px">
+          <h2>Password Reset</h2>
+          <p>Hello <strong>${user.name}</strong>,</p>
+          <p>We received a request to reset your password.</p>
+          <a
+            href="${resetLink}"
+            style="
+              display:inline-block;
+              padding:12px 24px;
+              background:#0d6efd;
+              color:#fff;
+              text-decoration:none;
+              border-radius:5px;
+            "
+          >
+            Reset Password
+          </a>
+          <p style="margin-top:20px">
             This link expires in 1 hour.
           </p>
-
-        <hr>
-
-        <small>
-          If you didn't request this, simply ignore this email.
-        </small>
-
+          <hr>
+          <small>
+            If you didn't request this, simply ignore this email.
+          </small>
         </div>
       `,
     });
 
     return res.status(200).json({
       status: "success",
-      message: "Password reset link has been sent to your email.",
+      message: "If an account exists with this email, a reset link has been sent.",
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("FORGOT PASSWORD ERROR:", error.message);
 
     return res.status(500).json({
       status: "error",
@@ -487,7 +461,6 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   try {
-
     const { token } = req.params;
     const { password } = req.body;
 
@@ -516,15 +489,13 @@ exports.resetPassword = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         status: "error",
-        message:
-          "Password reset link is invalid or has expired.",
+        message: "Password reset link is invalid or has expired.",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     user.password = hashedPassword;
-
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
 
@@ -535,18 +506,14 @@ exports.resetPassword = async (req, res) => {
 
     return res.status(200).json({
       status: "success",
-      message:
-        "Password has been reset successfully. You can now log in.",
+      message: "Password has been reset successfully. You can now log in.",
     });
-
   } catch (error) {
-
-    console.error(error);
+    console.error("RESET PASSWORD ERROR:", error.message);
 
     return res.status(500).json({
       status: "error",
       message: "Unable to reset password.",
     });
-
   }
 };
