@@ -14,6 +14,9 @@ const PASSWORD_REGEX =
 const DUMMY_HASH =
   "$2b$10$e7V9/Gk5dD3yqP1pT6mZuu.f3Z4l/D3V9k2g6.2y0/2M0g6.2y0/2";
 
+// Helper: Get Client Base URL safely
+const getClientUrl = () => process.env.CLIENT_URL || "https://nunua-mtaani.vercel.app";
+
 // Generate JWT
 const generateToken = (user) => {
   return jwt.sign(
@@ -91,8 +94,7 @@ exports.register = async (req, res) => {
     });
 
     const token = generateToken(newUser);
-    const clientUrl = process.env.CLIENT_URL || "https://nunua-mtaani.vercel.app";
-    const verificationLink = `${clientUrl}/verify-email/${verificationToken}`;
+    const verificationLink = `${getClientUrl()}/verify-email/${verificationToken}`;
 
     // 2. Dispatch Email with Graceful Failure Handling
     try {
@@ -140,7 +142,6 @@ exports.register = async (req, res) => {
       const user = newUser.toObject();
       delete user.password;
 
-      // Account was created successfully in DB, so return 201 with warning
       return res.status(201).json({
         status: "warning",
         token,
@@ -217,6 +218,7 @@ exports.login = async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({
+        status: "error",
         message: "Email and password are required.",
       });
     }
@@ -225,12 +227,13 @@ exports.login = async (req, res) => {
       email: email.toLowerCase(),
     });
 
-    // Constant-time execution check to prevent user enumeration
+    // Constant-time check to prevent timing-based user enumeration
     const targetPasswordHash = user ? user.password : DUMMY_HASH;
     const match = await bcrypt.compare(password, targetPasswordHash);
 
     if (!user) {
       return res.status(401).json({
+        status: "error",
         message: "Invalid email or password.",
       });
     }
@@ -238,33 +241,28 @@ exports.login = async (req, res) => {
     // Check account status
     if (user.status === "suspended") {
       return res.status(403).json({
+        status: "error",
         message: "This account has been suspended.",
       });
     }
 
     if (user.status === "deleted") {
       return res.status(403).json({
+        status: "error",
         message: "This account no longer exists.",
       });
     }
 
-    // Check email verification
-    if (!user.isVerified) {
-      return res.status(403).json({
-        message:
-          "Please verify your email before logging in. Check your inbox or request a new verification email.",
-      });
-    }
-
-    // Check account lock
+    // Check account lock status before checking password validity
     if (user.lockUntil && user.lockUntil > Date.now()) {
       return res.status(423).json({
+        status: "error",
         message:
           "Account temporarily locked due to too many failed login attempts. Please try again later.",
       });
     }
 
-    // Handle invalid password
+    // Handle invalid password attempt
     if (!match) {
       user.loginAttempts = (user.loginAttempts || 0) + 1;
 
@@ -275,11 +273,21 @@ exports.login = async (req, res) => {
       await user.save();
 
       return res.status(401).json({
+        status: "error",
         message: "Invalid email or password.",
       });
     }
 
-    // Reset login attempts on successful authentication
+    // Check email verification status
+    if (!user.isVerified) {
+      return res.status(403).json({
+        status: "error",
+        message:
+          "Please verify your email before logging in. Check your inbox or request a new verification email.",
+      });
+    }
+
+    // Reset attempts on valid credentials
     user.loginAttempts = 0;
     user.lockUntil = null;
     user.lastLogin = new Date();
@@ -300,12 +308,11 @@ exports.login = async (req, res) => {
     console.error("LOGIN ERROR:", err.message);
 
     return res.status(500).json({
+      status: "error",
       message: "Login failed.",
     });
   }
 };
-
-
 
 // =====================
 // RESEND VERIFICATION EMAIL
@@ -315,10 +322,10 @@ exports.resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || !validator.isEmail(email)) {
       return res.status(400).json({
         status: "error",
-        message: "Email is required.",
+        message: "Please provide a valid email address.",
       });
     }
 
@@ -349,7 +356,7 @@ exports.resendVerification = async (req, res) => {
 
     await user.save();
 
-    const verificationLink = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+    const verificationLink = `${getClientUrl()}/verify-email/${verificationToken}`;
 
     await sendEmail({
       to: user.email,
@@ -400,10 +407,10 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || !validator.isEmail(email)) {
       return res.status(400).json({
         status: "error",
-        message: "Email is required.",
+        message: "Please provide a valid email address.",
       });
     }
 
@@ -412,23 +419,28 @@ exports.forgotPassword = async (req, res) => {
     });
 
     if (!user) {
-      // Return 200 generic message to avoid email enumeration
+      // Return generic 200 message to prevent user account discovery
       return res.status(200).json({
         status: "success",
         message: "If an account exists with this email, a reset link has been sent.",
       });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    // Generate unhashed token for the link, store SHA-256 hash in database
+    const rawResetToken = crypto.randomBytes(32).toString("hex");
+    const hashedResetToken = crypto
+      .createHash("sha256")
+      .update(rawResetToken)
+      .digest("hex");
 
-    user.resetPasswordToken = resetToken;
+    user.resetPasswordToken = hashedResetToken;
     user.resetPasswordExpires = new Date(
       Date.now() + 60 * 60 * 1000 // 1 hour
     );
 
     await user.save();
 
-    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    const resetLink = `${getClientUrl()}/reset-password/${rawResetToken}`;
 
     await sendEmail({
       to: user.email,
@@ -500,8 +512,14 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
+    // Hash the incoming token from URL parameter to query database
+    const hashedResetToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
     const user = await UserModel.findOne({
-      resetPasswordToken: token,
+      resetPasswordToken: hashedResetToken,
       resetPasswordExpires: {
         $gt: new Date(),
       },
