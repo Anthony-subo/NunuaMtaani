@@ -10,10 +10,7 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
-  message: {
-    status: "error",
-    message: "Too many login attempts. Please try again after 15 minutes.",
-  },
+  message: { status: "error", message: "Too many login attempts." },
 });
 
 const registerLimiter = rateLimit({
@@ -22,19 +19,8 @@ const registerLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
-  message: {
-    status: "error",
-    message: "Too many accounts created from this IP. Please try again in an hour.",
-  },
+  message: { status: "error", message: "Too many accounts created." },
 });
-
-// Guard checks: Validate handlers before passing to router
-if (typeof authController.register !== "function") {
-  throw new Error("authController.register is not exported as a function!");
-}
-if (typeof authController.login !== "function") {
-  throw new Error("authController.login is not exported as a function!");
-}
 
 router.post("/register", registerLimiter, authController.register);
 router.post("/login", loginLimiter, authController.login);
