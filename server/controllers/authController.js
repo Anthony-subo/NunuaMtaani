@@ -80,7 +80,6 @@ exports.register = async (req, res) => {
     const rawVerificationToken = generateRawToken();
     const hashedVerificationToken = hashToken(rawVerificationToken);
 
-    // Create User with HASHED verification token in DB
     const newUser = await UserModel.create({
       name,
       phone,
@@ -95,7 +94,6 @@ exports.register = async (req, res) => {
     });
 
     const token = generateToken(newUser);
-    // Build verification link using RAW token
     const verificationLink = `${getClientUrl()}/verify-email/${rawVerificationToken}`;
 
     try {
@@ -125,8 +123,6 @@ exports.register = async (req, res) => {
           </div>
         `,
       });
-
-      console.log("✅ Verification email sent to:", newUser.email);
 
       const userObj = newUser.toObject();
       delete userObj.password;
@@ -171,55 +167,6 @@ exports.register = async (req, res) => {
 };
 
 // =====================
-// VERIFY EMAIL
-// =====================
-exports.verifyEmail = async (req, res) => {
-  try {
-    const { token } = req.params;
-
-    if (!token) {
-      return res.status(400).json({
-        status: "error",
-        message: "Verification token is required.",
-      });
-    }
-
-    // Hash incoming URL token parameter before matching against DB
-    const hashedToken = hashToken(token);
-
-    const user = await UserModel.findOne({
-      verificationToken: hashedToken,
-      verificationTokenExpires: { $gt: new Date() },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        status: "error",
-        message: "Verification link is invalid or has expired.",
-      });
-    }
-
-    user.isVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpires = null;
-
-    await user.save();
-
-    return res.status(200).json({
-      status: "success",
-      message: "Email verified successfully. You can now log in.",
-    });
-  } catch (error) {
-    console.error("VERIFY EMAIL ERROR:", error.message);
-
-    return res.status(500).json({
-      status: "error",
-      message: "Email verification failed.",
-    });
-  }
-};
-
-// =====================
 // LOGIN
 // =====================
 exports.login = async (req, res) => {
@@ -237,7 +184,6 @@ exports.login = async (req, res) => {
       email: email.toLowerCase().trim(),
     });
 
-    // Constant-time check to prevent timing-based user enumeration
     const targetPasswordHash = user ? user.password : DUMMY_HASH;
     const match = await bcrypt.compare(password, targetPasswordHash);
 
@@ -317,177 +263,6 @@ exports.login = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Login failed.",
-    });
-  }
-};
-
-// =====================
-// RESEND VERIFICATION EMAIL
-// =====================
-exports.resendVerification = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email || !validator.isEmail(email)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Please provide a valid email address.",
-      });
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-    const user = await UserModel.findOne({ email: normalizedEmail });
-
-    const genericSuccessMsg =
-      "If an unverified account exists with that email, a verification link has been sent.";
-
-    if (!user || user.isVerified) {
-      return res.status(200).json({
-        status: "success",
-        message: genericSuccessMsg,
-      });
-    }
-
-    const RESEND_COOLDOWN_MS = 2 * 60 * 1000;
-    if (
-      user.lastVerificationSentAt &&
-      Date.now() - new Date(user.lastVerificationSentAt).getTime() < RESEND_COOLDOWN_MS
-    ) {
-      return res.status(429).json({
-        status: "error",
-        message: "Please wait a couple of minutes before requesting another verification email.",
-      });
-    }
-
-    const rawToken = generateRawToken();
-    const hashedVerificationToken = hashToken(rawToken);
-
-    user.verificationToken = hashedVerificationToken;
-    user.verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    user.lastVerificationSentAt = new Date();
-
-    await user.save();
-
-    const verificationLink = `${getClientUrl()}/verify-email/${rawToken}`;
-
-    await sendEmail({
-      to: user.email,
-      subject: "Verify your NunuaMtaani Account",
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 25px; color: #333;">
-          <h2>Hello ${user.name || "Customer"},</h2>
-          <p>You requested a new verification link for your NunuaMtaani account.</p>
-          <div style="margin: 25px 0;">
-            <a
-              href="${verificationLink}"
-              style="
-                background-color: #0d6efd;
-                color: #ffffff;
-                padding: 12px 24px;
-                text-decoration: none;
-                border-radius: 5px;
-                display: inline-block;
-                font-weight: bold;
-              "
-            >
-              Verify Email Address
-            </a>
-          </div>
-          <p style="color: #666; font-size: 0.9em;">
-            This link is valid for 24 hours. If you did not request this, you can safely ignore this message.
-          </p>
-        </div>
-      `,
-    });
-
-    return res.status(200).json({
-      status: "success",
-      message: genericSuccessMsg,
-    });
-  } catch (err) {
-    console.error("RESEND VERIFICATION ERROR:", err);
-
-    return res.status(500).json({
-      status: "error",
-      message: "Unable to process request at this time. Please try again later.",
-    });
-  }
-};
-
-// =====================
-// FORGOT PASSWORD
-// =====================
-exports.forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email || !validator.isEmail(email)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Please provide a valid email address.",
-      });
-    }
-
-    const user = await UserModel.findOne({
-      email: email.toLowerCase().trim(),
-    });
-
-    if (!user) {
-      return res.status(200).json({
-        status: "success",
-        message: "If an account exists with this email, a reset link has been sent.",
-      });
-    }
-
-    const rawResetToken = generateRawToken();
-    const hashedResetToken = hashToken(rawResetToken);
-
-    user.resetPasswordToken = hashedResetToken;
-    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-    await user.save();
-
-    const resetLink = `${getClientUrl()}/reset-password/${rawResetToken}`;
-
-    await sendEmail({
-      to: user.email,
-      subject: "Reset your NunuaMtaani Password",
-      html: `
-        <div style="font-family:Arial,sans-serif;padding:30px;color:#333">
-          <h2>Password Reset</h2>
-          <p>Hello <strong>${user.name}</strong>,</p>
-          <p>We received a request to reset your password.</p>
-          <a
-            href="${resetLink}"
-            style="
-              display:inline-block;
-              padding:12px 24px;
-              background:#0d6efd;
-              color:#fff;
-              text-decoration:none;
-              border-radius:5px;
-              font-weight:bold;
-            "
-          >
-            Reset Password
-          </a>
-          <p style="margin-top:20px">This link expires in 1 hour.</p>
-          <hr>
-          <small>If you didn't request this, simply ignore this email.</small>
-        </div>
-      `,
-    });
-
-    return res.status(200).json({
-      status: "success",
-      message: "If an account exists with this email, a reset link has been sent.",
-    });
-  } catch (error) {
-    console.error("FORGOT PASSWORD ERROR:", error.message);
-
-    return res.status(500).json({
-      status: "error",
-      message: "Unable to process request.",
     });
   }
 };

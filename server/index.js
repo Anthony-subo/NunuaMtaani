@@ -35,10 +35,12 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Connect DB & Verify SMTP Transporter on startup
 connectDB();
-require("./config/mail"); // <--- ADD THIS LINE HERE
+require("./config/mail");
 
-app.use("/api/payments", require("./routes/payments"));
+// Route Mounts
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/email", require("./routes/emailRoutes")); // <--- MOUNTED HERE
+app.use("/api/payments", require("./routes/payments"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/shops", require("./routes/shopRoutes"));
