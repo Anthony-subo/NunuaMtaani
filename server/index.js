@@ -39,7 +39,7 @@ require("./config/mail");
 
 // Route Mounts
 app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/email", require("./routes/emailRoutes")); // <--- MOUNTED HERE
+//app.use("/api/email", require("./routes/emailRoutes")); // <--- MOUNTED HERE
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
