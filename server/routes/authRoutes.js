@@ -23,6 +23,7 @@ const registerLimiter = rateLimit({
 });
 
 router.post("/register", registerLimiter, authController.register);
+
 router.post("/login", loginLimiter, authController.login);
 
 module.exports = router;
