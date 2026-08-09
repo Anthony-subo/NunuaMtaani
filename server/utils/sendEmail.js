@@ -1,29 +1,27 @@
-const transporter = require("../config/mail");
+const { Resend } = require("resend");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    console.log("📨 Sending email to:", to);
+    console.log("📨 Sending email via Resend to:", to);
 
-    const info = await transporter.sendMail({
-      from: `"NunuaMtaani" <${process.env.EMAIL_USER}>`,
-      to,
+    const { data, error } = await resend.emails.send({
+      from: "NunuaMtaani <onboarding@resend.dev>", // Default testing domain
+      to: Array.isArray(to) ? to : [to], // Resend expects an array for 'to'
       subject,
       html,
     });
 
-    console.log("✅ Email sent successfully");
-    console.log(info);
+    if (error) {
+      console.error("❌ Resend API Error:", error);
+      throw new Error(error.message);
+    }
 
-    return info;
-
+    console.log("✅ Email sent successfully! ID:", data.id);
+    return data;
   } catch (err) {
-    console.log("❌ EMAIL ERROR");
-    console.log("Code:", err.code);
-    console.log("Message:", err.message);
-    console.log("Response:", err.response);
-    console.log("Response Code:", err.responseCode);
-    console.log(err);
-
+    console.error("❌ EMAIL DELIVERY FAILED:", err.message);
     throw err;
   }
 };
