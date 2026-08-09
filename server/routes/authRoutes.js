@@ -65,12 +65,4 @@ router.post("/register", registerLimiter, register);
 // Login
 router.post("/login", loginLimiter, login);
 
-// Email Verification
-router.get("/verify-email/:token", verifyEmail);
-router.post("/resend-verification", emailActionLimiter, resendVerification);
-
-// Password Management
-router.post("/forgot-password", emailActionLimiter, forgotPassword);
-router.post("/reset-password/:token", emailActionLimiter, resetPassword);
-
 module.exports = router;
