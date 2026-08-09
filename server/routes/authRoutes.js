@@ -2,28 +2,44 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const router = express.Router();
 
-const authController = require("../controllers/authController");
+const {
+  register,
+  login,
+  verifyEmail,
+  resendVerification,
+  forgotPassword,
+  resetPassword,
+} = require("../controllers/authController");
 
+// ==========================
+// Login Rate Limiter
+// ==========================
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { trustProxy: false },
-  message: { status: "error", message: "Too many login attempts." },
+  message: {
+    status: "error",
+    message: "Too many login attempts. Please try again after 15 minutes.",
+  },
 });
 
-const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  validate: { trustProxy: false },
-  message: { status: "error", message: "Too many accounts created." },
-});
+// ==========================
+// Authentication Routes
+// ==========================
 
-router.post("/register", registerLimiter, authController.register);
+// Register
+router.post("/register", register);
 
-router.post("/login", loginLimiter, authController.login);
+// Login (Protected by Rate Limiter)
+router.post("/login", loginLimiter, login);
+
+router.get("/verify-email/:token", verifyEmail);
+
+router.post("/resend-verification", resendVerification);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
+
 
 module.exports = router;

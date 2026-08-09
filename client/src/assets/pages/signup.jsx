@@ -276,10 +276,11 @@ function Signup() {
             </button>
           </div>
 
-        {/* Submit Button */}
+        <br />
+
         <button
           type="submit"
-          className="btn btn-primary w-100 py-2"
+          className="btn btn-primary w-100"
           disabled={loading}
         >
           {loading ? (
@@ -289,6 +290,7 @@ function Signup() {
                 role="status"
                 aria-hidden="true"
               ></span>
+
               Creating Account...
             </>
           ) : (
@@ -297,7 +299,8 @@ function Signup() {
         </button>
 
         <p className="mt-4 text-center">
-          Already have an account? <Link to="/login">Login</Link>
+          Already have an account?
+          <Link to="/login"> Login</Link>
         </p>
       </form>
     </div>
