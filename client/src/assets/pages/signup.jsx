@@ -20,12 +20,13 @@ function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [errMsg, setErrMsg] = useState("");
+  const [warningMsg, setWarningMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Password checks
+  // Live password validation checks
   const checks = {
     length: password.length >= 8,
     upper: /[A-Z]/.test(password),
@@ -36,8 +37,8 @@ function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setErrMsg("");
+    setWarningMsg("");
 
     if (password !== confirmPassword) {
       setErrMsg("Passwords do not match.");
@@ -54,7 +55,7 @@ function Signup() {
     setLoading(true);
 
     try {
-      const result = await axios.post(
+      const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/auth/register`,
         {
           name: name.trim(),
@@ -65,68 +66,64 @@ function Signup() {
         }
       );
 
-      if (result.data.status === "success") {
+      const { status, message } = response.data;
+
+      if (status === "success") {
         navigate("/login", {
           state: {
             message:
-              result.data.message ||
+              message ||
               "Registration successful! Please check your email to verify your account.",
           },
         });
+      } else if (status === "warning") {
+        // Handle account created, but email dispatch failure
+        setWarningMsg(
+          message ||
+            "Account created, but we couldn't send the verification email. You can resend it from the login page."
+        );
       }
     } catch (err) {
-      console.error(err);
-
+      console.error("Registration error:", err);
       setErrMsg(
         err.response?.data?.message ||
-          "Registration failed. Please try again."
+          "Registration failed. Please check your network connection and try again."
       );
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
     <div className="auth-container">
-      {/* Logo */}
-
+      {/* Brand Header */}
       <div className="d-flex align-items-center logo mb-3">
         <BsCartFill className="shopping-icon" size={28} />
-
-        <div className="d-flex flex-column">
+        <div className="d-flex flex-column ms-2">
           <div className="d-flex align-items-center mb-1">
             <h3 className="brand mb-0 me-2">
               <span className="nunua">Nunua</span>
               <span className="m">M</span>
               <span className="taani">taani</span>
             </h3>
-
             <Link to="/" className="home-icon-link ms-2" title="Home">
               <AiFillHome size={22} className="text-dark" />
             </Link>
           </div>
-
-          <small className="slogan">
-            Your trusted online market
-          </small>
+          <small className="slogan">Your trusted online market</small>
         </div>
       </div>
 
-      <h3 className="text-center mb-4">
-        Create Account
-      </h3>
+      <h3 className="text-center mb-4">Create Account</h3>
 
-      {errMsg && (
-        <div className="alert alert-danger">
-          {errMsg}
-        </div>
-      )}
+      {/* Alert Messages */}
+      {errMsg && <div className="alert alert-danger mb-3">{errMsg}</div>}
+      {warningMsg && <div className="alert alert-warning mb-3">{warningMsg}</div>}
 
       <form onSubmit={handleSubmit}>
-        {/* Name */}
-
-        <label>Full Name</label>
-
+        {/* Full Name */}
+        <div className="mb-3">
+          <label className="form-label">Full Name</label>
           <input
             type="text"
             className="form-control"
@@ -136,13 +133,11 @@ function Signup() {
             onChange={(e) => setName(e.target.value)}
             required
           />
+        </div>
 
-        <br />
-
-        {/* Email */}
-
-        <label>Email Address</label>
-
+        {/* Email Address */}
+        <div className="mb-3">
+          <label className="form-label">Email Address</label>
           <input
             type="email"
             className="form-control"
@@ -153,32 +148,28 @@ function Signup() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+        </div>
 
-        <br />
-
-        {/* Phone */}
-
-        <label>Phone Number</label>
-
+        {/* Phone Number */}
+        <div className="mb-3">
+          <label className="form-label">Phone Number</label>
           <input
             type="tel"
             className="form-control"
             placeholder="07XXXXXXXX"
             autoComplete="tel"
             pattern="^(07|01)[0-9]{8}$"
-          title="Enter a valid Kenyan phone number"
+            title="Enter a valid Kenyan phone number (e.g., 0712345678 or 0112345678)"
             value={phone}
             disabled={loading}
             onChange={(e) => setPhone(e.target.value)}
             required
           />
-
-        <br />
+        </div>
 
         {/* Location */}
-
-        <label>Location</label>
-
+        <div className="mb-3">
+          <label className="form-label">Location</label>
           <input
             type="text"
             className="form-control"
@@ -187,13 +178,11 @@ function Signup() {
             disabled={loading}
             onChange={(e) => setLocation(e.target.value)}
           />
-
-        <br />
+        </div>
 
         {/* Password */}
-
-        <label>Password</label>
-
+        <div className="mb-3">
+          <label className="form-label">Password</label>
           <div className="input-group">
             <input
               type={showPassword ? "text" : "password"}
@@ -205,7 +194,6 @@ function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-
             <button
               type="button"
               className="btn btn-outline-secondary"
@@ -215,44 +203,29 @@ function Signup() {
             </button>
           </div>
 
-        {/* Password Strength */}
-
-        <div className="mt-3">
-          <small className={checks.length ? "text-success" : "text-danger"}>
+          {/* Password Validation Indicators */}
+          <div className="mt-2">
+            <small className={checks.length ? "text-success d-block" : "text-danger d-block"}>
               {checks.length ? "✔" : "✖"} Minimum 8 characters
             </small>
-
-          <br />
-
-          <small className={checks.upper ? "text-success" : "text-danger"}>
+            <small className={checks.upper ? "text-success d-block" : "text-danger d-block"}>
               {checks.upper ? "✔" : "✖"} One uppercase letter
             </small>
-
-          <br />
-
-          <small className={checks.lower ? "text-success" : "text-danger"}>
+            <small className={checks.lower ? "text-success d-block" : "text-danger d-block"}>
               {checks.lower ? "✔" : "✖"} One lowercase letter
             </small>
-
-          <br />
-
-          <small className={checks.number ? "text-success" : "text-danger"}>
+            <small className={checks.number ? "text-success d-block" : "text-danger d-block"}>
               {checks.number ? "✔" : "✖"} One number
             </small>
-
-          <br />
-
-          <small className={checks.special ? "text-success" : "text-danger"}>
+            <small className={checks.special ? "text-success d-block" : "text-danger d-block"}>
               {checks.special ? "✔" : "✖"} One special character (@$!%*?&.#)
             </small>
           </div>
-
-        <br />
+        </div>
 
         {/* Confirm Password */}
-
-        <label>Confirm Password</label>
-
+        <div className="mb-4">
+          <label className="form-label">Confirm Password</label>
           <div className="input-group">
             <input
               type={showConfirmPassword ? "text" : "password"}
@@ -264,23 +237,20 @@ function Signup() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
-
             <button
               type="button"
               className="btn btn-outline-secondary"
-            onClick={() =>
-              setShowConfirmPassword(!showConfirmPassword)
-            }
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
+        </div>
 
-        <br />
-
+        {/* Submit Button */}
         <button
           type="submit"
-          className="btn btn-primary w-100"
+          className="btn btn-primary w-100 py-2"
           disabled={loading}
         >
           {loading ? (
@@ -290,7 +260,6 @@ function Signup() {
                 role="status"
                 aria-hidden="true"
               ></span>
-
               Creating Account...
             </>
           ) : (
@@ -299,8 +268,7 @@ function Signup() {
         </button>
 
         <p className="mt-4 text-center">
-          Already have an account?
-          <Link to="/login"> Login</Link>
+          Already have an account? <Link to="/login">Login</Link>
         </p>
       </form>
     </div>

@@ -1,6 +1,8 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
+const crypto = require("crypto");
+
 const UserModel = require("../models/users");
 const sendEmail = require("../utils/sendEmail");
 const generateVerificationToken = require("../utils/generateToken");
@@ -8,7 +10,10 @@ const generateVerificationToken = require("../utils/generateToken");
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{8,}$/;
 
-// Generate JWT
+// =====================
+// GENERATE JWT
+// =====================
+
 const generateToken = (user) => {
   return jwt.sign(
     {
@@ -27,16 +32,19 @@ const generateToken = (user) => {
 // REGISTER
 // =====================
 
-// =====================
-// REGISTER
-// =====================
-
 exports.register = async (req, res) => {
   try {
     console.log("========== REGISTER ==========");
     console.log("Request Body:", req.body);
 
-    const { name, phone, email, location, password, role } = req.body;
+    const {
+      name,
+      phone,
+      email,
+      location,
+      password,
+      role,
+    } = req.body;
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -102,32 +110,92 @@ exports.register = async (req, res) => {
 
     console.log("User created:", newUser.email);
 
+    // Generate JWT
     const token = generateToken(newUser);
 
+    // Create verification link
     const verificationLink =
       `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
     console.log("Verification link:");
     console.log(verificationLink);
 
+    // =====================
+    // SEND VERIFICATION EMAIL
+    // =====================
+
     console.log("Sending verification email...");
 
       await sendEmail({
         to: newUser.email,
-  subject: "Welcome to NunuaMtaani",
+      subject: "Verify your NunuaMtaani Account",
         html: `
-    <h2>Welcome to NunuaMtaani</h2>
+        <div
+          style="
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            background: #ffffff;
+            color: #333333;
+          "
+        >
 
-    <p>Hello ${newUser.name},</p>
+          <h2 style="color: #0d6efd;">
+            Welcome to NunuaMtaani!
+          </h2>
 
-    <p>Your account has been created successfully.</p>
+          <p>
+            Hello <strong>${newUser.name}</strong>,
+          </p>
 
-    <p>This is a test email.</p>
+          <p>
+            Thank you for creating your NunuaMtaani account.
+          </p>
+
+          <p>
+            Please verify your email address by clicking the button below:
+          </p>
+
+          <p style="margin: 30px 0;">
+            <a
+              href="${verificationLink}"
+              style="
+                display: inline-block;
+                padding: 12px 24px;
+                background: #0d6efd;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: bold;
+              "
+            >
+              Verify My Email
+            </a>
+          </p>
+
+          <p>
+            This verification link will expire in 24 hours.
+          </p>
+
+          <p>
+            If you did not create this account, you can safely ignore this
+            email.
+          </p>
+
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eeeeee;">
+
+          <p style="font-size: 12px; color: #777777;">
+            This email was sent by NunuaMtaani.
+          </p>
+
+        </div>
         `,
       });
 
     console.log("✅ Verification email sent.");
 
+    // Remove password from response
     const user = newUser.toObject();
     delete user.password;
 
@@ -138,9 +206,7 @@ exports.register = async (req, res) => {
       message:
         "Registration successful. Please check your email to verify your account.",
       });
-
   } catch (err) {
-
     console.error("========== REGISTER ERROR ==========");
     console.error(err);
     console.error(err.stack);
@@ -212,7 +278,7 @@ exports.login = async (req, res) => {
       user.loginAttempts += 1;
 
       if (user.loginAttempts >= 5) {
-        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
       }
 
       await user.save();
@@ -236,17 +302,16 @@ exports.login = async (req, res) => {
     const userData = user.toObject();
     delete userData.password;
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       token,
       user: userData,
       message: "Login successful.",
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("LOGIN ERROR:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Login failed.",
     });
   }
@@ -262,7 +327,9 @@ exports.verifyEmail = async (req, res) => {
 
     const user = await UserModel.findOne({
       verificationToken: token,
-      verificationTokenExpires: { $gt: new Date() },
+      verificationTokenExpires: {
+        $gt: new Date(),
+      },
     });
 
     if (!user) {
@@ -282,9 +349,8 @@ exports.verifyEmail = async (req, res) => {
       status: "success",
       message: "Email verified successfully. You can now log in.",
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("VERIFY EMAIL ERROR:", error);
 
     return res.status(500).json({
       status: "error",
@@ -326,59 +392,102 @@ exports.resendVerification = async (req, res) => {
       });
     }
 
+    // Generate new verification token
     const verificationToken = generateVerificationToken();
 
     user.verificationToken = verificationToken;
+
     user.verificationTokenExpires = new Date(
       Date.now() + 24 * 60 * 60 * 1000
     );
 
     await user.save();
 
+    // Create new verification link
     const verificationLink =
       `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
+    console.log("Resend verification link:");
+    console.log(verificationLink);
+
+    // Send verification email
     await sendEmail({
       to: user.email,
       subject: "Verify your NunuaMtaani Account",
       html: `
-      <div style="font-family:Arial;padding:25px">
-        <h2>Hello ${user.name}</h2>
+        <div
+          style="
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            background: #ffffff;
+            color: #333333;
+          "
+        >
 
-            <p>
-          Here is your new verification link.
+          <h2 style="color: #0d6efd;">
+            Verify Your NunuaMtaani Account
+          </h2>
+
+          <p>
+            Hello <strong>${user.name}</strong>,
+          </p>
+
+          <p>
+            You requested a new verification email for your NunuaMtaani
+            account.
             </p>
 
+          <p>
+            Click the button below to verify your email address:
+          </p>
+
+          <p style="margin: 30px 0;">
               <a
                 href="${verificationLink}"
                 style="
-            background:#0d6efd;
-            color:white;
-            padding:12px 20px;
-            text-decoration:none;
-            border-radius:5px;
-            display:inline-block;
+                display: inline-block;
+                padding: 12px 24px;
+                background: #0d6efd;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: bold;
                 "
               >
-          Verify Email
+              Verify My Email
               </a>
+          </p>
 
-        <p style="margin-top:20px">
-          This link expires in 24 hours.
+          <p>
+            This link will expire in 24 hours.
             </p>
+
+          <p>
+            If you did not request this email, you can safely ignore it.
+          </p>
+
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eeeeee;">
+
+          <p style="font-size: 12px; color: #777777;">
+            This email was sent by NunuaMtaani.
+          </p>
+
         </div>
       `,
     });
 
-    res.json({
+    console.log("✅ Verification email resent.");
+
+    return res.status(200).json({
       status: "success",
       message: "Verification email sent successfully.",
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("RESEND VERIFICATION ERROR:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: "Unable to send verification email.",
     });
@@ -415,64 +524,95 @@ exports.forgotPassword = async (req, res) => {
     const resetToken = crypto.randomBytes(32).toString("hex");
 
     user.resetPasswordToken = resetToken;
+
     user.resetPasswordExpires = new Date(
-      Date.now() + 60 * 60 * 1000 // 1 hour
+      Date.now() + 60 * 60 * 1000
     );
 
     await user.save();
 
+    // Create reset link
     const resetLink =
       `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
+    console.log("Password reset link:");
+    console.log(resetLink);
+
+    // Send password reset email
     await sendEmail({
       to: user.email,
       subject: "Reset your NunuaMtaani Password",
       html: `
-      <div style="font-family:Arial,sans-serif;padding:30px">
+        <div
+          style="
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            background: #ffffff;
+            color: #333333;
+          "
+        >
 
-          <h2>Password Reset</h2>
-
-          <p>Hello <strong>${user.name}</strong>,</p>
+          <h2 style="color: #0d6efd;">
+            Password Reset
+          </h2>
 
           <p>
-          We received a request to reset your password.
+            Hello <strong>${user.name}</strong>,
           </p>
 
+          <p>
+            We received a request to reset your NunuaMtaani password.
+          </p>
+
+          <p>
+            Click the button below to create a new password:
+          </p>
+
+          <p style="margin: 30px 0;">
             <a
               href="${resetLink}"
               style="
-            display:inline-block;
-            padding:12px 24px;
-            background:#0d6efd;
-            color:#fff;
-            text-decoration:none;
-            border-radius:5px;
+                display: inline-block;
+                padding: 12px 24px;
+                background: #0d6efd;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: bold;
               "
             >
               Reset Password
             </a>
+          </p>
 
-        <p style="margin-top:20px">
+          <p>
             This link expires in 1 hour.
           </p>
 
-        <hr>
+          <p>
+            If you didn't request a password reset, simply ignore this email.
+          </p>
 
-        <small>
-          If you didn't request this, simply ignore this email.
-        </small>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eeeeee;">
+
+          <p style="font-size: 12px; color: #777777;">
+            This email was sent by NunuaMtaani.
+          </p>
 
         </div>
       `,
     });
 
+    console.log("✅ Password reset email sent.");
+
     return res.status(200).json({
       status: "success",
       message: "Password reset link has been sent to your email.",
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("FORGOT PASSWORD ERROR:", error);
 
     return res.status(500).json({
       status: "error",
@@ -487,7 +627,6 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   try {
-
     const { token } = req.params;
     const { password } = req.body;
 
@@ -538,15 +677,13 @@ exports.resetPassword = async (req, res) => {
       message:
         "Password has been reset successfully. You can now log in.",
     });
-
   } catch (error) {
-
-    console.error(error);
+    console.error("RESET PASSWORD ERROR:", error);
 
     return res.status(500).json({
       status: "error",
       message: "Unable to reset password.",
     });
-
   }
 };
+```
