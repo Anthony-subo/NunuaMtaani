@@ -2,21 +2,17 @@ const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // SSL
-  pool: true, // Use pooled connections for performance
-  maxConnections: 5,
-  maxMessages: 100,
-  connectionTimeout: 10000, // 10 seconds timeout
-  greetingTimeout: 5000,
-  socketTimeout: 15000,
+  port: 587,
+  secure: false, // Use STARTTLS for port 587
+  family: 4,     // Force IPv4 connection to prevent Render IPv6 timeouts
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000,
+  socketTimeout: 10000,
 });
 
-// Verify connection on server startup
 transporter.verify((error) => {
   if (error) {
     console.error("❌ SMTP Verification Error:", error.message);
