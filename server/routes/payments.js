@@ -4,13 +4,23 @@ const Order = require('../models/orders');
 
 // ------------------ Helpers ------------------ //
 function normalizePhone(phone) {
-  if (phone.startsWith("0")) return "254" + phone.slice(1);
-  if (phone.startsWith("7")) return "254" + phone;
-  return phone;
+  let cleaned = String(phone).replace(/[^0-9]/g, '');
+  if (cleaned.startsWith('0')) return '254' + cleaned.slice(1);
+  if (cleaned.startsWith('7') || cleaned.startsWith('1')) return '254' + cleaned;
+  return cleaned;
 }
 
 function makeTimestamp() {
-  return new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return (
+    d.getFullYear() +
+    pad(d.getMonth() + 1) +
+    pad(d.getDate()) +
+    pad(d.getHours()) +
+    pad(d.getMinutes()) +
+    pad(d.getSeconds())
+  );
 }
 
 function makePassword(shortcode, passkey, timestamp) {
@@ -35,7 +45,7 @@ router.post('/stk/initiate', async (req, res) => {
   try {
     const { orderId, buyerPhone } = req.body;
     if (!orderId || !buyerPhone) {
-      return res.status(400).json({ error: 'Missing fields' });
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const order = await Order.findById(orderId);
@@ -43,7 +53,7 @@ router.post('/stk/initiate', async (req, res) => {
 
     // 🚫 prevent double payment
     if (order.status === 'paid') {
-      return res.status(400).json({ error: 'Order already paid' });
+      return res.status(400).json({ error: 'Order is already paid' });
     }
 
     const phone = normalizePhone(buyerPhone);
@@ -55,14 +65,16 @@ router.post('/stk/initiate', async (req, res) => {
       timestamp
     );
 
+    const payableAmount = Math.round(order.total);
+
     const payload = {
       BusinessShortCode: process.env.MPESA_SHORTCODE,
       Password: password,
       Timestamp: timestamp,
       TransactionType: "CustomerPayBillOnline",
-      Amount: Math.round(order.total),
+      Amount: payableAmount,
       PartyA: phone,
-      PartyB: process.env.MPESA_SHORTCODE, // ✅ MUST be shortcode owner
+      PartyB: process.env.MPESA_SHORTCODE,
       PhoneNumber: phone,
       CallBackURL: `${process.env.API_URL}/api/payments/stk/callback`,
       AccountReference: "NunuaMtaani",
@@ -84,10 +96,16 @@ router.post('/stk/initiate', async (req, res) => {
 
     await order.save();
 
-    res.json({ status: 'initiated' });
+    return res.json({ 
+      status: 'initiated', 
+      checkoutId: response.data.CheckoutRequestID 
+    });
   } catch (e) {
     console.error("❌ STK initiation error:", e.response?.data || e.message);
-    res.status(500).json({ error: 'Failed to initiate STK' });
+    return res.status(500).json({ 
+      error: 'Failed to initiate STK', 
+      details: e.response?.data || e.message 
+    });
   }
 });
 
@@ -95,7 +113,11 @@ router.post('/stk/initiate', async (req, res) => {
 router.post('/stk/callback', async (req, res) => {
   try {
     const stk = req.body?.Body?.stkCallback;
-    if (!stk) return res.json({ ok: false });
+    
+    // Standard response to acknowledge receipt to Safaricom
+    const acknowledgeSafaricom = () => res.json({ ResultCode: 0, ResultDesc: "Accepted" });
+
+    if (!stk) return acknowledgeSafaricom();
 
     const checkoutId = stk.CheckoutRequestID;
     const resultCode = stk.ResultCode;
@@ -109,31 +131,37 @@ router.post('/stk/callback', async (req, res) => {
       'payment.raw.CheckoutRequestID': checkoutId
     });
 
-    if (!order) return res.json({ ok: false });
+    if (!order) return acknowledgeSafaricom();
 
-    if (resultCode === 0 && Number(amount) !== order.total) {
+    // Check if paid amount matches rounded expected total
+    const expectedAmount = Math.round(order.total);
+
+    if (resultCode === 0 && Number(amount) !== expectedAmount) {
       order.status = 'failed';
-      order.payment.raw.mismatch = true;
+      order.payment = {
+        ...order.payment,
+        raw: { ...order.payment?.raw, mismatch: true, expectedAmount, receivedAmount: amount }
+      };
     } else {
       order.status = resultCode === 0 ? 'paid' : 'failed';
     }
 
     order.payment = {
       ...order.payment,
-      mpesaReceipt,
-      amount,
-      payerPhone: phone || order.payment.payerPhone,
+      mpesaReceipt: mpesaReceipt || order.payment?.mpesaReceipt,
+      amount: amount || order.payment?.amount,
+      payerPhone: phone ? String(phone) : order.payment?.payerPhone,
       callbackAt: new Date(),
-      raw: { ...order.payment.raw, ...stk }
+      raw: { ...order.payment?.raw, ...stk }
     };
 
     await order.save();
-    console.log(`✅ Order ${order._id} → ${order.status}`);
+    console.log(`✅ Order ${order._id} updated to status: ${order.status}`);
 
-    res.json({ ok: true });
+    return acknowledgeSafaricom();
   } catch (e) {
     console.error("❌ Callback error:", e.message);
-    res.json({ ok: false });
+    return res.json({ ResultCode: 1, ResultDesc: "Internal Error" });
   }
 });
 
