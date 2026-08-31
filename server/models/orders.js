@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema({
     required: true,
     index: true 
   },
-  shop_id: { 
+  sellerShop: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Shop', 
     required: true,
