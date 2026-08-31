@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/orders');
+const crypto = require('crypto');
 
 // ✅ POST /api/orders - create a new order
 router.post('/', async (req, res) => {
@@ -78,23 +79,31 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+
+// ✅ Assign rider to order
+router.put('/:id/assign-rider', async (req, res) => {
   try {
-    const { user_id, shop_id, sellerShop, items, total, payment } = req.body;
+    const { riderId } = req.body;
 
-    const order = new Order({
-      user_id,
-      sellerShop: sellerShop || shop_id,
-      items,
-      total,
-      payment
-    });
+    if (!riderId) return res.status(400).json({ message: 'Rider ID required' });
 
-    await order.save();
-    res.status(201).json(order);
-  } catch (error) {
-    console.error('❌ Order Creation Error:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    const code = crypto.randomBytes(3).toString('hex'); // short 6-digit code
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      {
+        delivery: { rider_id: riderId, code, status: 'assigned' },
+        status: 'deliver'
+      },
+      { new: true }
+    ).populate('delivery.rider_id');
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    res.json(order);
+  } catch (err) {
+    console.error('Error assigning rider:', err);
+    res.status(500).json({ message: 'Failed to assign rider.' });
   }
 });
 
