@@ -2,7 +2,6 @@ const router = require('express').Router();
 const axios = require('axios');
 const Order = require('../models/orders');
 
-// ------------------ Helpers ------------------ //
 function normalizePhone(phone) {
   let cleaned = String(phone).replace(/[^0-9]/g, '');
   if (cleaned.startsWith('0')) return '254' + cleaned.slice(1);
@@ -23,10 +22,6 @@ function makeTimestamp() {
   );
 }
 
-function makePassword(shortcode, passkey, timestamp) {
-  return Buffer.from(shortcode + passkey + timestamp).toString("base64");
-}
-
 async function getDarajaToken() {
   const auth = Buffer.from(
     `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`
@@ -40,7 +35,6 @@ async function getDarajaToken() {
   return response.data.access_token;
 }
 
-// ------------------ INITIATE STK ------------------ //
 router.post('/stk/initiate', async (req, res) => {
   try {
     const { orderId, buyerPhone } = req.body;
@@ -51,7 +45,6 @@ router.post('/stk/initiate', async (req, res) => {
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    // 🚫 prevent double payment
     if (order.status === 'paid') {
       return res.status(400).json({ error: 'Order is already paid' });
     }
@@ -59,11 +52,9 @@ router.post('/stk/initiate', async (req, res) => {
     const phone = normalizePhone(buyerPhone);
     const token = await getDarajaToken();
     const timestamp = makeTimestamp();
-    const password = makePassword(
-      process.env.MPESA_SHORTCODE,
-      process.env.MPESA_PASSKEY,
-      timestamp
-    );
+    const password = Buffer.from(
+      process.env.MPESA_SHORTCODE + process.env.MPESA_PASSKEY + timestamp
+    ).toString("base64");
 
     const payableAmount = Math.round(order.total);
 
@@ -96,28 +87,19 @@ router.post('/stk/initiate', async (req, res) => {
 
     await order.save();
 
-    return res.json({ 
-      status: 'initiated', 
-      checkoutId: response.data.CheckoutRequestID 
-    });
+    return res.json({ status: 'initiated', checkoutId: response.data.CheckoutRequestID });
   } catch (e) {
     console.error("❌ STK initiation error:", e.response?.data || e.message);
-    return res.status(500).json({ 
-      error: 'Failed to initiate STK', 
-      details: e.response?.data || e.message 
-    });
+    return res.status(500).json({ error: 'Failed to initiate STK' });
   }
 });
 
-// ------------------ STK CALLBACK ------------------ //
 router.post('/stk/callback', async (req, res) => {
+  const acknowledge = () => res.json({ ResultCode: 0, ResultDesc: "Accepted" });
+  
   try {
     const stk = req.body?.Body?.stkCallback;
-    
-    // Standard response to acknowledge receipt to Safaricom
-    const acknowledgeSafaricom = () => res.json({ ResultCode: 0, ResultDesc: "Accepted" });
-
-    if (!stk) return acknowledgeSafaricom();
+    if (!stk) return acknowledge();
 
     const checkoutId = stk.CheckoutRequestID;
     const resultCode = stk.ResultCode;
@@ -127,13 +109,9 @@ router.post('/stk/callback', async (req, res) => {
     const amount = metadata.find(i => i.Name === 'Amount')?.Value;
     const phone  = metadata.find(i => i.Name === 'PhoneNumber')?.Value;
 
-    const order = await Order.findOne({
-      'payment.raw.CheckoutRequestID': checkoutId
-    });
+    const order = await Order.findOne({ 'payment.raw.CheckoutRequestID': checkoutId });
+    if (!order) return acknowledge();
 
-    if (!order) return acknowledgeSafaricom();
-
-    // Check if paid amount matches rounded expected total
     const expectedAmount = Math.round(order.total);
 
     if (resultCode === 0 && Number(amount) !== expectedAmount) {
@@ -156,9 +134,7 @@ router.post('/stk/callback', async (req, res) => {
     };
 
     await order.save();
-    console.log(`✅ Order ${order._id} updated to status: ${order.status}`);
-
-    return acknowledgeSafaricom();
+    return acknowledge();
   } catch (e) {
     console.error("❌ Callback error:", e.message);
     return res.json({ ResultCode: 1, ResultDesc: "Internal Error" });

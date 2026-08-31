@@ -78,4 +78,34 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  try {
+    const { user_id, shop_id, sellerShop, items, total, payment } = req.body;
+
+    const order = new Order({
+      user_id,
+      sellerShop: sellerShop || shop_id,
+      items,
+      total,
+      payment
+    });
+
+    await order.save();
+    res.status(201).json(order);
+  } catch (error) {
+    console.error('❌ Order Creation Error:', error);
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
+router.get('/:id/status', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).select('status payment');
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json({ status: order.status, payment: order.payment });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch status' });
+  }
+});
+
 module.exports = router;

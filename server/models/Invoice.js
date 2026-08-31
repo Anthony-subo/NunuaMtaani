@@ -1,5 +1,10 @@
-// models/Invoice.js (monthly per shop)
 const mongoose = require('mongoose');
+
+const PaymentSubSchema = new mongoose.Schema({
+  amount: { type: Number, required: true, min: 0 },
+  mpesaRef: { type: String, required: true, trim: true },
+  at: { type: Date, default: Date.now }
+}, { _id: true });
 
 const InvoiceSchema = new mongoose.Schema({
   shop: { 
@@ -15,35 +20,17 @@ const InvoiceSchema = new mongoose.Schema({
   commissionDue:  { type: Number, default: 0, min: 0 },
   subscriptionFee: { type: Number, default: 300, min: 0 },
   totalDue: { type: Number, default: 0, min: 0 },
-  amountPaid: { type: Number, default: 0, min: 0 }, // Track total settled so far
   status: { 
     type: String, 
     enum: ['unpaid', 'partially_paid', 'paid', 'waived'], 
     default: 'unpaid',
-    index: true
+    index: true 
   },
   issuedAt: { type: Date, default: Date.now },
-  dueDate:  { type: Date },          // e.g., 7th of the next month
-  payments: [{
-    amount: { type: Number, required: true, min: 0 },
-    mpesaRef: { type: String, required: true, uppercase: true, trim: true },
-    at: { type: Date, default: Date.now }
-  }]
-}, { 
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
-});
+  dueDate:  { type: Date, required: true },
+  payments: [PaymentSubSchema]
+}, { timestamps: true });
 
-// Compound index to prevent duplicate invoices for the same shop in the same period
 InvoiceSchema.index({ shop: 1, periodStart: 1, periodEnd: 1 }, { unique: true });
-
-// Index for fast payment lookup by M-Pesa receipt
-InvoiceSchema.index({ 'payments.mpesaRef': 1 });
-
-// Virtual for remaining balance
-InvoiceSchema.virtual('balanceDue').get(function() {
-  return Math.max(0, this.totalDue - this.amountPaid);
-});
 
 module.exports = mongoose.model('Invoice', InvoiceSchema);

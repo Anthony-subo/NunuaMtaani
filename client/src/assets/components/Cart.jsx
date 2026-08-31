@@ -13,7 +13,6 @@ function Cart() {
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
-
     if (storedUser && storedUser._id) {
       setUserId(storedUser._id);
       const userCart = JSON.parse(localStorage.getItem(`cart_${storedUser._id}`)) || [];
@@ -33,17 +32,11 @@ function Cart() {
       : "https://via.placeholder.com/400x300?text=No+Image";
   };
 
-  const saveCartToStorage = (updatedCart) => {
-    if (userId) {
-      localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
-    }
-  };
-
   const handleRemoveItem = (index) => {
     const updatedCart = [...cart];
     updatedCart.splice(index, 1);
     setCart(updatedCart);
-    saveCartToStorage(updatedCart);
+    if (userId) localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
   };
 
   const getTotal = () => {
@@ -60,24 +53,52 @@ function Cart() {
     return grouped;
   };
 
-  const handlePlaceOrder = async () => {
-    if (!userId) {
-      alert("Please log in first.");
-      return;
-    }
+  const pollOrderStatus = (createdOrders) => {
+    let attempts = 0;
+    const maxAttempts = 15; // Poll for ~30 seconds
 
-    if (!phone) {
-      alert("Please enter your M-Pesa phone number.");
-      return;
-    }
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const statuses = await Promise.all(
+          createdOrders.map(order => axios.get(`${API_URL}/api/orders/${order._id}/status`))
+        );
+
+        const allPaid = statuses.every(res => res.data.status === 'paid');
+        const anyFailed = statuses.some(res => res.data.status === 'failed');
+
+        if (allPaid) {
+          clearInterval(interval);
+          setOrderStatus("🎉 Payment received! Your order is confirmed.");
+          localStorage.removeItem(`cart_${userId}`);
+          setCart([]);
+          setLoading(false);
+        } else if (anyFailed) {
+          clearInterval(interval);
+          setOrderStatus("❌ Payment failed or cancelled on phone. Please try again.");
+          setLoading(false);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setOrderStatus("⏱️ Payment confirmation timeout. Please check your order history.");
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Polling error:", e);
+      }
+    }, 2000);
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!userId) return alert("Please log in first.");
+    if (!phone) return alert("Please enter your M-Pesa phone number.");
 
     setLoading(true);
-    setOrderStatus("⏳ Creating orders and initiating M-Pesa prompt...");
+    setOrderStatus("⏳ Creating order(s) and sending M-Pesa prompt...");
 
     try {
       const groupedItems = groupByShop(cart);
+      const createdOrders = [];
 
-      // 1. Create Orders & Trigger STK Push per Shop
       for (const [shopId, items] of Object.entries(groupedItems)) {
         const total = items.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
         
@@ -91,120 +112,83 @@ function Cart() {
             name: item.name,
           })),
           total,
-          payment: {
-            method: "mpesa",
-            payerPhone: phone,
-          },
+          payment: { method: "mpesa", payerPhone: phone },
         };
 
-        // Step A: Save Order to DB
         const orderRes = await axios.post(`${API_URL}/api/orders`, orderPayload);
         const createdOrder = orderRes.data;
+        createdOrders.push(createdOrder);
 
-        // Step B: Trigger STK Push for this order
         await axios.post(`${API_URL}/api/payments/stk/initiate`, {
-          orderId: createdOrder._id || createdOrder.order?._id,
+          orderId: createdOrder._id,
           buyerPhone: phone,
         });
       }
 
-      setOrderStatus("📲 M-Pesa STK push sent! Please enter your PIN on your phone.");
-
-      // Clear cart storage after successfully triggering STK push
-      localStorage.removeItem(`cart_${userId}`);
-      setCart([]);
+      setOrderStatus("📲 STK push sent! Please enter your M-Pesa PIN on your phone...");
+      pollOrderStatus(createdOrders);
     } catch (err) {
       console.error(err);
-      setOrderStatus("❌ Order placement or M-Pesa initiation failed. Please try again.");
-    } finally {
+      setOrderStatus("❌ Failed to initiate payment.");
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <style>
-        {`
-          .cart-page { min-height: 100vh; background: #f5f7fb; padding: 40px 20px; }
-          .cart-title { font-size: 34px; font-weight: bold; margin-bottom: 30px; color: #111827; }
-          .cart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
-          .cart-card { background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,0.08); transition: 0.3s; }
-          .cart-card:hover { transform: translateY(-6px); }
-          .cart-image { width: 100%; height: 240px; object-fit: cover; }
-          .cart-content { padding: 20px; }
-          .cart-content h4 { margin-bottom: 15px; font-size: 24px; color: #111; }
-          .cart-content p { margin-bottom: 10px; color: #555; font-size: 15px; }
-          .subtotal { font-weight: bold; color: #0d6efd; }
-          .remove-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: #dc3545; color: white; font-weight: bold; cursor: pointer; margin-top: 15px; }
-          .remove-btn:hover { background: #bb2d3b; }
-          .summary-box { margin-top: 40px; background: white; padding: 25px; border-radius: 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); }
-          .phone-input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 20px; }
-          .checkout-btn { width: 100%; padding: 14px; border: none; border-radius: 10px; background: #198754; color: white; font-weight: bold; cursor: pointer; }
-          .checkout-btn:disabled { background: #6c757d; cursor: not-allowed; }
-          .checkout-btn:hover:not(:disabled) { background: #157347; }
-          .order-status { margin-top: 20px; padding: 15px; border-radius: 10px; background: #eef6ff; color: #0d6efd; font-weight: 500; }
-          .empty-cart { background: white; padding: 40px; border-radius: 18px; text-align: center; }
-        `}
-      </style>
+    <div style={{ minHeight: "100vh", background: "#f5f7fb", padding: "40px 20px" }}>
+      <h2 style={{ fontSize: "34px", fontWeight: "bold", marginBottom: "30px" }}>🛒 My Cart</h2>
 
-      <div className="cart-page">
-        <h2 className="cart-title">🛒 My Cart</h2>
-
-        {cart.length === 0 ? (
-          <div className="empty-cart">Your cart is empty</div>
-        ) : (
-          <>
-            <div className="cart-grid">
-              {cart.map((item, idx) => (
-                <div className="cart-card" key={idx}>
-                  <img
-                    src={getProductImage(item)}
-                    alt={item.name}
-                    className="cart-image"
-                  />
-                  <div className="cart-content">
-                    <h4>{item.name}</h4>
-                    <p><strong>Price:</strong> {item.price} KES</p>
-                    <p><strong>Quantity:</strong> {item.quantity || 1}</p>
-                    <p className="subtotal">Subtotal: {item.price * (item.quantity || 1)} KES</p>
-                    <button
-                      className="remove-btn"
-                      onClick={() => handleRemoveItem(idx)}
-                    >
-                      🗑 Remove
-                    </button>
-                  </div>
+      {cart.length === 0 ? (
+        <div style={{ background: "white", padding: "40px", borderRadius: "18px", textAlign: "center" }}>
+          Your cart is empty
+        </div>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "25px" }}>
+            {cart.map((item, idx) => (
+              <div key={idx} style={{ background: "white", borderRadius: "18px", overflow: "hidden", boxShadow: "0 4px 18px rgba(0,0,0,0.08)" }}>
+                <img src={getProductImage(item)} alt={item.name} style={{ width: "100%", height: "240px", objectFit: "cover" }} />
+                <div style={{ padding: "20px" }}>
+                  <h4>{item.name}</h4>
+                  <p><strong>Price:</strong> {item.price} KES</p>
+                  <p><strong>Quantity:</strong> {item.quantity || 1}</p>
+                  <p style={{ fontWeight: "bold", color: "#0d6efd" }}>Subtotal: {item.price * (item.quantity || 1)} KES</p>
+                  <button onClick={() => handleRemoveItem(idx)} style={{ width: "100%", padding: "12px", borderRadius: "10px", background: "#dc3545", color: "white", border: "none", cursor: "pointer", marginTop: "15px" }}>
+                    🗑 Remove
+                  </button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            <div className="summary-box">
-              <h3>Total: {getTotal()} KES</h3>
+          <div style={{ marginTop: "40px", background: "white", padding: "25px", borderRadius: "18px", boxShadow: "0 4px 18px rgba(0,0,0,0.08)" }}>
+            <h3>Total: {getTotal()} KES</h3>
 
-              <input
-                type="text"
-                placeholder="Enter M-Pesa Number (e.g. 0712345678)"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="phone-input"
-              />
+            <input
+              type="text"
+              placeholder="Enter M-Pesa Phone (e.g. 0712345678)"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "1px solid #ccc", marginBottom: "20px" }}
+            />
 
-              <button
-                className="checkout-btn"
-                onClick={handlePlaceOrder}
-                disabled={loading}
-              >
-                {loading ? "Processing..." : "✅ Place Order & Pay via M-Pesa"}
-              </button>
+            <button
+              onClick={handlePlaceOrder}
+              disabled={loading}
+              style={{ width: "100%", padding: "14px", border: "none", borderRadius: "10px", background: loading ? "#6c757d" : "#198754", color: "white", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}
+            >
+              {loading ? "Processing Payment..." : "✅ Place Order & Pay via M-Pesa"}
+            </button>
 
-              {orderStatus && (
-                <div className="order-status">{orderStatus}</div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </>
+            {orderStatus && (
+              <div style={{ marginTop: "20px", padding: "15px", borderRadius: "10px", background: "#eef6ff", color: "#0d6efd", fontWeight: "500" }}>
+                {orderStatus}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
