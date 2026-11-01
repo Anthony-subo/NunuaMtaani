@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
 // ✅ GET /api/orders - fetch all orders (admin use)
 router.get('/', async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const orders = await Order.find({ sellerShop: shop_id }).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     console.error('Error fetching all orders:', err);
