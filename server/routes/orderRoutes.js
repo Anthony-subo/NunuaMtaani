@@ -29,15 +29,18 @@ router.get('/', async (req, res) => {
 // ✅ GET /api/orders/seller/:shop_id - seller-specific orders
 router.get('/seller/:shop_id', async (req, res) => {
   const { shop_id } = req.params;
+
   console.log("📦 Fetching orders for shop:", shop_id);
 
   try {
-    const orders = await Order.find({ shop_id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ sellerShop: shop_id }).sort({ createdAt: -1 });
+
     console.log("Found orders:", orders.length);
+
     res.json(orders);
   } catch (err) {
-    console.error('Error fetching seller orders:', err);
-    res.status(500).json({ message: 'Failed to fetch seller orders.' });
+    console.error("Error fetching seller orders:", err);
+    res.status(500).json({ message: "Failed to fetch seller orders." });
   }
 });
 
