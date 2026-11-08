@@ -53,6 +53,7 @@ function Cart() {
     return grouped;
   };
 
+  // Poll status for the created orders until payment is confirmed
   const pollOrderStatus = (createdOrders) => {
     let attempts = 0;
     const maxAttempts = 15; // Poll for ~30 seconds
@@ -61,11 +62,11 @@ function Cart() {
       attempts++;
       try {
         const statuses = await Promise.all(
-          createdOrders.map(order => axios.get(`${API_URL}/api/orders/${order._id}/status`))
+          createdOrders.map((order) => axios.get(`${API_URL}/api/orders/${order._id}/status`))
         );
 
-        const allPaid = statuses.every(res => res.data.status === 'paid');
-        const anyFailed = statuses.some(res => res.data.status === 'failed');
+        const allPaid = statuses.every((res) => res.data.status === "paid");
+        const anyFailed = statuses.some((res) => res.data.status === "failed");
 
         if (allPaid) {
           clearInterval(interval);
@@ -92,16 +93,30 @@ function Cart() {
     if (!userId) return alert("Please log in first.");
     if (!phone) return alert("Please enter your M-Pesa phone number.");
 
+    // 1. Standardize phone number format for Daraja API (07... or 01... -> 254...)
+    let formattedPhone = phone.trim();
+    if (formattedPhone.startsWith("0")) {
+      formattedPhone = "254" + formattedPhone.slice(1);
+    } else if (formattedPhone.startsWith("+")) {
+      formattedPhone = formattedPhone.slice(1);
+    }
+
+    // Validate 254 format length
+    if (!/^254(7|1)\d{8}$/.test(formattedPhone)) {
+      return alert("Please enter a valid M-Pesa phone number (e.g. 0712345678 or 0112345678).");
+    }
+
     setLoading(true);
-    setOrderStatus("⏳ Creating order(s) and sending M-Pesa prompt...");
+    setOrderStatus("⏳ Saving your order to database...");
 
     try {
       const groupedItems = groupByShop(cart);
       const createdOrders = [];
 
+      // STEP 1: Save data to MongoDB FIRST before triggering payment
       for (const [shopId, items] of Object.entries(groupedItems)) {
         const total = items.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
-        
+
         const orderPayload = {
           user_id: userId,
           sellerShop: shopId,
@@ -112,24 +127,32 @@ function Cart() {
             name: item.name,
           })),
           total,
-          payment: { method: "mpesa", payerPhone: phone },
+          payment: { method: "mpesa", payerPhone: formattedPhone, status: "pending" },
+          status: "pending"
         };
 
         const orderRes = await axios.post(`${API_URL}/api/orders`, orderPayload);
-        const createdOrder = orderRes.data;
-        createdOrders.push(createdOrder);
+        createdOrders.push(orderRes.data); // This contains the MongoDB _id
+      }
 
+      setOrderStatus("📲 Order saved! Sending M-Pesa prompt to your phone...");
+
+      // STEP 2: Trigger the payment STK push for each saved order
+      for (const createdOrder of createdOrders) {
         await axios.post(`${API_URL}/api/payments/stk/initiate`, {
           orderId: createdOrder._id,
-          buyerPhone: phone,
+          buyerPhone: formattedPhone,
         });
       }
 
-      setOrderStatus("📲 STK push sent! Please enter your M-Pesa PIN on your phone...");
+      setOrderStatus("📲 STK push sent! Please enter your M-Pesa PIN...");
+      
+      // STEP 3: Start checking if the payment was successful
       pollOrderStatus(createdOrders);
+
     } catch (err) {
       console.error(err);
-      setOrderStatus("❌ Failed to initiate payment.");
+      setOrderStatus("❌ Failed to process order or payment.");
       setLoading(false);
     }
   };
@@ -177,7 +200,7 @@ function Cart() {
               disabled={loading}
               style={{ width: "100%", padding: "14px", border: "none", borderRadius: "10px", background: loading ? "#6c757d" : "#198754", color: "white", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}
             >
-              {loading ? "Processing Payment..." : "✅ Place Order & Pay via M-Pesa"}
+              {loading ? "Processing..." : "✅ Place Order & Pay via M-Pesa"}
             </button>
 
             {orderStatus && (

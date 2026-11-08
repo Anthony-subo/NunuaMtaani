@@ -15,10 +15,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ✅ GET /api/orders - fetch all orders (admin use)
+// ✅ GET /api/orders - fetch all orders (Admin use)
 router.get('/', async (req, res) => {
   try {
-    const orders = await Order.find({ sellerShop: shop_id }).sort({ createdAt: -1 });
+    // Fixed: removed undefined 'shop_id' to fetch all orders safely
+    const orders = await Order.find({}).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     console.error('Error fetching all orders:', err);
@@ -55,6 +56,17 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
+// ✅ GET /api/orders/:id/status - Check order & payment status (Used by frontend polling)
+router.get('/:id/status', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).select('status payment');
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json({ status: order.status, payment: order.payment });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch status' });
+  }
+});
+
 // ✅ PUT /api/orders/:id/status - update order status
 router.put('/:id/status', async (req, res) => {
   const { status } = req.body;
@@ -82,7 +94,6 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
-
 // ✅ Assign rider to order
 router.put('/:id/assign-rider', async (req, res) => {
   try {
@@ -90,7 +101,7 @@ router.put('/:id/assign-rider', async (req, res) => {
 
     if (!riderId) return res.status(400).json({ message: 'Rider ID required' });
 
-    const code = crypto.randomBytes(3).toString('hex'); // short 6-digit code
+    const code = crypto.randomBytes(3).toString('hex'); // short code
 
     const order = await Order.findByIdAndUpdate(
       req.params.id,
@@ -107,16 +118,6 @@ router.put('/:id/assign-rider', async (req, res) => {
   } catch (err) {
     console.error('Error assigning rider:', err);
     res.status(500).json({ message: 'Failed to assign rider.' });
-  }
-});
-
-router.get('/:id/status', async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id).select('status payment');
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    res.json({ status: order.status, payment: order.payment });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch status' });
   }
 });
 
