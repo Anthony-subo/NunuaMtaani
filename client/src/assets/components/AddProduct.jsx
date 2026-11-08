@@ -15,6 +15,7 @@ function AddProduct() {
 
   const [imageFiles, setImageFiles] = useState([null, null, null, null]);
   const [imagePreviews, setImagePreviews] = useState(['', '', '', '']);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [shopName, setShopName] = useState('');
@@ -49,7 +50,19 @@ function AddProduct() {
       const updatedPreviews = [...imagePreviews];
       updatedPreviews[index] = previewUrl;
       setImagePreviews(updatedPreviews);
+      setActivePreviewIndex(index);
     }
+  };
+
+  const removeImage = (index, e) => {
+    e.stopPropagation();
+    const updatedFiles = [...imageFiles];
+    updatedFiles[index] = null;
+    setImageFiles(updatedFiles);
+
+    const updatedPreviews = [...imagePreviews];
+    updatedPreviews[index] = '';
+    setImagePreviews(updatedPreviews);
   };
 
   const handleSubmit = async (e) => {
@@ -58,7 +71,7 @@ function AddProduct() {
 
     const selectedImages = imageFiles.filter(file => file !== null);
     if (selectedImages.length === 0) {
-      setMessage('❌ Please upload at least 1 image of your product.');
+      setMessage('❌ Please upload at least 1 image.');
       return;
     }
 
@@ -75,7 +88,7 @@ function AddProduct() {
       });
 
       if (res.data.status === 'success' || res.status === 201 || res.status === 200) {
-        setMessage('✅ Product published successfully!');
+        setMessage('🎉 Product published to marketplace!');
         setForm({
           shop_id: form.shop_id,
           name: '',
@@ -95,138 +108,216 @@ function AddProduct() {
     }
   };
 
+  // Find primary image for live card preview
+  const activeImage = imagePreviews.find(img => img !== '') || 'https://via.placeholder.com/400x300?text=Upload+Product+Photo';
+
   return (
-    <div className="container py-5" style={{ maxWidth: '750px' }}>
-      <div className="add-product-card shadow-lg p-4 bg-white rounded-4 border-0">
+    <div style={{ background: '#f4f6f9', minHeight: '100vh', padding: '40px 20px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         
-        {/* Banner Section */}
-        <div className="text-center mb-4 pb-3 border-bottom">
-          <span className="fs-1">📦</span>
-          <h3 className="fw-bold mt-2">Add New Product</h3>
-          <p className="text-muted mb-0">
-            Listing for: <strong className="text-primary">{shopName || 'Your Shop'}</strong>
+        {/* Header Title */}
+        <div style={{ marginBottom: '30px' }}>
+          <h2 style={{ fontWeight: '800', color: '#1a1d20', marginBottom: '6px' }}>✨ Create Marketplace Listing</h2>
+          <p style={{ color: '#6c757d' }}>
+            Publishing as: <strong style={{ color: '#0d6efd' }}>{shopName || 'Your Shop'}</strong>
           </p>
         </div>
 
-        {/* Alert Message */}
         {message && (
-          <div className={`alert ${message.includes('✅') ? 'alert-success' : 'alert-danger'} text-center py-2`} role="alert">
+          <div style={{
+            padding: '14px',
+            borderRadius: '12px',
+            marginBottom: '25px',
+            background: message.includes('🎉') ? '#d1e7dd' : '#f8d7da',
+            color: message.includes('🎉') ? '#0f5132' : '#842029',
+            fontWeight: '600'
+          }}>
             {message}
           </div>
         )}
 
-        <form className="add-product-form" onSubmit={handleSubmit} encType="multipart/form-data">
+        {/* Split Panel Layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '30px' }}>
           
-          {/* Product Name */}
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Product Name</label>
-            <input 
-              type="text" 
-              name="name" 
-              className="form-control form-control-lg" 
-              placeholder="e.g. Wireless Bluetooth Earbuds" 
-              value={form.name} 
-              onChange={handleChange} 
-              required 
-            />
-          </div>
+          {/* LEFT PANEL: Form Inputs */}
+          <div style={{ background: '#ffffff', padding: '30px', borderRadius: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+            <form onSubmit={handleSubmit}>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px', color: '#333' }}>Product Title</label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="e.g. Nike Air Max 270"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e0e0e0', outline: 'none' }}
+                />
+              </div>
 
-          {/* Price & Location Row */}
-          <div className="row">
-            <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">Price (KES)</label>
-              <input 
-                type="number" 
-                name="price" 
-                className="form-control" 
-                placeholder="e.g. 1500" 
-                value={form.price} 
-                onChange={handleChange} 
-                required 
-              />
-            </div>
-            <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">Location / Pickup Point</label>
-              <input 
-                type="text" 
-                name="location" 
-                className="form-control" 
-                placeholder="e.g. Nairobi CBD" 
-                value={form.location} 
-                onChange={handleChange} 
-                required 
-              />
-            </div>
-          </div>
-
-          {/* Status Selection */}
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Initial Status</label>
-            <select name="status" className="form-select" value={form.status} onChange={handleChange}>
-              <option value="available">Available (In Stock)</option>
-              <option value="sold">Sold Out</option>
-            </select>
-          </div>
-
-          {/* Image Upload Grid with Thumbnails */}
-          <div className="mb-4">
-            <label className="form-label fw-semibold d-block">
-              Product Images <span className="text-muted small">(At least 1 required, up to 4)</span>
-            </label>
-            <div className="row g-3">
-              {[0, 1, 2, 3].map(i => (
-                <div key={i} className="col-6 col-md-3">
-                  <div className="border rounded-3 p-2 text-center position-relative bg-light" style={{ height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-                    {imagePreviews[i] ? (
-                      <img 
-                        src={imagePreviews[i]} 
-                        alt="Preview" 
-                        className="w-100 h-100 position-absolute top-0 start-0 object-fit-cover rounded-3" 
-                      />
-                    ) : (
-                      <label role="button" className="w-100 h-100 d-flex flex-column justify-content-center align-items-center text-muted" style={{ cursor: 'pointer' }}>
-                        <span className="fs-4">📷</span>
-                        <span className="small mt-1">Slot {i + 1}</span>
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          className="d-none" 
-                          onChange={(e) => handleImageChange(i, e.target.files[0])} 
-                        />
-                      </label>
-                    )}
-                    {imagePreviews[i] && (
-                      <button 
-                        type="button" 
-                        className="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle p-1 lh-1"
-                        style={{ width: '24px', height: '24px', fontSize: '10px', zIndex: 5 }}
-                        onClick={() => {
-                          const newFiles = [...imageFiles];
-                          newFiles[i] = null;
-                          setImageFiles(newFiles);
-                          const newPreviews = [...imagePreviews];
-                          newPreviews[i] = '';
-                          setImagePreviews(newPreviews);
-                        }}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px', color: '#333' }}>Price (KES)</label>
+                  <input
+                    type="number"
+                    name="price"
+                    placeholder="e.g. 3500"
+                    value={form.price}
+                    onChange={handleChange}
+                    required
+                    style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e0e0e0', outline: 'none' }}
+                  />
                 </div>
-              ))}
+                <div>
+                  <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px', color: '#333' }}>Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    placeholder="e.g. Roysambu"
+                    value={form.location}
+                    onChange={handleChange}
+                    required
+                    style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e0e0e0', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px', color: '#333' }}>Inventory Status</label>
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e0e0e0', background: '#fff' }}
+                >
+                  <option value="available">🟢 Available in Stock</option>
+                  <option value="sold">🔴 Sold Out</option>
+                </select>
+              </div>
+
+              {/* Photo Upload Slots */}
+              <div style={{ marginBottom: '25px' }}>
+                <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px', color: '#333' }}>Upload Photos (1-4)</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                  {[0, 1, 2, 3].map(i => (
+                    <div
+                      key={i}
+                      style={{
+                        position: 'relative',
+                        height: '75px',
+                        borderRadius: '10px',
+                        border: '2px dashed #d0d7de',
+                        background: '#f8f9fa',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {imagePreviews[i] ? (
+                        <>
+                          <img src={imagePreviews[i]} alt="slot" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button
+                            type="button"
+                            onClick={(e) => removeImage(i, e)}
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              right: '4px',
+                              background: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </>
+                      ) : (
+                        <label style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <span style={{ fontSize: '18px' }}>📷</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(e) => handleImageChange(i, e.target.files[0])}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: '12px',
+                  background: loading ? '#6c757d' : '#198754',
+                  color: '#ffffff',
+                  fontWeight: '700',
+                  border: 'none',
+                  fontSize: '16px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 14px rgba(25, 135, 84, 0.3)'
+                }}
+              >
+                {loading ? 'Publishing Product...' : '🚀 Publish Product'}
+              </button>
+
+            </form>
+          </div>
+
+          {/* RIGHT PANEL: Live Marketplace Buyer Preview */}
+          <div>
+            <div style={{ position: 'sticky', top: '20px' }}>
+              <h5 style={{ fontWeight: '700', color: '#6c757d', marginBottom: '15px' }}>👁️ Customer Preview</h5>
+              <div style={{ background: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 8px 25px rgba(0,0,0,0.08)', border: '1px solid #eee' }}>
+                
+                {/* Shop Badge */}
+                <div style={{ padding: '12px 18px', background: '#f8f9fa', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: '700', fontSize: '14px', color: '#333' }}>{shopName || 'Shop Name'}</span>
+                  <span style={{ fontSize: '12px', background: '#e1f5fe', color: '#0288d1', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>Verified</span>
+                </div>
+
+                {/* Main Product Image */}
+                <div style={{ height: '240px', background: '#f0f0f0', position: 'relative' }}>
+                  <img src={activeImage} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {form.status === 'sold' && (
+                    <span style={{ position: 'absolute', top: '10px', right: '10px', background: '#dc3545', color: 'white', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+                      SOLD OUT
+                    </span>
+                  )}
+                </div>
+
+                {/* Product Info */}
+                <div style={{ padding: '20px' }}>
+                  <h4 style={{ fontWeight: '700', margin: '0 0 8px 0', fontSize: '18px' }}>{form.name || 'Your Product Title'}</h4>
+                  <p style={{ margin: '0 0 10px 0', color: '#6c757d', fontSize: '13px' }}>📍 {form.location || 'Location'}</p>
+                  <h3 style={{ color: '#0d6efd', fontWeight: '800', margin: '0 0 15px 0' }}>{form.price ? `${form.price} KES` : '0 KES'}</h3>
+                  
+                  <button style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#f0f2f5', color: '#333', border: '1px solid #ccc', fontWeight: '600', cursor: 'not-allowed' }}>
+                    🛒 Add to Cart (Preview)
+                  </button>
+                </div>
+
+              </div>
             </div>
           </div>
 
-          {/* Submit Button */}
-          <button 
-            type="submit" 
-            className="btn btn-success btn-lg w-100 py-3 fw-bold shadow-sm"
-            disabled={loading}
-          >
-            {loading ? '⏳ Publishing Product...' : '🚀 Publish Product'}
-          </button>
-        </form>
+        </div>
 
       </div>
     </div>
