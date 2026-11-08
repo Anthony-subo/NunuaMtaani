@@ -20,6 +20,7 @@ function MyPurchases() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user._id) {
       setLoading(false);
+      setError("Please log in to view your purchases.");
       return;
     }
 
@@ -52,7 +53,7 @@ function MyPurchases() {
 
   // Cancel order
   const handleCancelOrder = async (orderId) => {
-    if (!window.confirm("Cancel this order?")) return;
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
 
     setCancelingId(orderId);
     try {
@@ -90,9 +91,8 @@ function MyPurchases() {
         orderId: selectedOrder._id,
         riderId: selectedRider,
         userId: user._id,
-        shopId: selectedOrder.shop_id,
+        shopId: selectedOrder.sellerShop || selectedOrder.shop_id,
 
-        // Dummy values for now
         startLocation: { lat: 0, lng: 0 },
         endLocation: { lat: 0, lng: 0 },
         distanceKm: 1,
@@ -103,109 +103,137 @@ function MyPurchases() {
       setOrders((prev) =>
         prev.map((order) =>
           order._id === selectedOrder._id
-            ? { ...order, status: "assigned", assignedRider: selectedRider }
+            ? { ...order, status: "deliver", assignedRider: selectedRider }
             : order
         )
       );
 
       setShowModal(false);
       setSelectedRider("");
-      alert("Rider assigned and trip created!");
+      alert("Rider assigned and delivery started!");
     } catch (err) {
       console.error(err);
       alert("Failed to assign rider");
     }
   };
 
-  if (loading) return <div className="orders-container">Loading...</div>;
-  if (error) return <div className="orders-container text-danger">{error}</div>;
+  // Badge mapping for status lookups
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "pending": return "bg-warning text-dark";
+      case "deliver": return "bg-info text-dark";
+      case "completed": return "bg-success";
+      case "cancelled": return "bg-danger";
+      default: return "bg-secondary";
+    }
+  };
+
+  if (loading) return <div className="text-center py-5">Loading your purchases...</div>;
+  if (error) return <div className="container text-center py-5 text-danger">{error}</div>;
 
   return (
-    <div className="orders-container">
-      <h3 className="orders-title">🧾 My Purchases</h3>
+    <div className="container py-4" style={{ maxWidth: "900px" }}>
+      
+      {/* Header section */}
+      <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+          <h2 className="fw-bold mb-1">🧾 My Purchases</h2>
+          <p className="text-muted mb-0">Track your active orders and delivery statuses.</p>
+        </div>
+        <div className="bg-white p-3 rounded shadow-sm">
+          <span className="text-muted small d-block">Total Orders</span>
+          <strong className="fs-5">{orders.length}</strong>
+        </div>
+      </div>
 
       {orders.length > 0 ? (
-        <ul className="list-unstyled">
+        <div className="d-flex flex-column gap-3">
           {orders.map((order) => (
-            <li key={order._id} className="order-card">
-              <div className="order-header">Order #{order._id.slice(-6)}</div>
-
-              <div className="order-meta">
-                📅 Placed on:{" "}
-                {order.createdAt
-                  ? new Date(order.createdAt).toLocaleDateString("en-KE", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })
-                  : "N/A"}
+            <div key={order._id} className="bg-white p-4 rounded-4 shadow-sm border">
+              
+              {/* Order Meta Header */}
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 flex-wrap gap-2">
+                <div>
+                  <span className="fw-bold text-primary">Order #{order._id.slice(-6).toUpperCase()}</span>
+                  <span className="text-muted ms-3 small">
+                    📅 {order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-KE", { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
+                  </span>
+                </div>
+                <div className="d-flex gap-2">
+                  <span className={`badge px-3 py-2 text-uppercase ${getStatusBadge(order.status)}`}>
+                    {order.status || "unknown"}
+                  </span>
+                  {order.payment?.status && (
+                    <span className={`badge px-3 py-2 ${order.payment.status === 'paid' ? 'bg-success' : 'bg-warning text-dark'}`}>
+                      Payment: {order.payment.status}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <ul className="order-items">
-                {(order.items || []).map((item, index) => (
-                  <li key={index} className="order-item">
-                    {item.name} × {item.quantity} —{" "}
-                    <strong>KES {item.price * item.quantity}</strong>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="order-total">
-                Total: <strong>KES {order.total || 0}</strong>
+              {/* Order Items */}
+              <div className="mb-3">
+                <ul className="list-unstyled mb-0">
+                  {(order.items || []).map((item, index) => (
+                    <li key={index} className="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
+                      <span>
+                        🛒 <strong>{item.name}</strong> <span className="text-muted">× {item.quantity}</span>
+                      </span>
+                      <span className="fw-semibold">KES {item.price * item.quantity}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <div className="order-status mb-2">
-                Status:{" "}
-                <span
-                  className={`badge ${
-                    order.status === "pending"
-                      ? "bg-warning text-dark"
-                      : order.status === "assigned"
-                      ? "bg-info text-dark"
-                      : order.status === "cancelled"
-                      ? "bg-danger"
-                      : order.status === "completed"
-                      ? "bg-success"
-                      : "bg-secondary"
-                  }`}
-                >
-                  {order.status || "unknown"}
-                </span>
+              {/* Total & Action Buttons */}
+              <div className="d-flex justify-content-between align-items-center pt-2 flex-wrap gap-3">
+                <div className="fs-6">
+                  Grand Total: <strong className="text-success fs-5">KES {order.total || 0}</strong>
+                </div>
+
+                <div className="d-flex gap-2">
+                  {order.status === "pending" && (
+                    <>
+                      <button
+                        className="btn btn-sm btn-outline-danger px-3"
+                        disabled={cancelingId === order._id}
+                        onClick={() => handleCancelOrder(order._id)}
+                      >
+                        {cancelingId === order._id ? "Cancelling..." : "Cancel Order"}
+                      </button>
+
+                      <button
+                        className="btn btn-sm btn-primary px-3"
+                        onClick={() => openRiderSelector(order)}
+                      >
+                        🚚 Request Rider
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
-              {order.status === "pending" && (
-                <>
-                  <button
-                    className="btn btn-sm btn-outline-danger me-2"
-                    disabled={cancelingId === order._id}
-                    onClick={() => handleCancelOrder(order._id)}
-                  >
-                    {cancelingId === order._id ? "Cancelling..." : "Cancel Order"}
-                  </button>
-
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={() => openRiderSelector(order)}
-                  >
-                    Add Rider
-                  </button>
-                </>
-              )}
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
-        <p>No purchases yet.</p>
+        <div className="text-center py-5 bg-white rounded-4 shadow-sm">
+          <p className="text-muted mb-0">You haven't made any purchases yet.</p>
+        </div>
       )}
 
-      {/* Rider selection modal */}
+      {/* Rider Selection Modal Overlay */}
       {showModal && (
-        <div className="modal-backdrop">
-          <div className="modal-box">
-            <h4>Select Rider</h4>
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+          background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1050
+        }}>
+          <div className="bg-white p-4 rounded-4 shadow-lg" style={{ width: "400px", maxWidth: "90%" }}>
+            <h4 className="fw-bold mb-3">🚚 Select Delivery Rider</h4>
+            <p className="text-muted small mb-3">Choose an available rider to deliver your items.</p>
 
             <select
-              className="form-select mb-3"
+              className="form-select form-select-lg mb-4"
               value={selectedRider}
               onChange={(e) => setSelectedRider(e.target.value)}
             >
@@ -217,15 +245,18 @@ function MyPurchases() {
               ))}
             </select>
 
-            <button className="btn btn-success me-2" onClick={assignRider}>
-              Assign Rider
-            </button>
-            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
-              Close
-            </button>
+            <div className="d-flex gap-2">
+              <button className="btn btn-success flex-grow-1 py-2 fw-bold" onClick={assignRider}>
+                Confirm & Assign
+              </button>
+              <button className="btn btn-light px-4 py-2" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
