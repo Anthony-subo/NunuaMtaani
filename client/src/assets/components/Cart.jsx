@@ -25,34 +25,41 @@ function Cart() {
       .catch((err) => console.log("Products error:", err));
   }, []);
 
-  // 🔧 FIXED: Robust image lookup supporting multiple ID keys and direct properties
+  // 🔧 Robust image lookup supporting Base64, full URLs, and backend uploads safely
   const getProductImage = (item) => {
-    // 1. Check if the cart item itself already stores an image path
-    if (item.image) {
-      return item.image.startsWith("http") ? item.image : `${API_URL}/uploads/${item.image}`;
-    }
-    if (item.images && item.images.length > 0) {
-      return item.images[0].startsWith("http") ? item.images[0] : `${API_URL}/uploads/${item.images[0]}`;
-    }
+    const rawImage = item.image || (item.images && item.images.length > 0 ? item.images[0] : null);
 
-    // 2. Otherwise, find the product from the fetched products list using _id or product_id
-    const targetId = item._id || item.product_id;
-    const product = products.find((p) => p._id === targetId);
-
-    if (product?.images && product.images.length > 0) {
-      const imgPath = product.images[0];
-      return imgPath.startsWith("http") ? imgPath : `${API_URL}/uploads/${imgPath}`;
+    if (!rawImage) {
+      // Fallback to searching the loaded products list
+      const targetId = item._id || item.product_id;
+      const product = products.find((p) => p._id === targetId);
+      if (product?.images && product.images.length > 0) {
+        const prodImg = product.images[0];
+        if (prodImg.startsWith("data:image") || prodImg.startsWith("http")) return prodImg;
+        return `${API_URL}/uploads/${prodImg}`;
+      }
+      return "https://via.placeholder.com/400x300?text=No+Image";
     }
 
-    // 3. Fallback placeholder if nothing is found
-    return "https://via.placeholder.com/400x300?text=No+Image";
+    // If it's already a base64 string or full url, render directly
+    if (rawImage.startsWith("data:image") || rawImage.startsWith("http")) {
+      return rawImage;
+    }
+
+    return `${API_URL}/uploads/${rawImage}`;
   };
 
   const handleRemoveItem = (index) => {
     const updatedCart = [...cart];
     updatedCart.splice(index, 1);
     setCart(updatedCart);
-    if (userId) localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
+    if (userId) {
+      try {
+        localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
+      } catch (e) {
+        console.error("Storage error:", e);
+      }
+    }
   };
 
   const getTotal = () => {
@@ -69,7 +76,7 @@ function Cart() {
     return grouped;
   };
 
-  // Poll status for the created orders until payment is confirmed
+  // Poll status for created orders until payment is confirmed
   const pollOrderStatus = (createdOrders) => {
     let attempts = 0;
     const maxAttempts = 15; // Poll for ~30 seconds
@@ -141,7 +148,8 @@ function Cart() {
             quantity: item.quantity || 1,
             price: item.price,
             name: item.name,
-            image: item.image || (item.images ? item.images[0] : undefined)
+            // Avoid saving massive base64 strings into MongoDB arrays if possible
+            image: item.image && !item.image.startsWith("data:image") ? item.image : undefined
           })),
           total,
           payment: { method: "mpesa", payerPhone: formattedPhone, status: "pending" },
@@ -149,7 +157,7 @@ function Cart() {
         };
 
         const orderRes = await axios.post(`${API_URL}/api/orders`, orderPayload);
-        createdOrders.push(orderRes.data); // Contains the MongoDB _id
+        createdOrders.push(orderRes.data);
       }
 
       setOrderStatus("📲 Order saved! Sending M-Pesa prompt to your phone...");
@@ -164,11 +172,11 @@ function Cart() {
 
       setOrderStatus("📲 STK push sent! Please enter your M-Pesa PIN...");
       
-      // STEP 3: Start checking if the payment was successful
+      // STEP 3: Start polling order status
       pollOrderStatus(createdOrders);
 
     } catch (err) {
-      console.error(err);
+      console.error("Order placement error:", err);
       setOrderStatus("❌ Failed to process order or payment.");
       setLoading(false);
     }

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import ProductImageSlider from '../components/ProductImageSlider';
 import '../styles/allproduct.css';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function AllProducts() {
   const [products, setProducts] = useState([]);
   const [shops, setShops] = useState([]);
@@ -9,13 +11,13 @@ function AllProducts() {
 
   useEffect(() => {
     // Fetch products
-    fetch(`${import.meta.env.VITE_API_URL}/api/products`)
+    fetch(`${API_URL}/api/products`)
       .then(res => res.json())
       .then(data => setProducts(data))
       .catch(err => console.error('Failed to fetch products:', err));
 
     // Fetch shops
-    fetch(`${import.meta.env.VITE_API_URL}/api/shops`)
+    fetch(`${API_URL}/api/shops`)
       .then(res => res.json())
       .then(data => setShops(data))
       .catch(err => console.error('Failed to fetch shops:', err));
@@ -27,7 +29,16 @@ function AllProducts() {
     }
   }, []);
 
-  // ✅ Only update localStorage
+  // Helper to format image URLs safely for display & storage
+  const formatImage = (img) => {
+    if (!img) return null;
+    if (img.startsWith('data:image') || img.startsWith('http')) {
+      return img;
+    }
+    return `${API_URL}/uploads/${img}`;
+  };
+
+  // ✅ Add to Cart (Cleaned up to prevent QuotaExceededError)
   const addToCart = (product) => {
     if (!userId) {
       alert('Please log in to add to cart.');
@@ -43,10 +54,29 @@ function AllProducts() {
       return;
     }
 
-    const newCart = [...cart, { ...product, quantity: 1 }];
-    localStorage.setItem(cartKey, JSON.stringify(newCart));
+    // Extract only a lightweight image reference or first formatted image string
+    const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
+    const sanitizedImage = formatImage(firstImage);
 
-    alert(`${product.name} added to cart.`);
+    // Save lightweight properties to prevent localstorage quota crash
+    const cartItem = {
+      _id: product._id,
+      shop_id: product.shop_id || product.sellerShop,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: sanitizedImage // Store safe single string instead of massive raw arrays
+    };
+
+    const newCart = [...cart, cartItem];
+    
+    try {
+      localStorage.setItem(cartKey, JSON.stringify(newCart));
+      alert(`${product.name} added to cart.`);
+    } catch (e) {
+      console.error("Storage quota error:", e);
+      alert("Storage limit reached. Clear some cart items.");
+    }
   };
 
   // Find shop name
@@ -65,34 +95,42 @@ function AllProducts() {
         </div>
       ) : (
         <div className="row">
-          {products.map(p => (
-            <div key={p._id} className="col-md-4 mb-4">
-              <div className="card h-100 shadow-sm product-card">
-                <div className="card-header bg-light d-flex justify-content-between align-items-center">
-                  <span className="shop-name">{getShopName(p.shop_id)}</span>
-                  <span className="verified-check">✅</span>
-                </div>
+          {products.map(p => {
+            // Pre-format product images for the slider so they display cleanly
+            const formattedImages = p.images && p.images.length > 0
+              ? p.images.map(img => formatImage(img))
+              : ["https://via.placeholder.com/400x300?text=No+Image"];
 
-                <ProductImageSlider images={p.images} />
+            return (
+              <div key={p._id} className="col-md-4 mb-4">
+                <div className="card h-100 shadow-sm product-card">
+                  <div className="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span className="shop-name">{getShopName(p.shop_id)}</span>
+                    <span className="verified-check">✅</span>
+                  </div>
 
-                <div className="card-body">
-                  <h5 className="card-title">{p.name}</h5>
-                  <p className="card-text">
-                    <strong>Price:</strong> {p.price} KES<br />
-                    <strong>Status:</strong>{' '}
-                    <span className="badge bg-secondary">{p.status}</span>
-                  </p>
+                  {/* Pass formatted images to your slider */}
+                  <ProductImageSlider images={formattedImages} />
 
-                  <button
-                    className="btn btn-outline-primary w-100 mt-2"
-                    onClick={() => addToCart(p)}
-                  >
-                    🛒 Add to Cart
-                  </button>
+                  <div className="card-body">
+                    <h5 className="card-title">{p.name}</h5>
+                    <p className="card-text">
+                      <strong>Price:</strong> {p.price} KES<br />
+                      <strong>Status:</strong>{' '}
+                      <span className="badge bg-secondary">{p.status}</span>
+                    </p>
+
+                    <button
+                      className="btn btn-outline-primary w-100 mt-2"
+                      onClick={() => addToCart(p)}
+                    >
+                      🛒 Add to Cart
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
