@@ -86,3 +86,13 @@
 .update-btn:hover {
   background-color: #0056b3;
 }
+.orders-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+.order-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.order-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08) !important;
+}
