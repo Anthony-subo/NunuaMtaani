@@ -18,11 +18,12 @@ router.post('/', async (req, res) => {
 // ✅ GET /api/orders - fetch all orders (Admin use)
 router.get('/', async (req, res) => {
   try {
-    // Fixed: removed undefined 'shop_id' to fetch all orders safely
-    const orders = await Order.find({}).sort({ createdAt: -1 });
+    const orders = await Order.find({})
+      .populate('user_id', 'name email')
+      .populate('sellerShop', 'shop_name')
+      .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
-    console.error('Error fetching all orders:', err);
     res.status(500).json({ message: 'Failed to fetch orders.' });
   }
 });
@@ -120,5 +121,7 @@ router.put('/:id/assign-rider', async (req, res) => {
     res.status(500).json({ message: 'Failed to assign rider.' });
   }
 });
+
+
 
 module.exports = router;
