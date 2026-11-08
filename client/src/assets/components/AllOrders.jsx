@@ -1,20 +1,3 @@
-Here is the redesigned React component.
-
-### Key Improvements Made
-
-1. **Per-Order Loading & Feedback State**: Replaced the standard browser `alert()` with specific per-order updating states (`updatingMap`), preventing multi-click duplicate requests and giving real-time feedback on the button.
-2. **Search Input**: Added a live search field so you can quickly filter by Order ID, Buyer Name, or Shop Name alongside tab filtering.
-3. **Refined UI & Hierarchy**:
-* Improved badge colors and layout for better visual scanability.
-* Restructured Buyer/Vendor section with subtle modern background cards.
-* Cleaned up item formatting and item pricing breakdown.
-
-
-4. **Optimized Calculations**: Used `useMemo` for filtering, counts, and grand total calculations to avoid unnecessary recalculations during renders.
-
----
-
-```jsx
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import '../styles/orders.css';
@@ -364,5 +347,3 @@ function AllOrders() {
 }
 
 export default AllOrders;
-
-```
