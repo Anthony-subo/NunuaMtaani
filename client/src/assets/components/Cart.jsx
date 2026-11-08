@@ -1,24 +1,3 @@
-The reason the image isn't showing up comes down to how `getProductImage(item)` matches the item in your cart with the full product list fetched from `${API_URL}/api/products`.
-
-Look at this line inside `getProductImage`:
-
-```javascript
-const product = products.find((p) => p._id === item._id);
-
-```
-
-If your cart items store the product ID under `product_id` instead of `_id` (or if the naming convention in your cart object differs from what you use to find it), `products.find(...)` returns `undefined`, which forces it to fall back to the placeholder image. Also, sometimes items saved in localStorage already carry an `image` field directly on them.
-
-### The Fix
-
-Let's make `getProductImage` much safer and more flexible. It should check:
-
-1. If the cart item already has an `image` or `images` property saved directly on it.
-2. If it can find the product in your fetched `products` list using either `item._id` or `item.product_id`.
-
-Here is the updated, drop-in `Cart.jsx` file with the image resolution fixed:
-
-```jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -46,27 +25,11 @@ function Cart() {
       .catch((err) => console.log("Products error:", err));
   }, []);
 
-  // 🔧 FIXED: Robust image lookup supporting multiple ID keys and direct properties
   const getProductImage = (item) => {
-    // 1. Check if the cart item itself already stores an image path
-    if (item.image) {
-      return item.image.startsWith("http") ? item.image : `${API_URL}/uploads/${item.image}`;
-    }
-    if (item.images && item.images.length > 0) {
-      return item.images[0].startsWith("http") ? item.images[0] : `${API_URL}/uploads/${item.images[0]}`;
-    }
-
-    // 2. Otherwise, find the product from the fetched products list using _id or product_id
-    const targetId = item._id || item.product_id;
-    const product = products.find((p) => p._id === targetId);
-
-    if (product?.images && product.images.length > 0) {
-      const imgPath = product.images[0];
-      return imgPath.startsWith("http") ? imgPath : `${API_URL}/uploads/${imgPath}`;
-    }
-
-    // 3. Fallback placeholder if nothing is found
-    return "https://via.placeholder.com/400x300?text=No+Image";
+    const product = products.find((p) => p._id === item._id);
+    return product?.images?.[0]
+      ? `${API_URL}/uploads/${product.images[0]}`
+      : "https://via.placeholder.com/400x300?text=No+Image";
   };
 
   const handleRemoveItem = (index) => {
@@ -83,7 +46,7 @@ function Cart() {
   const groupByShop = (items) => {
     const grouped = {};
     items.forEach((item) => {
-      const shopId = item.shop_id || item.sellerShop;
+      const shopId = item.shop_id;
       if (!grouped[shopId]) grouped[shopId] = [];
       grouped[shopId].push(item);
     });
@@ -130,7 +93,7 @@ function Cart() {
     if (!userId) return alert("Please log in first.");
     if (!phone) return alert("Please enter your M-Pesa phone number.");
 
-    // Standardize phone number format for Daraja API (07... or 01... -> 254...)
+    // 1. Standardize phone number format for Daraja API (07... or 01... -> 254...)
     let formattedPhone = phone.trim();
     if (formattedPhone.startsWith("0")) {
       formattedPhone = "254" + formattedPhone.slice(1);
@@ -158,11 +121,10 @@ function Cart() {
           user_id: userId,
           sellerShop: shopId,
           items: items.map((item) => ({
-            product_id: item._id || item.product_id,
+            product_id: item._id,
             quantity: item.quantity || 1,
             price: item.price,
             name: item.name,
-            image: item.image || (item.images ? item.images[0] : undefined)
           })),
           total,
           payment: { method: "mpesa", payerPhone: formattedPhone, status: "pending" },
@@ -170,7 +132,7 @@ function Cart() {
         };
 
         const orderRes = await axios.post(`${API_URL}/api/orders`, orderPayload);
-        createdOrders.push(orderRes.data); // Contains the MongoDB _id
+        createdOrders.push(orderRes.data); // This contains the MongoDB _id
       }
 
       setOrderStatus("📲 Order saved! Sending M-Pesa prompt to your phone...");
