@@ -8,7 +8,7 @@ exports.createRider = async (req, res) => {
 
     const rider = new Rider({
       ...data,
-      rider_id: "RDR-" + uuidv4().slice(0, 8), // still keep friendly rider_id
+      rider_id: "RDR-" + uuidv4().slice(0, 8),
       earnings: { totalTrips: 0, totalKm: 0, totalPay: 0, pendingPay: 0 },
     });
 
@@ -79,6 +79,10 @@ exports.deleteRider = async (req, res) => {
 exports.getNearbyRiders = async (req, res) => {
   try {
     const { lng, lat } = req.query;
+    if (!lng || !lat) {
+      return res.status(400).json({ error: "Missing longitude or latitude query parameters" });
+    }
+
     const riders = await Rider.find({
       location: {
         $near: {
@@ -110,7 +114,6 @@ exports.getRiderTrips = (req, res) => {
 };
 
 // ✅ Update rider live GPS location
-// riderController.js
 exports.updateLocation = async (req, res) => {
   try {
     const { latitude, longitude, isAvailable } = req.body;
@@ -119,8 +122,13 @@ exports.updateLocation = async (req, res) => {
       return res.status(400).json({ error: "Missing latitude or longitude" });
     }
 
-    const rider = await Rider.findByIdAndUpdate(
-      req.params.id,
+    // Support lookup by MongoDB _id or friendly rider_id string
+    const query = req.params.id.startsWith("RDR-") 
+      ? { rider_id: req.params.id } 
+      : { _id: req.params.id };
+
+    const rider = await Rider.findOneAndUpdate(
+      query,
       {
         location: {
           type: "Point",
