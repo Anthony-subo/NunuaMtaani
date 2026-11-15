@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import DeliveryMap from "../components/DeliveryMap"; // Import your interactive map component
 import "../styles/orders.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -10,11 +11,9 @@ function MyPurchases() {
   const [error, setError] = useState("");
   const [cancelingId, setCancelingId] = useState(null);
 
-  // Rider modal states
+  // Rider map modal states
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [riders, setRiders] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [selectedRider, setSelectedRider] = useState("");
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -25,7 +24,6 @@ function MyPurchases() {
     }
 
     fetchOrders(user._id);
-    fetchRiders();
   }, []);
 
   // Fetch buyer's orders
@@ -38,16 +36,6 @@ function MyPurchases() {
       setError("Unable to load your purchases.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Fetch all riders
-  const fetchRiders = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/api/users/riders`);
-      setRiders(res.data || []);
-    } catch (err) {
-      console.error("Failed to fetch riders:", err);
     }
   };
 
@@ -73,48 +61,13 @@ function MyPurchases() {
     }
   };
 
-  // Open modal to assign rider
+  // Open map modal to select rider
   const openRiderSelector = (order) => {
     setSelectedOrder(order);
+    // Store current order and shop IDs in localStorage so DeliveryMap can pick them up
+    localStorage.setItem("currentOrderId", order._id);
+    localStorage.setItem("currentShopId", order.sellerShop || order.shop_id);
     setShowModal(true);
-  };
-
-  // Assign rider and create trip
-  const assignRider = async () => {
-    if (!selectedRider) return alert("Please select a rider.");
-
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return alert("User not found.");
-
-    try {
-      await axios.post(`${API_URL}/api/trips/start`, {
-        orderId: selectedOrder._id,
-        riderId: selectedRider,
-        userId: user._id,
-        shopId: selectedOrder.sellerShop || selectedOrder.shop_id,
-
-        startLocation: { lat: 0, lng: 0 },
-        endLocation: { lat: 0, lng: 0 },
-        distanceKm: 1,
-        fare: 100,
-      });
-
-      // Update order status locally
-      setOrders((prev) =>
-        prev.map((order) =>
-          order._id === selectedOrder._id
-            ? { ...order, status: "deliver", assignedRider: selectedRider }
-            : order
-        )
-      );
-
-      setShowModal(false);
-      setSelectedRider("");
-      alert("Rider assigned and delivery started!");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to assign rider");
-    }
   };
 
   // Badge mapping for status lookups
@@ -206,7 +159,7 @@ function MyPurchases() {
                         className="btn btn-sm btn-primary px-3"
                         onClick={() => openRiderSelector(order)}
                       >
-                        🚚 Request Rider
+                        🗺️ Pick Rider from Map
                       </button>
                     </>
                   )}
@@ -222,35 +175,27 @@ function MyPurchases() {
         </div>
       )}
 
-      {/* Rider Selection Modal Overlay */}
+      {/* Interactive Map Rider Selection Modal */}
       {showModal && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-          background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1050
+          background: "rgba(0,0,0,0.6)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1050, padding: "20px"
         }}>
-          <div className="bg-white p-4 rounded-4 shadow-lg" style={{ width: "400px", maxWidth: "90%" }}>
-            <h4 className="fw-bold mb-3">🚚 Select Delivery Rider</h4>
-            <p className="text-muted small mb-3">Choose an available rider to deliver your items.</p>
+          <div className="bg-white p-4 rounded-4 shadow-lg" style={{ width: "650px", maxWidth: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h4 className="fw-bold mb-0">📍 Select Nearby Rider for Order #{selectedOrder?._id.slice(-6).toUpperCase()}</h4>
+              <button className="btn-close" onClick={() => setShowModal(false)}></button>
+            </div>
+            <p className="text-muted small mb-3">Click on any rider marker on the map to view their details and request delivery.</p>
 
-            <select
-              className="form-select form-select-lg mb-4"
-              value={selectedRider}
-              onChange={(e) => setSelectedRider(e.target.value)}
-            >
-              <option value="">-- Choose Rider --</option>
-              {riders.map((r) => (
-                <option key={r._id} value={r._id}>
-                  {r.name} ({r.phone})
-                </option>
-              ))}
-            </select>
+            {/* Embedded Interactive Delivery Map */}
+            <div className="mb-4">
+              <DeliveryMap />
+            </div>
 
-            <div className="d-flex gap-2">
-              <button className="btn btn-success flex-grow-1 py-2 fw-bold" onClick={assignRider}>
-                Confirm & Assign
-              </button>
-              <button className="btn btn-light px-4 py-2" onClick={() => setShowModal(false)}>
-                Cancel
+            <div className="text-end">
+              <button className="btn btn-secondary px-4 py-2" onClick={() => setShowModal(false)}>
+                Close Map
               </button>
             </div>
           </div>
