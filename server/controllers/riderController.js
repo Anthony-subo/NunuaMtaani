@@ -78,7 +78,7 @@ exports.deleteRider = async (req, res) => {
 // Get nearby riders (within 5km)
 exports.getNearbyRiders = async (req, res) => {
   try {
-    const { lng, lat } = req.query;
+    const { lat, lng } = req.query; // ✅ Match query parameter names
     if (!lng || !lat) {
       return res.status(400).json({ error: "Missing longitude or latitude query parameters" });
     }
@@ -86,14 +86,15 @@ exports.getNearbyRiders = async (req, res) => {
     const riders = await Rider.find({
       location: {
         $near: {
-          $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: 5000,
+          $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] }, // [lng, lat]
+          $maxDistance: 5000, // 5km radius
         },
       },
       isAvailable: true,
     });
     res.json(riders);
   } catch (err) {
+    console.error("Error fetching nearby riders:", err);
     res.status(500).json({ error: err.message });
   }
 };
