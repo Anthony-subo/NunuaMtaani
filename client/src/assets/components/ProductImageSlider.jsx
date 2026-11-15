@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import '../styles/productSlider.css';
 
-function ProductImageSlider({ images, shopName }) {
+function ProductImageSlider({ images, shopName, productName, price, status, onAddToCart }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const touchStartX = useRef(null);
 
@@ -12,7 +12,7 @@ function ProductImageSlider({ images, shopName }) {
     return (
       <div
         className="d-flex align-items-center justify-content-center bg-light"
-        style={{ height: '220px', color: '#888', borderRadius: '12px' }}
+        style={{ height: '300px', color: '#888', borderRadius: '12px' }}
       >
         No image
       </div>
@@ -27,7 +27,6 @@ function ProductImageSlider({ images, shopName }) {
     setCurrentIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length);
   };
 
-  // ✅ Touch swipe handlers
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -56,7 +55,7 @@ function ProductImageSlider({ images, shopName }) {
         alt={`Product image ${currentIndex + 1}`}
       />
 
-      {/* Floating Shop Name Overlay */}
+      {/* Floating Shop Name Overlay (Top) */}
       {shopName && (
         <div className="slider-shop-overlay">
           <span className="shop-name-text">{shopName}</span>
@@ -76,6 +75,24 @@ function ProductImageSlider({ images, shopName }) {
           ))}
         </div>
       )}
+
+      {/* Floating Product Info Overlay (Bottom) */}
+      <div className="slider-product-overlay">
+        <div className="product-info-text">
+          <h6 className="slider-product-title">{productName}</h6>
+          <div className="slider-product-meta">
+            <span className="slider-price"><strong>{price} KES</strong></span>
+            <span className="badge bg-secondary slider-status">{status}</span>
+          </div>
+        </div>
+        <button
+          className="btn btn-light btn-sm slider-cart-btn shadow-sm"
+          onClick={onAddToCart}
+          title="Add to Cart"
+        >
+          🛒 Add
+        </button>
+      </div>
     </div>
   );
 }

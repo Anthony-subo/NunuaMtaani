@@ -18,7 +18,6 @@ function AllProducts() {
       return;
     }
 
-    // Fetch products and shops concurrently
     Promise.all([
       fetch(`${API_URL}/api/products`).then(res => {
         if (!res.ok) throw new Error(`Products API error: ${res.status}`);
@@ -40,7 +39,6 @@ function AllProducts() {
         setLoading(false);
       });
 
-    // Load logged-in user
     const storedUser = JSON.parse(localStorage.getItem('user'));
     if (storedUser && storedUser._id) {
       setUserId(storedUser._id);
@@ -129,28 +127,15 @@ function AllProducts() {
 
             return (
               <div key={p._id} className="col-md-4 mb-4">
-                <div className="card h-100 shadow-sm product-card border-0">
-                  {/* Floating Shop Name Slider Component */}
+                <div className="card h-100 shadow-sm product-card border-0 bg-transparent">
                   <ProductImageSlider 
                     images={formattedImages} 
                     shopName={getShopName(p.shop_id)} 
+                    productName={p.name}
+                    price={p.price}
+                    status={p.status}
+                    onAddToCart={() => addToCart(p)}
                   />
-
-                  <div className="card-body">
-                    <h5 className="card-title">{p.name}</h5>
-                    <p className="card-text">
-                      <strong>Price:</strong> {p.price} KES<br />
-                      <strong>Status:</strong>{' '}
-                      <span className="badge bg-secondary">{p.status}</span>
-                    </p>
-
-                    <button
-                      className="btn btn-outline-primary w-100 mt-2"
-                      onClick={() => addToCart(p)}
-                    >
-                      🛒 Add to Cart
-                    </button>
-                  </div>
                 </div>
               </div>
             );
