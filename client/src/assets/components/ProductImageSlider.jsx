@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import '../styles/productSlider.css';
 
-function ProductImageSlider({ images }) {
+function ProductImageSlider({ images, shopName }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const touchStartX = useRef(null);
 
@@ -12,7 +12,7 @@ function ProductImageSlider({ images }) {
     return (
       <div
         className="d-flex align-items-center justify-content-center bg-light"
-        style={{ height: '200px', color: '#888' }}
+        style={{ height: '220px', color: '#888', borderRadius: '12px' }}
       >
         No image
       </div>
@@ -56,11 +56,25 @@ function ProductImageSlider({ images }) {
         alt={`Product image ${currentIndex + 1}`}
       />
 
+      {/* Floating Shop Name Overlay */}
+      {shopName && (
+        <div className="slider-shop-overlay">
+          <span className="shop-name-text">{shopName}</span>
+          <span className="verified-badge">✅</span>
+        </div>
+      )}
+
+      {/* Instagram-style pagination dots */}
       {displayImages.length > 1 && (
-        <>
-          <button className="slider-btn left" onClick={prev}>‹</button>
-          <button className="slider-btn right" onClick={next}>›</button>
-        </>
+        <div className="slider-dots">
+          {displayImages.map((_, index) => (
+            <span
+              key={index}
+              className={`dot ${currentIndex === index ? 'active' : ''}`}
+              onClick={() => setCurrentIndex(index)}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

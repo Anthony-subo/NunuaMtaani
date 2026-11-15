@@ -15,24 +15,63 @@
   transition: transform 0.4s ease;
 }
 
-.slider-btn {
+/* Floating Shop Name Overlay Style */
+.slider-shop-overlay {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0,0,0,0.4);
-  border: none;
-  color: white;
-  font-size: 1.8rem;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
   padding: 6px 12px;
-  cursor: pointer;
-  border-radius: 50%;
+  border-radius: 20px;
   z-index: 10;
-  transition: background 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.slider-btn:hover {
-  background: rgba(0,0,0,0.6);
+.shop-name-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.slider-btn.left { left: 10px; }
-.slider-btn.right { right: 10px; }
+.verified-badge {
+  font-size: 0.8rem;
+}
+
+/* Instagram-style dot container */
+.slider-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+}
+
+/* Individual dots */
+.slider-dots .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Active dot highlight */
+.slider-dots .dot.active {
+  background-color: #ffffff;
+  transform: scale(1.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
