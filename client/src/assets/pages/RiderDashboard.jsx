@@ -8,6 +8,8 @@ import { FaMapMarkedAlt, FaMotorcycle, FaWallet, FaCog } from 'react-icons/fa';
 import '../styles/dashboard.css';
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function RiderDashboard() {
   const [activeTab, setActiveTab] = useState('map');
   const [riderName, setRiderName] = useState('');
@@ -21,7 +23,8 @@ function RiderDashboard() {
     } else {
       setRiderName(user.name);
 
-      axios.get(`/api/riders/me/${user._id}`)
+      // ✅ Fixed: Use API_URL and match the backend route /api/riders/user/:userId
+      axios.get(`${API_URL}/api/riders/user/${user._id}`)
         .then(res => {
           setRiderId(res.data._id);
         })
@@ -33,11 +36,11 @@ function RiderDashboard() {
   }, []);
 
   const renderTab = () => {
-    if (error) return <p className="text-danger">{error}</p>;
+    if (error) return <p className="text-danger text-center mt-4">{error}</p>;
 
     switch (activeTab) {
       case 'map':
-        return riderId ? <RiderMap riderId={riderId} /> : <p>Loading map...</p>;
+        return riderId ? <RiderMap riderId={riderId} /> : <p className="text-center mt-4">Loading map...</p>;
       case 'trips':
         return <RiderTrips />;
       case 'earnings':
@@ -45,7 +48,7 @@ function RiderDashboard() {
       case 'settings':
         return <Settings />;
       default:
-        return riderId ? <RiderMap riderId={riderId} /> : <p>Loading map...</p>;
+        return riderId ? <RiderMap riderId={riderId} /> : <p className="text-center mt-4">Loading map...</p>;
     }
   };
 

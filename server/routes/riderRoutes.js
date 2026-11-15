@@ -7,15 +7,14 @@ router.post("/", riderController.createRider);
 router.get("/", riderController.getRiders);
 router.delete("/:id", riderController.deleteRider);
 
-// Get rider by user id
+// Get rider by user id (Supports both /me/:userId and /user/:userId)
 router.get("/me/:userId", riderController.getRiderByUserId);
+router.get("/user/:userId", riderController.getRiderByUserId);
 
 // Rider services
 router.get("/nearby", riderController.getNearbyRiders);
 
 // ✅ Update live location by Mongo _id
-// riderRoutes.js
-
 router.put("/:id/location", riderController.updateLocation);
 
 // Trips
