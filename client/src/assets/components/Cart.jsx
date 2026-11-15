@@ -19,10 +19,12 @@ function Cart() {
       setCart(userCart);
     }
 
-    fetch(`${API_URL}/api/products`)
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch((err) => console.log("Products error:", err));
+    if (API_URL) {
+      fetch(`${API_URL}/api/products`)
+        .then((res) => res.json())
+        .then((data) => setProducts(data))
+        .catch((err) => console.log("Products error:", err));
+    }
   }, []);
 
   // 🔧 Robust image lookup supporting Base64, full URLs, and backend uploads safely
@@ -30,7 +32,6 @@ function Cart() {
     const rawImage = item.image || (item.images && item.images.length > 0 ? item.images[0] : null);
 
     if (!rawImage) {
-      // Fallback to searching the loaded products list
       const targetId = item._id || item.product_id;
       const product = products.find((p) => p._id === targetId);
       if (product?.images && product.images.length > 0) {
@@ -41,7 +42,6 @@ function Cart() {
       return "https://via.placeholder.com/400x300?text=No+Image";
     }
 
-    // If it's already a base64 string or full url, render directly
     if (rawImage.startsWith("data:image") || rawImage.startsWith("http")) {
       return rawImage;
     }
@@ -59,6 +59,20 @@ function Cart() {
       } catch (e) {
         console.error("Storage error:", e);
       }
+    }
+  };
+
+  const handleQuantityChange = (index, delta) => {
+    const updatedCart = [...cart];
+    const newQty = (updatedCart[index].quantity || 1) + delta;
+    if (newQty <= 0) {
+      handleRemoveItem(index);
+      return;
+    }
+    updatedCart[index].quantity = newQty;
+    setCart(updatedCart);
+    if (userId) {
+      localStorage.setItem(`cart_${userId}`, JSON.stringify(updatedCart));
     }
   };
 
@@ -116,7 +130,6 @@ function Cart() {
     if (!userId) return alert("Please log in first.");
     if (!phone) return alert("Please enter your M-Pesa phone number.");
 
-    // Standardize phone number format for Daraja API (07... or 01... -> 254...)
     let formattedPhone = phone.trim();
     if (formattedPhone.startsWith("0")) {
       formattedPhone = "254" + formattedPhone.slice(1);
@@ -124,7 +137,6 @@ function Cart() {
       formattedPhone = formattedPhone.slice(1);
     }
 
-    // Validate 254 format length
     if (!/^254(7|1)\d{8}$/.test(formattedPhone)) {
       return alert("Please enter a valid M-Pesa phone number (e.g. 0712345678 or 0112345678).");
     }
@@ -136,7 +148,6 @@ function Cart() {
       const groupedItems = groupByShop(cart);
       const createdOrders = [];
 
-      // STEP 1: Save data to MongoDB FIRST before triggering payment
       for (const [shopId, items] of Object.entries(groupedItems)) {
         const total = items.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
 
@@ -148,7 +159,6 @@ function Cart() {
             quantity: item.quantity || 1,
             price: item.price,
             name: item.name,
-            // Avoid saving massive base64 strings into MongoDB arrays if possible
             image: item.image && !item.image.startsWith("data:image") ? item.image : undefined
           })),
           total,
@@ -162,7 +172,6 @@ function Cart() {
 
       setOrderStatus("📲 Order saved! Sending M-Pesa prompt to your phone...");
 
-      // STEP 2: Trigger the payment STK push for each saved order
       for (const createdOrder of createdOrders) {
         await axios.post(`${API_URL}/api/payments/stk/initiate`, {
           orderId: createdOrder._id,
@@ -171,8 +180,6 @@ function Cart() {
       }
 
       setOrderStatus("📲 STK push sent! Please enter your M-Pesa PIN...");
-      
-      // STEP 3: Start polling order status
       pollOrderStatus(createdOrders);
 
     } catch (err) {
@@ -195,13 +202,20 @@ function Cart() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "25px" }}>
             {cart.map((item, idx) => (
               <div key={idx} style={{ background: "white", borderRadius: "18px", overflow: "hidden", boxShadow: "0 4px 18px rgba(0,0,0,0.08)" }}>
-                <img src={getProductImage(item)} alt={item.name} style={{ width: "100%", height: "240px", objectFit: "cover" }} />
+                <img src={getProductImage(item)} alt={item.name} style={{ width: "100%", height: "200px", objectFit: "cover" }} />
                 <div style={{ padding: "20px" }}>
                   <h4>{item.name}</h4>
                   <p><strong>Price:</strong> {item.price} KES</p>
-                  <p><strong>Quantity:</strong> {item.quantity || 1}</p>
+                  
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "10px 0" }}>
+                    <span><strong>Quantity:</strong></span>
+                    <button onClick={() => handleQuantityChange(idx, -1)} style={{ padding: "4px 10px", borderRadius: "6px", border: "1px solid #ccc", background: "#fff", cursor: "pointer" }}>-</button>
+                    <span>{item.quantity || 1}</span>
+                    <button onClick={() => handleQuantityChange(idx, 1)} style={{ padding: "4px 10px", borderRadius: "6px", border: "1px solid #ccc", background: "#fff", cursor: "pointer" }}>+</button>
+                  </div>
+
                   <p style={{ fontWeight: "bold", color: "#0d6efd" }}>Subtotal: {item.price * (item.quantity || 1)} KES</p>
-                  <button onClick={() => handleRemoveItem(idx)} style={{ width: "100%", padding: "12px", borderRadius: "10px", background: "#dc3545", color: "white", border: "none", cursor: "pointer", marginTop: "15px" }}>
+                  <button onClick={() => handleRemoveItem(idx)} style={{ width: "100%", padding: "10px", borderRadius: "10px", background: "#dc3545", color: "white", border: "none", cursor: "pointer", marginTop: "10px" }}>
                     🗑 Remove
                   </button>
                 </div>
